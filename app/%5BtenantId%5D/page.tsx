@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 export default async function TenantDashboard({
   params,
 }: {
-  params: { tenantId: string };
+  params: Promise<any>;
 }) {
+  const { tenantId } = (await params) as { tenantId: string };
   const session = await auth();
   
   // For now, let's just show the dashboard if the user is authenticated

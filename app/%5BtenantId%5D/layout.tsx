@@ -7,9 +7,9 @@ export default async function TenantLayout({
   params,
 }: {
   children: ReactNode;
-  params: { tenantId: string };
+  params: Promise<any>;
 }) {
-  const { tenantId } = params;
+  const { tenantId } = (await params) as { tenantId: string };
 
   // Verify tenant exists
   const tenant = await db.query.tenants.findFirst({
