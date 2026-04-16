@@ -8,6 +8,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -80,12 +81,16 @@ export function ManualReservationSheet({
     validationResults,
     onSimulateBatch,
     updateValidationRow,
+    toggleResultSelection,
     clearValidation
   } = useReservationForm({
     onSuccess: () => onOpenChange(false),
     centerId,
     date: globalDateStr ? new Date(globalDateStr + "T12:00:00") : new Date(),
   });
+
+  const selectedCount = validationResults?.filter((r: any) => r.selected).length || 0;
+  const hasConflictsInSelected = validationResults?.some((r: any) => r.selected && r.status === 'conflict');
 
   // Pre-fill form when sheet opens with an initial slot
   useEffect(() => {
@@ -95,10 +100,11 @@ export function ManualReservationSheet({
         courtId: initialSlot.courtId,
         startTimeStr: initialSlot.time,
         durationMins: 90,
-        price: 15000, // Default price example, usually you'd calculate this
+        price: 15000,
+        dateStr: globalDateStr || new Date().toISOString().split("T")[0],
       });
     }
-  }, [open, initialSlot, form]);
+  }, [open, initialSlot, form, globalDateStr]);
 
   const watchCourtId = form.watch("courtId");
   const watchStartTime = form.watch("startTimeStr");
@@ -254,7 +260,7 @@ export function ManualReservationSheet({
                                   onClick={() => {
                                     const active = field.value || [];
                                     const next = active.includes(day.id)
-                                      ? active.filter(d => d !== day.id)
+                                      ? active.filter((d: number) => d !== day.id)
                                       : [...active, day.id];
                                     field.onChange(next);
                                   }}
@@ -278,22 +284,24 @@ export function ManualReservationSheet({
                       name="courtId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="uppercase text-xs font-bold tracking-wider">Cancha</FormLabel>
+                          <FormLabel className="uppercase text-xs font-bold tracking-wider">Cancha (Opcional)</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full h-auto min-h-10 text-left">
                                 <SelectValue placeholder="Seleccionar">
-                                  {field.value ? (
-                                    <span className="whitespace-normal break-words line-clamp-2">
+                                  {field.value === "auto" ? (
+                                    <span className="font-bold text-emerald-700">🔄 Sugerir automática</span>
+                                  ) : (
+                                    <span className="whitespace-normal break-words line-clamp-2 italic">
                                       {courts.find(c => c.id === field.value)?.name}
                                     </span>
-                                  ) : undefined}
+                                  )}
                                 </SelectValue>
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent alignItemWithTrigger={false} side="bottom" className="max-h-60 w-[var(--anchor-width)]">
                               <SelectItem value="auto" className="py-2.5 cursor-pointer whitespace-normal h-auto border-b bg-emerald-500/5 mb-1 text-emerald-800">
-                                <span className="line-clamp-2 leading-relaxed font-bold">🔄 Cualquier Cancha Fija</span>
+                                <span className="line-clamp-2 leading-relaxed font-bold">🔄 Cualquier Cancha (Auto)</span>
                               </SelectItem>
                               {courts.map((c) => (
                                 <SelectItem key={c.id} value={c.id} className="py-2.5 cursor-pointer whitespace-normal h-auto">
@@ -369,50 +377,180 @@ export function ManualReservationSheet({
 
                 </div>
 
-                {watchReservationType === "recurring" && !validationResults ? (
-                  <Button
-                    type="button"
-                    onClick={onSimulateBatch}
-                    disabled={isValidating}
-                    className="w-full h-12 uppercase font-black tracking-widest mt-8 transition-all bg-emerald-600 hover:bg-emerald-700 text-white"
-                  >
-                    {isValidating ? (
-                      <>
-                        <LucideLoader2 className="h-5 w-5 mr-2 animate-spin" />
-                        Simulando...
-                      </>
-                    ) : (
-                      <>
-                        <LucideSearch className="h-5 w-5 mr-2" />
-                        Simular Disponibilidad
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    disabled={loading || (watchReservationType === "recurring" && validationResults?.some(r => r.status === 'conflict'))}
-                    className="w-full h-12 uppercase font-black tracking-widest mt-8 transition-all"
-                  >
-                    {loading ? (
-                      <>
-                        <LucideLoader2 className="h-5 w-5 mr-2 animate-spin" />
-                        Procesando
-                      </>
-                    ) : (
-                      <>
-                        <LucideCheckCircle2 className="h-5 w-5 mr-2" />
-                        {watchReservationType === "recurring" ? "Confirmar Todo" : "Confirmar Reserva"}
-                      </>
-                    )}
-                  </Button>
-                )}
+                <div className="flex flex-col gap-3 mt-8">
+                  {watchReservationType === "recurring" && !validationResults ? (
+                    <Button
+                      type="button"
+                      onClick={onSimulateBatch}
+                      disabled={isValidating}
+                      className="w-full h-12 uppercase font-black tracking-widest transition-all bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                      {isValidating ? (
+                        <>
+                          <LucideLoader2 className="h-5 w-5 mr-2 animate-spin" />
+                          Simulando...
+                        </>
+                      ) : (
+                        <>
+                          <LucideSearch className="h-5 w-5 mr-2" />
+                          Simular Disponibilidad
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <>
+                      {watchReservationType === "single" && !validationResults && (
+                        <Button
+                          type="button"
+                          onClick={onSimulateBatch}
+                          disabled={isValidating || loading}
+                          variant="outline"
+                          className="w-full h-12 uppercase font-black tracking-widest transition-all border-emerald-600/20 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-600/40"
+                        >
+                          {isValidating ? (
+                            <>
+                              <LucideLoader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Verificando...
+                            </>
+                          ) : (
+                            <>
+                              <LucideSearch className="h-4 w-4 mr-2" />
+                              Verificar Disponibilidad
+                            </>
+                          )}
+                        </Button>
+                      )}
+                      <Button
+                        type="submit"
+                        disabled={loading || (validationResults && selectedCount === 0) || hasConflictsInSelected}
+                        className={`w-full h-12 uppercase font-black tracking-widest transition-all ${selectedCount > 0 ? "bg-primary" : ""}`}
+                      >
+                        {loading ? (
+                          <>
+                            <LucideLoader2 className="h-5 w-5 mr-2 animate-spin" />
+                            Procesando
+                          </>
+                        ) : (
+                          <>
+                            <LucideCheckCircle2 className="h-5 w-5 mr-2" />
+                            {watchReservationType === "recurring"
+                              ? (selectedCount > 0 ? `Confirmar ${selectedCount} Reservas` : "Selecciona fechas")
+                              : (watchReservationType === "block" ? "Bloquear Cancha" : "Confirmar Reserva")
+                            }
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  )}
+                </div>
               </form>
             </Form>
           </div>
 
-          {/* Column 2: Court Visual Grid */}
-          <div className={`transition-all duration-500 ${validationResults ? "w-full lg:border-l lg:pl-8 border-border" : "lg:border-l lg:pl-8 border-border"}`}>
+          {/* Column 2: Validation Table (Always shown if results exist) */}
+          {validationResults && (
+            <div className="flex flex-col h-full min-h-[400px] lg:border-l lg:pl-8 border-border">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center">
+                  <LucideSparkles className="h-4 w-4 mr-2 text-amber-500" />
+                  Pre-Chequeo de Fechas
+                </h3>
+                <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-1 rounded">
+                  {validationResults.length} FECHAS
+                </span>
+              </div>
+
+              <div className="flex-1 border rounded-xl overflow-hidden bg-white shadow-sm flex flex-col h-full max-h-[600px]">
+                <div className="overflow-y-auto flex-1">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="sticky top-0 bg-muted/50 backdrop-blur-md z-10">
+                      <tr className="border-b">
+                        <th className="p-3 text-[10px] font-black uppercase tracking-wider opacity-60">Fecha</th>
+                        <th className="p-3 text-[10px] font-black uppercase tracking-wider opacity-60">Cancha</th>
+                        <th className="p-3 text-[10px] font-black uppercase tracking-wider opacity-60">Horario</th>
+                        <th className="p-3 text-[10px] font-black uppercase tracking-wider opacity-60 text-right">Confirmar</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {validationResults.map((result, idx) => (
+                        <tr key={idx} className={`transition-colors ${!result.selected ? 'opacity-40 grayscale-[0.5]' : (result.status === 'conflict' ? 'bg-amber-500/5' : 'hover:bg-muted/30')}`}>
+                          <td className="p-3">
+                            <p className="text-xs font-bold">{result.dateStr}</p>
+                          </td>
+                          <td className="p-3">
+                            <p className="text-[11px] font-medium text-muted-foreground">{result.courtName}</p>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex flex-col gap-1">
+                              <p className="text-[11px] font-black">
+                                {new Date(result.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                              {result.selected && result.alternatives.length > 0 && (
+                                <Select onValueChange={(val) => {
+                                  const alt = result.alternatives.find((a: any) => a.label === val);
+                                  if (alt) {
+                                    updateValidationRow(idx, {
+                                      startTime: alt.startTime,
+                                      endTime: alt.endTime,
+                                      courtId: alt.courtId,
+                                      courtName: alt.courtName
+                                    });
+                                  }
+                                }}>
+                                  <SelectTrigger className="h-7 text-[10px] bg-amber-100 border-amber-200 text-amber-900 font-bold px-2 py-0">
+                                    <SelectValue placeholder="Ver alternativas" />
+                                  </SelectTrigger>
+                                  <SelectContent alignItemWithTrigger={false} side="bottom">
+                                    {result.alternatives.map((alt: any, aIdx: number) => (
+                                      <SelectItem key={aIdx} value={alt.label} className="text-[11px]">
+                                        {alt.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => toggleResultSelection(idx)}
+                              className="group relative transition-all duration-200 hover:scale-110 active:scale-95 outline-none"
+                              title={result.selected ? "Desmarcar para no reservar" : "Marcar para reservar"}
+                            >
+                              {result.selected ? (
+                                result.status === 'ok' ? (
+                                  <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] ring-4 ring-emerald-500/10 transition-colors">
+                                    <LucideCheck className="h-4 w-4" />
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.3)] ring-4 ring-amber-500/10 animate-pulse">
+                                    <LucideAlertTriangle className="h-4 w-4" />
+                                  </div>
+                                )
+                              ) : (
+                                <div className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-dashed border-muted-foreground/30 text-muted-foreground/40 bg-muted/10 hover:border-muted-foreground/60 transition-all">
+                                  <div className="h-2 w-2 rounded-full bg-muted-foreground/20 group-hover:bg-muted-foreground/40" />
+                                </div>
+                              )}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+                <p className="text-[10px] text-muted-foreground font-medium uppercase leading-relaxed">
+                  TIP: Si hay conflictos, selecciona uno de los horarios sugeridos por el motor o cancela y ajusta la reserva.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Column 3: Court Visual Grid */}
+          <div className={`transition-all duration-500 lg:border-l lg:pl-8 border-border`}>
             {selectedCourt || watchCourtId === "auto" ? (
               <div className="flex flex-col h-full space-y-4">
                 <div className="bg-emerald-500/5 rounded-lg p-4 border border-emerald-500/10 h-full flex flex-col">
@@ -499,95 +637,6 @@ export function ManualReservationSheet({
               </div>
             )}
           </div>
-
-          {/* Column 3: Validation Table (Only for Recurring) */}
-          {validationResults && (
-            <div className="flex flex-col h-full min-h-[400px] border-l pl-8 border-border">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center">
-                  <LucideSparkles className="h-4 w-4 mr-2 text-amber-500" />
-                  Pre-Chequeo de Fechas
-                </h3>
-                <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-1 rounded">
-                  {validationResults.length} FECHAS
-                </span>
-              </div>
-
-              <div className="flex-1 border rounded-xl overflow-hidden bg-white shadow-sm flex flex-col h-full max-h-[600px]">
-                <div className="overflow-y-auto flex-1">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="sticky top-0 bg-muted/50 backdrop-blur-md z-10">
-                      <tr className="border-b">
-                        <th className="p-3 text-[10px] font-black uppercase tracking-wider opacity-60">Fecha</th>
-                        <th className="p-3 text-[10px] font-black uppercase tracking-wider opacity-60">Cancha</th>
-                        <th className="p-3 text-[10px] font-black uppercase tracking-wider opacity-60">Horario</th>
-                        <th className="p-3 text-[10px] font-black uppercase tracking-wider opacity-60 text-right">Estado</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {validationResults.map((result, idx) => (
-                        <tr key={idx} className={`transition-colors ${result.status === 'conflict' ? 'bg-amber-500/5' : 'hover:bg-muted/30'}`}>
-                          <td className="p-3">
-                            <p className="text-xs font-bold">{result.dateStr}</p>
-                          </td>
-                          <td className="p-3">
-                            <p className="text-[11px] font-medium text-muted-foreground">{result.courtName}</p>
-                          </td>
-                          <td className="p-3">
-                            <div className="flex flex-col gap-1">
-                              <p className="text-[11px] font-black">
-                                {new Date(result.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                              {result.status === 'conflict' && result.alternatives.length > 0 && (
-                                <Select onValueChange={(val) => {
-                                  const alt = result.alternatives.find((a: any) => a.label === val);
-                                  if (alt) {
-                                    updateValidationRow(idx, {
-                                      startTime: alt.startTime,
-                                      endTime: alt.endTime,
-                                      courtId: alt.courtId,
-                                      courtName: alt.courtName
-                                    });
-                                  }
-                                }}>
-                                  <SelectTrigger className="h-7 text-[10px] bg-amber-100 border-amber-200 text-amber-900 font-bold px-2 py-0">
-                                    <SelectValue placeholder="Ver alternativas" />
-                                  </SelectTrigger>
-                                  <SelectContent alignItemWithTrigger={false} side="bottom">
-                                    {result.alternatives.map((alt: any, aIdx: number) => (
-                                      <SelectItem key={aIdx} value={alt.label} className="text-[11px]">
-                                        {alt.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-3 text-right">
-                            {result.status === 'ok' ? (
-                              <div className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm ring-4 ring-emerald-500/10">
-                                <LucideCheck className="h-3.5 w-3.5" />
-                              </div>
-                            ) : (
-                              <div className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm ring-4 ring-amber-500/10 animate-pulse">
-                                <LucideAlertTriangle className="h-3.5 w-3.5" />
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-                <p className="text-[10px] text-muted-foreground font-medium uppercase leading-relaxed">
-                  TIP: Si hay conflictos, selecciona uno de los horarios sugeridos por el motor o cancela y ajusta la reserva.
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </SheetContent>
     </Sheet>

@@ -206,7 +206,7 @@ export async function validateBatchReservationsAction(
 
   const finalResults = [];
 
-  // Pre-fetch all courts for "auto" capability if needed
+  // Pre-fetch all courts for the center
   const firstReqCenter = reservations[0]?.centerId;
   const centerCourts = await db.query.courts.findMany({
     where: eq(courts.centerId, firstReqCenter),
@@ -220,6 +220,7 @@ export async function validateBatchReservationsAction(
     let conflict = false;
     let assignedCourtName = "Auto";
 
+    // 1. Initial check (Auto or Fixed)
     if (finalCourtId === "auto") {
       let foundFreeId = null;
       let foundName = "";
@@ -255,46 +256,71 @@ export async function validateBatchReservationsAction(
       if (overlap) conflict = true;
     }
 
-    let alternatives: { startTime: Date, endTime: Date, courtId: string, courtName: string, label: string }[] = [];
+    // Always search for alternatives (even if no conflict) to allow preference changes/load distribution
+    const dayStart = new Date(req.startTime);
+    dayStart.setHours(7, 0, 0, 0); 
+    const dayEnd = new Date(req.startTime);
+    dayEnd.setHours(23, 59, 59, 999); 
     
-    if (conflict) {
-      const dayStart = new Date(req.startTime);
-      dayStart.setHours(8, 0, 0, 0);
-      const dayEnd = new Date(req.startTime);
-      dayEnd.setHours(23, 0, 0, 0);
+    const dayBookings = await db.query.bookings.findMany({
+      where: and(between(bookings.startTime, dayStart, dayEnd)),
+    });
+
+    // Calculate daily usage per court
+    const TOTAL_HOURS = 18;
+    const courtUsage = centerCourts.map(c => {
+      const bookedMs = dayBookings
+        .filter(b => b.courtId === c.id)
+        .reduce((acc, b) => acc + (b.endTime.getTime() - b.startTime.getTime()), 0);
+      const bookedHours = bookedMs / (1000 * 60 * 60);
+      return {
+        id: c.id,
+        usagePct: Math.round((bookedHours / TOTAL_HOURS) * 100)
+      };
+    });
+
+    let alternatives: { startTime: Date, endTime: Date, courtId: string, courtName: string, label: string, usagePct: number }[] = [];
+    const durationMs = req.endTime.getTime() - req.startTime.getTime();
+    const requestedMs = req.startTime.getTime();
+    const offsets = [0, -30, 30, -60, 60, -90, 90, -120, 120, -180, 180];
+
+    for (const offset of offsets) {
+      const candStart = new Date(requestedMs + offset * 60000);
+      const candEnd = new Date(candStart.getTime() + durationMs);
       
-      const dayBookings = await db.query.bookings.findMany({
-        where: and(between(bookings.startTime, dayStart, dayEnd)),
-      });
+      if (candStart.getHours() < 7 || (candEnd.getHours() === 0 && candEnd.getMinutes() > 0) || candEnd.getHours() > 1) continue;
 
-      const durationMs = req.endTime.getTime() - req.startTime.getTime();
-      const requestedMs = req.startTime.getTime();
-      const offsets = [-90, 90, -60, 60, -30, 30, -120, 120];
+      for (const c of centerCourts) {
+         // Don't suggest the current court at the current time as an "alternative" 
+         if (offset === 0 && c.id === finalCourtId) continue;
 
-      for (const offset of offsets) {
-        if (alternatives.length >= 3) break;
-        const candStart = new Date(requestedMs + offset * 60000);
-        const candEnd = new Date(candStart.getTime() + durationMs);
-        if (candStart.getHours() < 7 || candEnd.getHours() > 23) continue;
-
-        for (const c of centerCourts) {
-           const overlapping = dayBookings.some(b => 
-              b.courtId === c.id && ((candStart < b.endTime) && (candEnd > b.startTime))
-           );
-           if (!overlapping) {
-              const diffLabel = offset > 0 ? `(+${offset/60}h)` : `(${offset/60}h)`;
-              alternatives.push({
-                startTime: candStart,
-                endTime: candEnd,
-                courtId: c.id,
-                courtName: c.name,
-                label: `${candStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} en ${c.name} ${diffLabel}`
-              });
-              break;
-           }
-        }
+         const hasOverlap = dayBookings.some(b => 
+            b.courtId === c.id && ((candStart < b.endTime) && (candEnd > b.startTime))
+         );
+         
+         if (!hasOverlap) {
+            const usage = courtUsage.find(u => u.id === c.id)?.usagePct || 0;
+            const freePct = 100 - usage;
+            const diffLabel = offset === 0 ? "(Mismo horario)" : (offset > 0 ? `(+${offset}m)` : `(${offset}m)`);
+            
+            alternatives.push({
+              startTime: candStart,
+              endTime: candEnd,
+              courtId: c.id,
+              courtName: c.name,
+              usagePct: usage,
+              label: `${candStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${c.name} [Libre: ${freePct}%] ${diffLabel}`
+            });
+         }
       }
     }
+
+    alternatives.sort((a, b) => {
+      const aDist = Math.abs(a.startTime.getTime() - requestedMs);
+      const bDist = Math.abs(b.startTime.getTime() - requestedMs);
+      if (aDist === bDist) return a.usagePct - b.usagePct;
+      return aDist - bDist;
+    });
 
     finalResults.push({
       dateStr: req.startTime.toLocaleDateString('es-AR'),
@@ -304,6 +330,7 @@ export async function validateBatchReservationsAction(
       courtId: finalCourtId,
       courtName: assignedCourtName,
       status: conflict ? ('conflict' as const) : ('ok' as const),
+      selected: true, 
       alternatives
     });
   }

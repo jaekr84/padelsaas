@@ -9,7 +9,7 @@ import { capitalize } from "@/lib/formatters";
 export const reservationFormSchema = z.object({
   reservationType: z.enum(["single", "recurring", "block"]).default("single"),
   guestName: z.string().optional(),
-  courtId: z.string().min(1, "Selecciona una cancha"),
+  courtId: z.string().default("auto"),
   dateStr: z.string().min(1, "Selecciona una fecha"),
   startTimeStr: z.string().min(1, "Horario inválido"),
   durationMins: z.coerce.number().min(30).max(180),
@@ -53,7 +53,7 @@ export function useReservationForm({
     defaultValues: {
       reservationType: "single",
       guestName: "",
-      courtId: "",
+      courtId: "auto",
       dateStr: date.toISOString().split("T")[0],
       startTimeStr: "18:00",
       durationMins: 90,
@@ -68,40 +68,56 @@ export function useReservationForm({
 
   const onSimulateBatch = async () => {
     const values = form.getValues();
-    if (!values.recurringEndDateStr || !values.recurringDays || values.recurringDays.length === 0) {
-      toast.error("Faltan datos de recurrencia para simular");
-      return;
-    }
-
     setIsValidating(true);
     try {
       const [hours, minutes] = values.startTimeStr.split(":").map(Number);
       const [yyyy, mm, dd] = values.dateStr.split("-").map(Number);
       const startDateTime = new Date(yyyy, mm - 1, dd, hours, minutes, 0, 0);
 
-      const endRecurrence = new Date(values.recurringEndDateStr + "T23:59:59");
       const batchDates = [];
-      let cursorDate = new Date(startDateTime);
 
-      while (cursorDate <= endRecurrence) {
-        if (values.recurringDays.includes(cursorDate.getDay())) {
-          const rowStart = new Date(cursorDate);
-          const rowEnd = new Date(cursorDate);
-          rowEnd.setMinutes(rowStart.getMinutes() + values.durationMins);
-          batchDates.push({
-            courtId: values.courtId,
-            centerId: centerId,
-            guestName: values.guestName || "Cliente",
-            price: values.price,
-            startTime: rowStart,
-            endTime: rowEnd,
-          });
+      if (values.reservationType === "single") {
+        const rowStart = new Date(startDateTime);
+        const rowEnd = new Date(startDateTime);
+        rowEnd.setMinutes(rowStart.getMinutes() + values.durationMins);
+        batchDates.push({
+          courtId: values.courtId,
+          centerId: centerId,
+          guestName: values.guestName || "Cliente",
+          price: values.price,
+          startTime: rowStart,
+          endTime: rowEnd,
+        });
+      } else {
+        if (!values.recurringEndDateStr || !values.recurringDays || values.recurringDays.length === 0) {
+          toast.error("Faltan datos de recurrencia para simular");
+          setIsValidating(false);
+          return;
         }
-        cursorDate.setDate(cursorDate.getDate() + 1);
+        
+        const endRecurrence = new Date(values.recurringEndDateStr + "T23:59:59");
+        let cursorDate = new Date(startDateTime);
+
+        while (cursorDate <= endRecurrence) {
+          if (values.recurringDays.includes(cursorDate.getDay())) {
+            const rowStart = new Date(cursorDate);
+            const rowEnd = new Date(cursorDate);
+            rowEnd.setMinutes(rowStart.getMinutes() + values.durationMins);
+            batchDates.push({
+              courtId: values.courtId,
+              centerId: centerId,
+              guestName: values.guestName || "Cliente",
+              price: values.price,
+              startTime: rowStart,
+              endTime: rowEnd,
+            });
+          }
+          cursorDate.setDate(cursorDate.getDate() + 1);
+        }
       }
 
       const response = await validateBatchReservationsAction(batchDates);
-      if (response.success) {
+      if (response && response.success) {
         setValidationResults(response.results);
         toast.info("Simulación completada. Revisa la tabla central.");
       }
@@ -115,7 +131,14 @@ export function useReservationForm({
   const updateValidationRow = (index: number, newData: any) => {
     if (!validationResults) return;
     const next = [...validationResults];
-    next[index] = { ...next[index], ...newData, status: 'ok' }; // Assume fixing it makes it 'ok' for now or the user knows
+    next[index] = { ...next[index], ...newData, status: 'ok', selected: true }; // Re-selecting on fix makes sense
+    setValidationResults(next);
+  };
+
+  const toggleResultSelection = (index: number) => {
+    if (!validationResults) return;
+    const next = [...validationResults];
+    next[index] = { ...next[index], selected: !next[index].selected };
     setValidationResults(next);
   };
 
@@ -135,18 +158,20 @@ export function useReservationForm({
         : capitalize(values.guestName || "Cliente");
 
       if (values.reservationType === "recurring") {
-        // If we have validation results, we use THOSE instead of re-calculating (to respect manual fixes)
-        const finalBatch = validationResults ? validationResults.map(r => ({
-          courtId: r.courtId,
-          centerId: centerId,
-          guestName: formattedName,
-          price: values.price,
-          startTime: new Date(r.startTime),
-          endTime: new Date(r.endTime),
-        })) : [];
+        // Only book SELECTED rows
+        const finalBatch = validationResults ? validationResults
+          .filter(r => r.selected)
+          .map(r => ({
+            courtId: r.courtId,
+            centerId: centerId,
+            guestName: formattedName,
+            price: values.price,
+            startTime: new Date(r.startTime),
+            endTime: new Date(r.endTime),
+          })) : [];
 
         if (finalBatch.length === 0) {
-           toast.error("Primero debes simular y validar las fechas");
+           toast.error(validationResults ? "No hay ninguna fecha seleccionada para reservar" : "Primero debes simular y validar las fechas");
            setLoading(false);
            return;
         }
@@ -161,12 +186,29 @@ export function useReservationForm({
         }
         
       } else {
+        let finalCourtId = values.courtId;
+        let finalStart = startDateTime;
+        let finalEnd = endDateTime;
+
+        // If user simulated and corrected the single row, use those values
+        if (values.reservationType === "single" && validationResults?.length === 1) {
+          const r = validationResults[0];
+          if (!r.selected) {
+            toast.error("La reserva está desmarcada. Márcala para confirmar.");
+            setLoading(false);
+            return;
+          }
+          finalCourtId = r.courtId;
+          finalStart = new Date(r.startTime);
+          finalEnd = new Date(r.endTime);
+        }
+
         const response = await createReservationAction({
-          courtId: values.courtId,
+          courtId: finalCourtId,
           guestName: formattedName,
           price: values.price,
-          startTime: startDateTime,
-          endTime: endDateTime,
+          startTime: finalStart,
+          endTime: finalEnd,
           centerId: centerId,
         });
 
@@ -195,6 +237,7 @@ export function useReservationForm({
     validationResults,
     onSimulateBatch,
     updateValidationRow,
+    toggleResultSelection,
     clearValidation: () => setValidationResults(null),
   };
 }
