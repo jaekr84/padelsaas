@@ -38,7 +38,7 @@ export default function LoginPage() {
       if (res?.error) {
         setError("Credenciales inválidas");
       } else {
-        router.push("/padel-pro");
+        router.push("/home");
       }
     } catch (err) {
       setError("Ocurrió un error al iniciar sesión");

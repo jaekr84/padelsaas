@@ -49,9 +49,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        // Fetch membership details on first sign in
+        const membership = await db.query.members.findFirst({
+          where: (members, { eq }) => eq(members.userId, user.id as string),
+        });
+
+        if (membership) {
+          token.role = membership.role;
+          token.tenantId = membership.tenantId;
+          token.centerId = membership.centerId;
+        }
+      }
+      return token;
+    },
     session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub;
+      if (session.user) {
+        session.user.id = token.sub as string;
+        session.user.role = token.role as string;
+        session.user.tenantId = token.tenantId as string;
+        session.user.centerId = token.centerId as string;
       }
       return session;
     },
