@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createReservationAction, createBatchReservationsAction, validateBatchReservationsAction } from "@/lib/actions/reservation-actions";
 import { capitalize } from "@/lib/formatters";
@@ -40,10 +40,12 @@ export type ReservationFormValues = z.infer<typeof reservationFormSchema>;
 export function useReservationForm({
   onSuccess,
   centerId,
+  center,
   date = new Date(),
 }: {
   onSuccess: () => void;
   centerId: string;
+  center?: any;
   date?: Date;
 }) {
   const [loading, setLoading] = useState(false);
@@ -62,6 +64,48 @@ export function useReservationForm({
       recurringDays: [date.getDay()],
     },
   });
+
+  // --- Auto-Pricing Logic (Option A) ---
+  const watchStartTime = form.watch("startTimeStr");
+  const watchDuration = form.watch("durationMins");
+  const watchDate = form.watch("dateStr");
+  const [appliedRateInfo, setAppliedRateInfo] = useState<{ name: string; price: number } | null>(null);
+
+  useEffect(() => {
+    if (!center) return;
+    
+    // Sort by priority DESC so highest priority matches first
+    const schedules = [...(center.pricingSchedules || [])].sort((a: any, b: any) => (b.priority || 0) - (a.priority || 0));
+    const defaultPrice = center.defaultPrice30 || 0;
+    
+    const [yyyy, mm, dd] = watchDate.split("-").map(Number);
+    const dayOfWeek = new Date(yyyy, mm - 1, dd).getDay();
+
+    const timeToMinutes = (time: string) => {
+      const [h, m] = time.split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    const startMinutes = timeToMinutes(watchStartTime);
+
+    // Find band for Option A: Price determined by START time
+    const matchingBand = schedules.find((s: any) => {
+      const isDayMatch = s.daysOfWeek.includes(dayOfWeek);
+      const bandStart = timeToMinutes(s.startTime);
+      const bandEnd = timeToMinutes(s.endTime);
+      return isDayMatch && startMinutes >= bandStart && startMinutes < bandEnd;
+    });
+
+    const pricePer30 = matchingBand ? matchingBand.price : defaultPrice;
+    const modules = Math.round(watchDuration / 30);
+    const finalPrice = pricePer30 * modules;
+
+    form.setValue("price", finalPrice, { shouldValidate: true, shouldDirty: true });
+    setAppliedRateInfo({
+      name: matchingBand ? `Franja Especial (${matchingBand.startTime} - ${matchingBand.endTime})` : "Tarifa Base",
+      price: pricePer30
+    });
+  }, [watchStartTime, watchDuration, watchDate, center, form]);
 
   const [isValidating, setIsValidating] = useState(false);
   const [validationResults, setValidationResults] = useState<any[] | null>(null);
@@ -249,6 +293,7 @@ export function useReservationForm({
     onSimulateBatch,
     updateValidationRow,
     toggleResultSelection,
+    appliedRateInfo,
     clearValidation: () => setValidationResults(null),
   };
 }

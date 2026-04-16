@@ -32,6 +32,9 @@ export async function getCenterAction(id?: string) {
     where: centerIdToFetch 
       ? eq(centers.id, centerIdToFetch)
       : eq(centers.tenantId, userMember.tenantId),
+    with: {
+      pricingSchedules: true,
+    },
     orderBy: (centers, { asc }) => [asc(centers.createdAt)],
   });
 
@@ -60,6 +63,9 @@ export async function getCentersAction() {
 
   const tenantCenters = await db.query.centers.findMany({
     where: eq(centers.tenantId, session.user.tenantId),
+    with: {
+      pricingSchedules: true,
+    },
     orderBy: (centers, { asc }) => [asc(centers.name)],
   });
 

@@ -26,9 +26,7 @@ export default async function CourtsPage(props: {
       <div className="pt-4">
         <CourtsList 
           courts={courts} 
-          totalCapacity={center?.courtsCount || 0} 
-          openTime={center?.openTime}
-          closeTime={center?.closeTime}
+          center={center}
           globalDate={dateParam}
         />
       </div>

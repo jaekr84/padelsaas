@@ -73,17 +73,17 @@ export const isSlotBooked = (court: Court, timeStr: string, baseDateStr?: string
 
 export function CourtsList({ 
   courts, 
-  totalCapacity = 0,
-  openTime = "08:00",
-  closeTime = "23:00",
+  center,
   globalDate,
 }: { 
   courts: Court[];
-  totalCapacity?: number;
-  openTime?: string;
-  closeTime?: string;
+  center: any;
   globalDate?: string;
 }) {
+  const openTime = center?.openTime || "08:00";
+  const closeTime = center?.closeTime || "23:00";
+  const totalCapacity = center?.courtsCount || 0;
+  
   const router = useRouter();
   
   const rawDateStr = globalDate || new Date().toISOString().split("T")[0];
@@ -394,7 +394,8 @@ export function CourtsList({
         <ManualReservationSheet 
           open={sheetOpen}
           onOpenChange={setSheetOpen}
-          centerId={courts[0]?.centerId}
+          centerId={center?.id}
+          center={center}
           courts={courts}
           initialSlot={initialSlot}
           openTime={openTime}

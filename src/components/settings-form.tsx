@@ -12,7 +12,6 @@ import {
   FormLabel, 
   FormMessage 
 } from "@/components/ui/form";
-import { type ControllerRenderProps } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,10 +34,22 @@ import {
 import { updateCenterAction, createCenterAction } from "@/lib/actions/center";
 import { updateTenantAction } from "@/lib/actions/tenant";
 import { useState, useEffect } from "react";
-import { LucideSave, LucideCheckCircle2, LucidePlus, LucideBuilding2, LucideBriefcase } from "lucide-react";
+import { 
+  LucideSave, 
+  LucideCheckCircle2, 
+  LucidePlus, 
+  LucideBuilding2, 
+  LucideBriefcase,
+  LucideDollarSign,
+  LucideTrash2,
+  LucideZap
+} from "lucide-react";
 import { capitalize } from "@/lib/formatters";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { updatePricingConfigAction } from "@/lib/actions/pricing";
+import { PricingCanvas } from "./pricing-canvas";
+import { generateTimeSlots } from "./courts-list";
 
 const companySchema = z.object({
   id: z.string(),
@@ -69,6 +80,7 @@ const formSchema = z.object({
   courtsCount: z.coerce.number().min(1, "Debe tener al menos 1 cancha"),
   openTime: z.string(),
   closeTime: z.string(),
+  defaultPrice30: z.coerce.number().min(0),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -115,8 +127,11 @@ export function SettingsForm({
         hasWiFi: false,
         hasVestuarios: false,
       },
+      defaultPrice30: 0,
     },
   });
+
+  const [schedules, setSchedules] = useState<any[]>([]);
 
   // Form for Company (Tenant)
   const companyForm = useForm<CompanyValues>({
@@ -130,6 +145,7 @@ export function SettingsForm({
   // Watch names for reactive tabs
   const watchedCenterName = centerForm.watch("name");
   const watchedCompanyName = companyForm.watch("name");
+  const watchedBasePrice = centerForm.watch("defaultPrice30");
 
   // Reset center form when selected center changes
   useEffect(() => {
@@ -158,7 +174,9 @@ export function SettingsForm({
           hasWiFi: activeCenter.amenities?.hasWiFi || false,
           hasVestuarios: activeCenter.amenities?.hasVestuarios || false,
         },
+        defaultPrice30: activeCenter.defaultPrice30 || 0,
       });
+      setSchedules(activeCenter.pricingSchedules || []);
     }
   }, [activeCenter, centerForm]);
 
@@ -229,6 +247,34 @@ export function SettingsForm({
       setLoading(false);
     }
   }
+
+  async function onPricingSubmit() {
+    if (!activeCenter) return;
+    setLoading(true);
+    try {
+      const response = await updatePricingConfigAction(activeCenter.id, {
+        defaultPrice30: centerForm.getValues("defaultPrice30"),
+        schedules: schedules
+      });
+      if (response.success) {
+        toast.success("Tarifas actualizadas correctamente");
+        // Update local state
+        setCenters(centers.map(c => c.id === activeCenter.id ? { 
+          ...c, 
+          defaultPrice30: centerForm.getValues("defaultPrice30"),
+          pricingSchedules: schedules
+        } : c));
+      }
+    } catch (error) {
+      toast.error("Error al actualizar tarifas");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const watchBasePrice = centerForm.watch("defaultPrice30");
+  const watchOpenTime = centerForm.watch("openTime");
+  const watchCloseTime = centerForm.watch("closeTime");
 
   return (
     <div className="space-y-6 pb-10">
@@ -653,9 +699,86 @@ export function SettingsForm({
             </CardContent>
           </Card>
         </div>
-      </form>
-    </Form>
-    )}
-  </div>
-  );
-}
+
+        {/* --- TARIFAS SECTION --- */}
+        <div className="mt-12 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2">
+              <LucideDollarSign className="h-6 w-6 text-emerald-600" />
+              Gestión de Tarifas (Por Módulo de 30 min)
+            </h2>
+            <Button 
+               type="button" 
+               variant="outline"
+               onClick={onPricingSubmit}
+               disabled={loading}
+               className="gap-2 font-bold uppercase tracking-wider text-xs border-primary/20 hover:bg-primary/5"
+            >
+              <LucideSave className="h-4 w-4" />
+              Guardar Tarifas
+            </Button>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+             {/* Precio Base */}
+             <Card className="border-none shadow-md bg-emerald-50/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-bold uppercase tracking-wider text-emerald-800">Precio Base</CardTitle>
+                  <CardDescription className="text-[11px]">Se usará si no hay franjas especiales.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FormField
+                    control={centerForm.control}
+                    name="defaultPrice30"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                           <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600 font-bold">$</span>
+                              <Input 
+                                type="number" 
+                                className="pl-7 font-black text-lg h-12" 
+                                placeholder="0" 
+                                {...field} 
+                              />
+                           </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+             </Card>
+
+             {/* Dynamic Bands - Visual Canvas */}
+              <Card className="md:col-span-2 border-none shadow-md overflow-hidden">
+                 <CardHeader className="flex flex-row items-center justify-between bg-white border-b">
+                   <div>
+                     <CardTitle className="text-sm font-bold uppercase tracking-wider">Lienzo Semanal de Tarifas</CardTitle>
+                     <CardDescription className="text-[11px]">Dibuja tus precios sobre la grilla semanal para automatizar el cobro.</CardDescription>
+                   </div>
+                 </CardHeader>
+                 <CardContent className="p-0">
+                    <PricingCanvas 
+                      rules={schedules}
+                      basePrice={Number(watchBasePrice) || 0}
+                      onChange={(newRules) => setSchedules(newRules)}
+                      openTime={watchOpenTime}
+                      closeTime={watchCloseTime}
+                    />
+                 </CardContent>
+                 <CardFooter className="bg-muted/10 border-t py-3">
+                    <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                      <LucideZap className="h-3 w-3 text-amber-500" />
+                      El sistema detectará automáticamente los rangos y días para optimizar el almacenamiento.
+                    </p>
+                 </CardFooter>
+              </Card>
+           </div>
+         </div>
+       </form>
+     </Form>
+     )}
+   </div>
+   );
+ }

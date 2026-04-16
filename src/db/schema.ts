@@ -98,6 +98,7 @@ export const centers = pgTable("center", {
   openTime: text("open_time").default("08:00").notNull(),
   closeTime: text("close_time").default("23:00").notNull(),
   courtsCount: integer("courts_count").default(1).notNull(),
+  defaultPrice30: integer("default_price_30").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -129,6 +130,20 @@ export const bookings = pgTable("booking", {
   endTime: timestamp("end_time").notNull(),
   status: text("status").notNull().default("pending"), // pending, confirmed, cancelled
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const pricingSchedules = pgTable("pricing_schedule", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  centerId: uuid("center_id")
+    .notNull()
+    .references(() => centers.id, { onDelete: "cascade" }),
+  startTime: text("start_time").notNull(), // "HH:mm"
+  endTime: text("end_time").notNull(),   // "HH:mm"
+  daysOfWeek: jsonb("days_of_week").$type<number[]>().notNull(), // [0,1,2,3,4,5,6] (0=Sun)
+  priority: integer("priority").default(1).notNull(),
+  price: integer("price").notNull(), // Price per 30 mins
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Relationships/Members (Many-to-Many between User and Tenant)
@@ -170,6 +185,7 @@ export const centersRelations = relations(centers, ({ one, many }) => ({
     references: [tenants.id],
   }),
   courts: many(courts),
+  pricingSchedules: many(pricingSchedules),
 }));
 
 export const courtsRelations = relations(courts, ({ one, many }) => ({
@@ -188,5 +204,12 @@ export const bookingsRelations = relations(bookings, ({ one }) => ({
   user: one(users, {
     fields: [bookings.userId],
     references: [users.id],
+  }),
+}));
+
+export const pricingSchedulesRelations = relations(pricingSchedules, ({ one }) => ({
+  center: one(centers, {
+    fields: [pricingSchedules.centerId],
+    references: [centers.id],
   }),
 }));

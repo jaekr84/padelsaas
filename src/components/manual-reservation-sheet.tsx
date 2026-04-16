@@ -37,7 +37,8 @@ import {
   LucideAlertTriangle,
   LucideCheck,
   LucideSearch,
-  LucideX
+  LucideX,
+  LucideDollarSign
 } from "lucide-react";
 import { useReservationForm } from "@/hooks/use-reservation-form";
 import { generateTimeSlots, isSlotBooked } from "./courts-list";
@@ -57,6 +58,7 @@ interface ManualReservationSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   centerId: string;
+  center?: any;
   courts: TimeGridCourt[];
   initialSlot: { courtId: string; time: string } | null;
   openTime?: string;
@@ -68,6 +70,7 @@ export function ManualReservationSheet({
   open,
   onOpenChange,
   centerId,
+  center,
   courts,
   initialSlot,
   openTime = "08:00",
@@ -83,10 +86,12 @@ export function ManualReservationSheet({
     onSimulateBatch,
     updateValidationRow,
     toggleResultSelection,
+    appliedRateInfo,
     clearValidation
   } = useReservationForm({
     onSuccess: () => onOpenChange(false),
     centerId,
+    center,
     date: globalDateStr ? new Date(globalDateStr + "T12:00:00") : new Date(),
   });
 
@@ -376,6 +381,36 @@ export function ManualReservationSheet({
                     )}
                   />
 
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="uppercase text-xs font-bold tracking-wider">Monto a Cobrar ($)</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-emerald-600">$</span>
+                            <Input
+                              type="number"
+                              className="pl-7 font-black text-lg h-12 bg-emerald-50/30 border-emerald-100"
+                              placeholder="0"
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                        {appliedRateInfo && (
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 animate-in fade-in slide-in-from-top-1">
+                            <LucideDollarSign className="h-3 w-3" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">
+                              Tarifa: {appliedRateInfo.name} (${appliedRateInfo.price}/mod)
+                            </span>
+                          </div>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                 </div>
 
                 <div className="flex flex-col gap-3 mt-8">
@@ -640,12 +675,11 @@ export function ManualReservationSheet({
                                   <span>{result.usagePct}%</span>
                                 </div>
                                 <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-200/50">
-                                  <div 
-                                    className={`h-full transition-all duration-500 ${
-                                      result.usagePct > 80 ? 'bg-red-500' : 
-                                      result.usagePct > 50 ? 'bg-amber-500' : 
-                                      'bg-emerald-500'
-                                    }`}
+                                  <div
+                                    className={`h-full transition-all duration-500 ${result.usagePct > 80 ? 'bg-red-500' :
+                                        result.usagePct > 50 ? 'bg-amber-500' :
+                                          'bg-emerald-500'
+                                      }`}
                                     style={{ width: `${result.usagePct}%` }}
                                   />
                                 </div>
@@ -721,7 +755,7 @@ export function ManualReservationSheet({
                 </p>
               </div>
             )}
-            
+
             <div className="mt-4 p-4 bg-muted/30 rounded-lg">
               <p className="text-[10px] text-muted-foreground font-medium uppercase leading-relaxed">
                 TIP: Si hay conflictos, selecciona uno de los horarios sugeridos por el motor o cancela y ajusta la reserva.
