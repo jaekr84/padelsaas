@@ -5,7 +5,7 @@ import { members, users } from "@/db/schema";
 import { auth } from "@/auth";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export async function getTenantMembersAction() {
   const session = await auth();
