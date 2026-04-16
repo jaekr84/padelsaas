@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 
 import { cookies } from "next/headers";
 
-export async function getCourtsAction() {
+export async function getCourtsAction(dateStr?: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
@@ -34,10 +34,18 @@ export async function getCourtsAction() {
 
   if (!center) return [];
 
-  // Get today's boundaries
-  const startOfDay = new Date();
+  // Parse date boundaries
+  let targetDate = new Date();
+  if (dateStr) {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    // Explicitly construct local time to avoid timezone offset shifts caused by Date("YYYY-MM-DD")
+    targetDate = new Date(year, month - 1, day);
+  }
+
+  const startOfDay = new Date(targetDate);
   startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date();
+  
+  const endOfDay = new Date(targetDate);
   endOfDay.setHours(23, 59, 59, 999);
 
   // Get all courts for that center with today's bookings

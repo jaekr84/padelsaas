@@ -6,7 +6,10 @@ export default async function CourtsPage(props: {
   params?: Promise<any>;
   searchParams?: Promise<any>;
 }) {
-  const courts = await getCourtsAction();
+  const searchParams = await props.searchParams;
+  const dateParam = searchParams?.date || undefined;
+
+  const courts = await getCourtsAction(dateParam);
   const center = await getCenterAction();
   
   return (
@@ -26,6 +29,7 @@ export default async function CourtsPage(props: {
           totalCapacity={center?.courtsCount || 0} 
           openTime={center?.openTime}
           closeTime={center?.closeTime}
+          globalDate={dateParam}
         />
       </div>
     </div>

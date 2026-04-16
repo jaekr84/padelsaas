@@ -122,8 +122,9 @@ export const bookings = pgTable("booking", {
     .notNull()
     .references(() => courts.id, { onDelete: "cascade" }),
   userId: text("user_id")
-    .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  guestName: text("guest_name"),
+  price: integer("price"),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time").notNull(),
   status: text("status").notNull().default("pending"), // pending, confirmed, cancelled

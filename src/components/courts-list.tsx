@@ -24,63 +24,82 @@ import {
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { LucideChevronLeft, LucideChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { updateCourtAction } from "@/lib/actions/court";
 import { toast } from "sonner";
+import { ManualReservationSheet } from "./manual-reservation-sheet";
 
-interface Court {
-  id: string;
-  name: string;
-  type: string;
-  surface: string;
-  bookings?: any[];
-}
+import { CourtTimeGrid, TimeGridCourt } from "./court-time-grid";
 
-export function CourtsList({ 
-  courts, 
-  totalCapacity = 0,
-  openTime = "08:00",
-  closeTime = "23:00"
-}: { 
-  courts: Court[];
-  totalCapacity?: number;
-  openTime?: string;
-  closeTime?: string;
-}) {
-  const registeredCount = courts.length;
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [tempName, setTempName] = useState("");
-  const [saving, setSaving] = useState(false);
-  
-  // Create slots of 30 mins each within operation hours
+export type Court = TimeGridCourt;
+
+export const generateTimeSlots = (openTime: string, closeTime: string) => {
   const allPossibleSlots = Array.from({ length: 48 }).map((_, i) => {
     const hours = Math.floor(i / 2);
     const minutes = i % 2 === 0 ? "00" : "30";
     return `${hours.toString().padStart(2, '0')}:${minutes}`;
   });
 
-  const timeSlots = allPossibleSlots.filter(time => {
+  return allPossibleSlots.filter(time => {
     if (openTime <= closeTime) {
       return time >= openTime && time <= closeTime;
     } else {
-      // Overnight range, e.g., 08:00 to 01:00
       return time >= openTime || time <= closeTime;
     }
   });
+};
 
-  const isSlotBooked = (court: Court, timeStr: string) => {
-    if (!court.bookings) return false;
-    
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const slotTime = new Date();
+export const isSlotBooked = (court: Court, timeStr: string, baseDateStr?: string) => {
+  if (!court.bookings) return false;
+  
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  let slotTime;
+  if (baseDateStr) {
+    const [y, m, d] = baseDateStr.split('-').map(Number);
+    slotTime = new Date(y, m - 1, d, hours, minutes, 0, 0);
+  } else {
+    slotTime = new Date();
     slotTime.setHours(hours, minutes, 0, 0);
-    
-    return court.bookings.some(booking => {
-      const start = new Date(booking.startTime);
-      const end = new Date(booking.endTime);
-      return slotTime >= start && slotTime < end;
-    });
-  };
+  }
+  
+  return court.bookings.some(booking => {
+    const start = new Date(booking.startTime);
+    const end = new Date(booking.endTime);
+    return slotTime >= start && slotTime < end;
+  });
+};
+
+export function CourtsList({ 
+  courts, 
+  totalCapacity = 0,
+  openTime = "08:00",
+  closeTime = "23:00",
+  globalDate,
+}: { 
+  courts: Court[];
+  totalCapacity?: number;
+  openTime?: string;
+  closeTime?: string;
+  globalDate?: string;
+}) {
+  const router = useRouter();
+  
+  const rawDateStr = globalDate || new Date().toISOString().split("T")[0];
+  const [_y, _m, _d] = rawDateStr.split('-').map(Number);
+  const activeDateObj = new Date(_y, _m - 1, _d);
+
+  const registeredCount = courts.length;
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [tempName, setTempName] = useState("");
+  const [saving, setSaving] = useState(false);
+  
+  // Sheet state
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [initialSlot, setInitialSlot] = useState<{ courtId: string; time: string } | null>(null);
+  
+  const timeSlots = generateTimeSlots(openTime, closeTime);
 
   // Calculate statistics
   const totalSlotsCount = courts.length * timeSlots.length;
@@ -88,7 +107,7 @@ export function CourtsList({
   
   courts.forEach(court => {
     timeSlots.forEach(time => {
-      if (isSlotBooked(court, time)) {
+      if (isSlotBooked(court, time, rawDateStr)) {
         occupiedSlotsCount++;
       }
     });
@@ -128,9 +147,65 @@ export function CourtsList({
     }
   };
 
+  const handleCellClick = (court: Court, time: string, booked: boolean) => {
+    if (booked) return; // Do not open for already booked slots
+    setInitialSlot({ courtId: court.id, time });
+    setSheetOpen(true);
+  };
+
+  const handlePrevDay = () => {
+    const prev = new Date(activeDateObj);
+    prev.setDate(prev.getDate() - 1);
+    router.push(`/courts?date=${prev.toISOString().split("T")[0]}`);
+  };
+  
+  const handleNextDay = () => {
+    const next = new Date(activeDateObj);
+    next.setDate(next.getDate() + 1);
+    router.push(`/courts?date=${next.toISOString().split("T")[0]}`);
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value) {
+      router.push(`/courts?date=${e.target.value}`);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
+        <h3 className="text-xl font-bold tracking-tight hidden lg:block">Rendimiento</h3>
+        
+        {/* Navbar Navegador de Fechas */}
+        <div className="flex bg-card items-center border border-border shadow-sm rounded-lg p-1 mx-auto sm:mx-0">
+          <Button variant="ghost" size="icon" onClick={handlePrevDay} className="h-8 w-8 hover:bg-muted">
+            <LucideChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="px-2 border-x border-border/50 mx-1 flex items-center">
+             <Input 
+               type="date"
+               value={rawDateStr}
+               onChange={handleDateChange}
+               className="border-0 shadow-none h-8 bg-transparent text-sm font-bold tracking-tight cursor-pointer focus-visible:ring-0 focus-visible:ring-offset-0 px-2"
+             />
+          </div>
+          <Button variant="ghost" size="icon" onClick={handleNextDay} className="h-8 w-8 hover:bg-muted">
+            <LucideChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        <Button 
+          onClick={() => {
+            setInitialSlot(null);
+            setSheetOpen(true);
+          }}
+          className="gap-2 font-bold uppercase tracking-wider text-xs ml-auto"
+        >
+          <LucideCalendar className="h-4 w-4" />
+          Nueva Reserva
+        </Button>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3 mt-0">
         <Card className="bg-primary/5 border-primary/20 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
@@ -260,35 +335,31 @@ export function CourtsList({
                     </div>
                   </div>
                   
-                  {/* Dense Time Grid: 8 columns x 6 rows (00:00 - 23:30) */}
-                  <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5 pt-2">
-                    {timeSlots.map((time) => {
-                      const booked = isSlotBooked(court, time);
-                      return (
-                        <div 
-                          key={time}
-                          className={cn(
-                            "group relative flex flex-col items-center justify-center p-1 rounded-sm text-[9px] font-bold transition-all border shadow-sm",
-                            booked 
-                              ? "bg-slate-400 border-slate-500 text-slate-50" 
-                              : "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 hover:bg-emerald-500 hover:text-white hover:scale-105 cursor-pointer"
-                          )}
-                        >
-                          {time}
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-30 pointer-events-none">
-                            <div className="bg-slate-900 text-white px-2 py-1 rounded text-[10px] whitespace-nowrap shadow-xl">
-                              {time} - {booked ? 'Reservado' : 'Disponible'}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <CourtTimeGrid 
+                    court={court}
+                    timeSlots={timeSlots}
+                    isSlotBooked={(c, t) => isSlotBooked(c, t, rawDateStr)}
+                    onSlotClick={handleCellClick}
+                  />
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Manual Reservation Sheet */}
+      {courts.length > 0 && (
+        <ManualReservationSheet 
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          centerId={courts[0]?.centerId}
+          courts={courts}
+          initialSlot={initialSlot}
+          openTime={openTime}
+          closeTime={closeTime}
+          globalDateStr={rawDateStr}
+        />
       )}
     </div>
   );
