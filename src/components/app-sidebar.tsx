@@ -17,7 +17,8 @@ import {
   LucideHome, 
   LucideSettings, 
   LucideUsers, 
-  LucideDumbbell 
+  LucideDumbbell,
+  LucideCalendar
 } from "lucide-react";
 import { UserNav } from "@/components/user-nav";
 import Link from "next/link";
@@ -29,6 +30,7 @@ import { useEffect, useState } from "react";
 
 const navItems = [
   { title: "Home", icon: LucideHome, href: "/home" },
+  { title: "Reservas", icon: LucideCalendar, href: "/bookings" },
   { title: "Canchas", icon: LucideDumbbell, href: "/courts" },
   { title: "Jugadores", icon: LucideUsers, href: "/players" },
   { title: "Usuarios", icon: LucideUsers, href: "/users", adminOnly: true },

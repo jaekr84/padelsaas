@@ -138,7 +138,18 @@ export function useReservationForm({
   const toggleResultSelection = (index: number) => {
     if (!validationResults) return;
     const next = [...validationResults];
-    next[index] = { ...next[index], selected: !next[index].selected };
+    const isSingle = form.getValues("reservationType") === "single";
+
+    if (isSingle) {
+      // Radio-button behavior: only one can be selected
+      const currentlySelected = next[index].selected;
+      next.forEach((r, i) => {
+        r.selected = (i === index) ? !currentlySelected : false;
+      });
+    } else {
+      // Standard checkbox behavior
+      next[index] = { ...next[index], selected: !next[index].selected };
+    }
     setValidationResults(next);
   };
 
@@ -190,11 +201,11 @@ export function useReservationForm({
         let finalStart = startDateTime;
         let finalEnd = endDateTime;
 
-        // If user simulated and corrected the single row, use those values
-        if (values.reservationType === "single" && validationResults?.length === 1) {
-          const r = validationResults[0];
-          if (!r.selected) {
-            toast.error("La reserva está desmarcada. Márcala para confirmar.");
+        // If user simulated and chose a specific court from the exploded options
+        if (values.reservationType === "single" && validationResults && validationResults.length > 0) {
+          const r = validationResults.find(res => res.selected);
+          if (!r) {
+            toast.error("La reserva está desmarcada. Selecciona una opción para confirmar.");
             setLoading(false);
             return;
           }

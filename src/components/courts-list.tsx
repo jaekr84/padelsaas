@@ -117,6 +117,16 @@ export function CourtsList({
     ? Math.round((occupiedSlotsCount / totalSlotsCount) * 100) 
     : 0;
 
+  const getCourtOccupancy = (court: Court) => {
+    let occupied = 0;
+    timeSlots.forEach(time => {
+      if (isSlotBooked(court, time, rawDateStr)) {
+        occupied++;
+      }
+    });
+    return timeSlots.length > 0 ? Math.round((occupied / timeSlots.length) * 100) : 0;
+  };
+
   const getOccupancyColor = (rate: number) => {
     if (rate >= 80) return "text-orange-600";
     if (rate >= 50) return "text-blue-600";
@@ -165,6 +175,10 @@ export function CourtsList({
     router.push(`/courts?date=${next.toISOString().split("T")[0]}`);
   };
 
+  const handleToday = () => {
+    router.push('/courts');
+  };
+
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value) {
       router.push(`/courts?date=${e.target.value}`);
@@ -191,6 +205,15 @@ export function CourtsList({
           </div>
           <Button variant="ghost" size="icon" onClick={handleNextDay} className="h-8 w-8 hover:bg-muted">
             <LucideChevronRight className="h-4 w-4" />
+          </Button>
+          <div className="border-l border-border/50 h-4 mx-1" />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleToday} 
+            className="h-8 px-2 text-[10px] font-black uppercase hover:bg-muted"
+          >
+            Hoy
           </Button>
         </div>
         <Button 
@@ -307,13 +330,31 @@ export function CourtsList({
                   </div>
                 ) : (
                   <>
-                    <CardTitle 
-                      className="text-2xl font-black text-primary uppercase tracking-tighter cursor-pointer hover:text-primary/70 flex items-center gap-2 group/title"
-                      onClick={() => handleStartEdit(court)}
-                    >
-                      {court.name}
-                      <LucidePencil className="h-4 w-4 opacity-0 group-hover/title:opacity-100 transition-opacity text-muted-foreground" />
-                    </CardTitle>
+                    <div className="flex flex-col gap-0.5">
+                      <CardTitle 
+                        className="text-2xl font-black text-primary uppercase tracking-tighter cursor-pointer hover:text-primary/70 flex items-center gap-2 group/title"
+                        onClick={() => handleStartEdit(court)}
+                      >
+                        {court.name}
+                        <LucidePencil className="h-4 w-4 opacity-0 group-hover/title:opacity-100 transition-opacity text-muted-foreground" />
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-24 bg-gray-200 rounded-full overflow-hidden border border-gray-300/30">
+                          <div 
+                            className={cn(
+                              "h-full transition-all duration-1000",
+                              getCourtOccupancy(court) > 80 ? 'bg-red-500' : 
+                              getCourtOccupancy(court) > 50 ? 'bg-amber-500' : 
+                              'bg-emerald-500'
+                            )}
+                            style={{ width: `${getCourtOccupancy(court)}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-black uppercase text-muted-foreground/70 tracking-tighter">
+                          {getCourtOccupancy(court)}% Ocupado hoy
+                        </span>
+                      </div>
+                    </div>
                   </>
                 )}
               </CardHeader>

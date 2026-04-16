@@ -36,7 +36,8 @@ import {
   LucideSparkles,
   LucideAlertTriangle,
   LucideCheck,
-  LucideSearch
+  LucideSearch,
+  LucideX
 } from "lucide-react";
 import { useReservationForm } from "@/hooks/use-reservation-form";
 import { generateTimeSlots, isSlotBooked } from "./courts-list";
@@ -124,7 +125,7 @@ export function ManualReservationSheet({
       if (!val) clearValidation();
       onOpenChange(val);
     }}>
-      <SheetContent className={`overflow-y-auto transition-all duration-500 ease-in-out ${validationResults ? "!max-w-[100vw] sm:!max-w-[95vw] lg:!max-w-[1400px]" : "!max-w-[100vw] sm:!max-w-[80vw] md:!max-w-[750px] lg:!max-w-[900px]"} w-full p-6 sm:p-8`}>
+      <SheetContent className="overflow-y-auto transition-all duration-500 ease-in-out !max-w-[100vw] sm:!max-w-[95vw] lg:!max-w-[1400px] w-full p-6 sm:p-8">
         <SheetHeader className="mb-6 mt-4">
           <SheetTitle className="text-2xl font-black uppercase tracking-tighter">
             Nueva Reserva
@@ -134,7 +135,7 @@ export function ManualReservationSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <div className={`grid gap-8 transition-all duration-500 ${validationResults ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>
+        <div className="grid gap-8 transition-all duration-500 lg:grid-cols-3">
           {/* Left Column: Form */}
           <div className="flex flex-col space-y-6">
             <Form {...form}>
@@ -378,51 +379,61 @@ export function ManualReservationSheet({
                 </div>
 
                 <div className="flex flex-col gap-3 mt-8">
-                  {watchReservationType === "recurring" && !validationResults ? (
-                    <Button
-                      type="button"
-                      onClick={onSimulateBatch}
-                      disabled={isValidating}
-                      className="w-full h-12 uppercase font-black tracking-widest transition-all bg-emerald-600 hover:bg-emerald-700 text-white"
-                    >
-                      {isValidating ? (
-                        <>
-                          <LucideLoader2 className="h-5 w-5 mr-2 animate-spin" />
-                          Simulando...
-                        </>
-                      ) : (
-                        <>
-                          <LucideSearch className="h-5 w-5 mr-2" />
-                          Simular Disponibilidad
-                        </>
-                      )}
-                    </Button>
-                  ) : (
+                  {/* Phase 1: Not simulated yet or simple block */}
+                  {!validationResults && (
                     <>
-                      {watchReservationType === "single" && !validationResults && (
+                      {(watchReservationType === "recurring" || watchReservationType === "single") && (
                         <Button
                           type="button"
                           onClick={onSimulateBatch}
                           disabled={isValidating || loading}
-                          variant="outline"
-                          className="w-full h-12 uppercase font-black tracking-widest transition-all border-emerald-600/20 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-600/40"
+                          variant={watchReservationType === "recurring" ? "default" : "outline"}
+                          className={`w-full h-12 uppercase font-black tracking-widest transition-all ${watchReservationType === "recurring" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "border-emerald-600/20 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-600/40"
+                            }`}
                         >
                           {isValidating ? (
                             <>
-                              <LucideLoader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Verificando...
+                              <LucideLoader2 className="h-5 w-5 mr-2 animate-spin" />
+                              {watchReservationType === "recurring" ? "Simulando..." : "Verificando..."}
                             </>
                           ) : (
                             <>
-                              <LucideSearch className="h-4 w-4 mr-2" />
-                              Verificar Disponibilidad
+                              <LucideSearch className="h-5 w-5 mr-2" />
+                              {watchReservationType === "recurring" ? "Simular Disponibilidad" : "Verificar Disponibilidad"}
                             </>
                           )}
                         </Button>
                       )}
+
+                      {/* Only show direct submit for Single (if not simulated) or Block */}
+                      {(watchReservationType === "single" || watchReservationType === "block") && (
+                        <Button
+                          type="submit"
+                          disabled={loading}
+                          className="w-full h-12 uppercase font-black tracking-widest transition-all"
+                        >
+                          {loading ? (
+                            <>
+                              <LucideLoader2 className="h-5 w-5 mr-2 animate-spin" />
+                              Procesando
+                            </>
+                          ) : (
+                            <>
+                              <LucideCheckCircle2 className="h-5 w-5 mr-2" />
+                              {watchReservationType === "block" ? "Bloquear Cancha" : "Confirmar Reserva"}
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </>
+                  )}
+
+                  {/* Phase 2: Results are present */}
+                  {validationResults && (
+                    <div className="flex flex-col gap-3">
                       <Button
                         type="submit"
-                        disabled={loading || (validationResults && selectedCount === 0) || hasConflictsInSelected}
+                        disabled={loading || selectedCount === 0 || hasConflictsInSelected}
                         className={`w-full h-12 uppercase font-black tracking-widest transition-all ${selectedCount > 0 ? "bg-primary" : ""}`}
                       >
                         {loading ? (
@@ -440,26 +451,169 @@ export function ManualReservationSheet({
                           </>
                         )}
                       </Button>
-                    </>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={clearValidation}
+                        className="w-full text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground h-10"
+                      >
+                        <LucideSearch className="h-3.5 w-3.5 mr-2" />
+                        Modificar parámetros / Volver
+                      </Button>
+                    </div>
                   )}
                 </div>
               </form>
             </Form>
           </div>
 
-          {/* Column 2: Validation Table (Always shown if results exist) */}
-          {validationResults && (
-            <div className="flex flex-col h-full min-h-[400px] lg:border-l lg:pl-8 border-border">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center">
-                  <LucideSparkles className="h-4 w-4 mr-2 text-amber-500" />
-                  Pre-Chequeo de Fechas
-                </h3>
-                <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-1 rounded">
-                  {validationResults.length} FECHAS
-                </span>
-              </div>
+          {/* Column 2: Court Visual Grid (Moved to middle) */}
+          <div className="transition-all duration-500 lg:border-l lg:pl-8 border-border">
+            {selectedCourt || watchCourtId === "auto" ? (
+              <div className="flex flex-col h-full space-y-4">
+                <div className="bg-emerald-500/5 rounded-lg p-4 border border-emerald-500/10 h-full flex flex-col">
+                  <div className="mb-4 flex flex-col gap-3">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-emerald-800 leading-relaxed">
+                      {watchCourtId === "auto" ? "Grilla Diferida (Auto Asignación)" : `Grilla de ${selectedCourt?.name}`}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="relative group/time">
+                        <span className="bg-white/80 px-3 py-1.5 rounded-md shadow-sm text-sm font-black text-emerald-900 border border-emerald-500/10 flex items-center pr-8">
+                          Hora: {watchStartTime || "--:--"}
+                        </span>
+                        {watchStartTime && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              form.setValue("startTimeStr", "", { shouldDirty: true });
+                              form.setValue("durationMins", 90, { shouldDirty: true });
+                              clearValidation();
+                            }}
+                            className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors"
+                            title="Limpiar horario"
+                          >
+                            <LucideX className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                      <span className="bg-emerald-600 text-white px-3 py-1.5 rounded-md shadow-sm text-sm font-black">
+                        {form.watch("durationMins")} min
+                      </span>
+                      {watchStartTime && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            form.setValue("startTimeStr", "", { shouldDirty: true });
+                            form.setValue("durationMins", 90, { shouldDirty: true });
+                            clearValidation();
+                          }}
+                          className="h-8 text-[10px] font-black uppercase text-emerald-800 hover:bg-emerald-100"
+                        >
+                          Limpiar
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-white/40 p-3 rounded-md shadow-inner">
+                    <CourtTimeGrid
+                      court={selectedCourt || { id: "auto", name: "Cualquier", centerId: centerId, surface: "Panorámica", type: "Pádel", bookings: [] }}
+                      timeSlots={timeSlots}
+                      isSlotBooked={watchCourtId === "auto" ? () => false : isSlotBooked}
+                      selectedTime={watchStartTime}
+                      selectedDurationMins={form.watch("durationMins")}
+                      onSlotClick={(_, time, booked) => {
+                        if (booked) return;
+                        clearValidation();
+                        const currentStart = form.getValues("startTimeStr");
+                        const currentDuration = form.getValues("durationMins");
 
+                        const parseHmMins = (t: string) => {
+                          const [h, m] = t.split(":").map(Number);
+                          return h * 60 + m;
+                        };
+
+                        if (!currentStart) {
+                          form.setValue("startTimeStr", time, { shouldValidate: true, shouldDirty: true });
+                          form.setValue("durationMins", 30, { shouldValidate: true, shouldDirty: true });
+                          return;
+                        }
+
+                        const clickedMins = parseHmMins(time);
+                        const currentStartMins = parseHmMins(currentStart);
+
+                        if (clickedMins > currentStartMins) {
+                          // User clicked a block after the start time -> EXTEND duration
+                          const newDuration = clickedMins - currentStartMins + 30; // +30 so it includes the clicked block
+
+                          // Check if it hits any already-booked block in between
+                          let valid = true;
+                          for (let m = currentStartMins; m <= clickedMins; m += 30) {
+                            const hs = Math.floor(m / 60).toString().padStart(2, '0');
+                            const ms = (m % 60) === 0 ? '00' : '30';
+                            if (watchCourtId !== "auto" && selectedCourt && isSlotBooked(selectedCourt, `${hs}:${ms}`)) {
+                              valid = false;
+                              break;
+                            }
+                          }
+
+                          if (valid) {
+                            form.setValue("durationMins", newDuration, { shouldValidate: true, shouldDirty: true });
+                          } else {
+                            // Obstacle hit -> reset to this new single block
+                            form.setValue("startTimeStr", time, { shouldValidate: true, shouldDirty: true });
+                            form.setValue("durationMins", 30, { shouldValidate: true, shouldDirty: true });
+                          }
+                        } else {
+                          // Clicked an earlier or identical block -> reset
+                          form.setValue("startTimeStr", time, { shouldValidate: true, shouldDirty: true });
+                          form.setValue("durationMins", 30, { shouldValidate: true, shouldDirty: true });
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="mt-auto pt-6 px-2 text-center">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest opacity-60">
+                      Haz clic en los bloques libres para pre-seleccionar la hora
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground bg-muted/30 rounded-xl border border-dashed border-muted">
+                <p className="text-sm font-bold uppercase tracking-widest mb-2">Sin cancha seleccionada</p>
+                <p className="text-xs max-w-[200px]">Elige una cancha del menú para visualizar sus horarios en tiempo real aquí mismo.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Column 3: Validation Table (Always shown now, at the end) */}
+          <div className="flex flex-col h-full min-h-[400px] lg:border-l lg:pl-8 border-border">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center">
+                <LucideSparkles className="h-4 w-4 mr-2 text-amber-500" />
+                Pre-Chequeo de Fechas
+              </h3>
+              {validationResults && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-1 rounded">
+                    {validationResults.length} FECHAS
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={clearValidation}
+                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                    title="Reiniciar búsqueda"
+                  >
+                    <LucideX className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {validationResults ? (
               <div className="flex-1 border rounded-xl overflow-hidden bg-white shadow-sm flex flex-col h-full max-h-[600px]">
                 <div className="overflow-y-auto flex-1">
                   <table className="w-full text-left border-collapse">
@@ -478,7 +632,25 @@ export function ManualReservationSheet({
                             <p className="text-xs font-bold">{result.dateStr}</p>
                           </td>
                           <td className="p-3">
-                            <p className="text-[11px] font-medium text-muted-foreground">{result.courtName}</p>
+                            <div className="flex flex-col gap-1.5">
+                              <p className="text-[11px] font-bold text-gray-700">{result.courtName}</p>
+                              <div className="flex flex-col gap-1 w-24">
+                                <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-tighter text-muted-foreground/70">
+                                  <span>Ocupación</span>
+                                  <span>{result.usagePct}%</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-200/50">
+                                  <div 
+                                    className={`h-full transition-all duration-500 ${
+                                      result.usagePct > 80 ? 'bg-red-500' : 
+                                      result.usagePct > 50 ? 'bg-amber-500' : 
+                                      'bg-emerald-500'
+                                    }`}
+                                    style={{ width: `${result.usagePct}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
                           </td>
                           <td className="p-3">
                             <div className="flex flex-col gap-1">
@@ -541,101 +713,20 @@ export function ManualReservationSheet({
                   </table>
                 </div>
               </div>
-              <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-                <p className="text-[10px] text-muted-foreground font-medium uppercase leading-relaxed">
-                  TIP: Si hay conflictos, selecciona uno de los horarios sugeridos por el motor o cancela y ajusta la reserva.
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-muted">
+                <LucideSearch className="h-10 w-10 mb-4 opacity-20" />
+                <p className="text-[11px] font-black uppercase tracking-widest opacity-40 leading-relaxed">
+                  Completa el formulario y simula <br /> para ver el chequeo de fechas aquí.
                 </p>
               </div>
-            </div>
-          )}
-
-          {/* Column 3: Court Visual Grid */}
-          <div className={`transition-all duration-500 lg:border-l lg:pl-8 border-border`}>
-            {selectedCourt || watchCourtId === "auto" ? (
-              <div className="flex flex-col h-full space-y-4">
-                <div className="bg-emerald-500/5 rounded-lg p-4 border border-emerald-500/10 h-full flex flex-col">
-                  <div className="mb-4 flex flex-col gap-3">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-emerald-800 leading-relaxed">
-                      {watchCourtId === "auto" ? "Grilla Diferida (Auto Asignación)" : `Grilla de ${selectedCourt?.name}`}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="bg-white/80 px-3 py-1.5 rounded-md shadow-sm text-sm font-black text-emerald-900 border border-emerald-500/10">
-                        Hora: {watchStartTime || "--:--"}
-                      </span>
-                      <span className="bg-emerald-600 text-white px-3 py-1.5 rounded-md shadow-sm text-sm font-black">
-                        {form.watch("durationMins")} min
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-white/40 p-3 rounded-md shadow-inner">
-                    <CourtTimeGrid
-                      court={selectedCourt || { id: "auto", name: "Cualquier", centerId: centerId, surface: "Panorámica", type: "Pádel", bookings: [] }}
-                      timeSlots={timeSlots}
-                      isSlotBooked={watchCourtId === "auto" ? () => false : isSlotBooked}
-                      selectedTime={watchStartTime}
-                      selectedDurationMins={form.watch("durationMins")}
-                      onSlotClick={(_, time, booked) => {
-                        if (booked) return;
-                        const currentStart = form.getValues("startTimeStr");
-                        const currentDuration = form.getValues("durationMins");
-
-                        const parseHmMins = (t: string) => {
-                          const [h, m] = t.split(":").map(Number);
-                          return h * 60 + m;
-                        };
-
-                        if (!currentStart) {
-                          form.setValue("startTimeStr", time, { shouldValidate: true, shouldDirty: true });
-                          form.setValue("durationMins", 30, { shouldValidate: true, shouldDirty: true });
-                          return;
-                        }
-
-                        const clickedMins = parseHmMins(time);
-                        const currentStartMins = parseHmMins(currentStart);
-
-                        if (clickedMins > currentStartMins) {
-                          // User clicked a block after the start time -> EXTEND duration
-                          const newDuration = clickedMins - currentStartMins + 30; // +30 so it includes the clicked block
-
-                          // Check if it hits any already-booked block in between
-                          let valid = true;
-                          for (let m = currentStartMins; m <= clickedMins; m += 30) {
-                            const hs = Math.floor(m / 60).toString().padStart(2, '0');
-                            const ms = (m % 60) === 0 ? '00' : '30';
-                            if (watchCourtId !== "auto" && selectedCourt && isSlotBooked(selectedCourt, `${hs}:${ms}`)) {
-                              valid = false;
-                              break;
-                            }
-                          }
-
-                          if (valid) {
-                            form.setValue("durationMins", newDuration, { shouldValidate: true, shouldDirty: true });
-                          } else {
-                            // Obstacle hit -> reset to this new single block
-                            form.setValue("startTimeStr", time, { shouldValidate: true, shouldDirty: true });
-                            form.setValue("durationMins", 30, { shouldValidate: true, shouldDirty: true });
-                          }
-                        } else {
-                          // Clicked an earlier or identical block -> reset
-                          form.setValue("startTimeStr", time, { shouldValidate: true, shouldDirty: true });
-                          form.setValue("durationMins", 30, { shouldValidate: true, shouldDirty: true });
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="mt-auto pt-6 px-2 text-center">
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest opacity-60">
-                      Haz clic en los bloques libres para pre-seleccionar la hora
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground bg-muted/30 rounded-xl border border-dashed border-muted">
-                <p className="text-sm font-bold uppercase tracking-widest mb-2">Sin cancha seleccionada</p>
-                <p className="text-xs max-w-[200px]">Elige una cancha del menú para visualizar sus horarios en tiempo real aquí mismo.</p>
-              </div>
             )}
+            
+            <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+              <p className="text-[10px] text-muted-foreground font-medium uppercase leading-relaxed">
+                TIP: Si hay conflictos, selecciona uno de los horarios sugeridos por el motor o cancela y ajusta la reserva.
+              </p>
+            </div>
           </div>
         </div>
       </SheetContent>
