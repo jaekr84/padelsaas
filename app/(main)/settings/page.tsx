@@ -1,4 +1,5 @@
-import { getCenterAction } from "@/lib/actions/center";
+import { getCentersAction } from "@/lib/actions/center";
+import { getTenantAction } from "@/lib/actions/tenant";
 import { SettingsForm } from "@/components/settings-form";
 
 import { auth } from "@/auth";
@@ -15,11 +16,12 @@ export default async function SettingsPage(props: {
     redirect("/home");
   }
 
-  const initialData = await getCenterAction();
+  const centers = await getCentersAction();
+  const tenant = await getTenantAction();
 
   return (
     <div className="flex-1 w-full max-w-5xl mx-auto py-6">
-      <SettingsForm initialData={initialData} />
+      <SettingsForm initialCenters={centers} initialTenant={tenant} />
     </div>
   );
 }

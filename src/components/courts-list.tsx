@@ -16,7 +16,10 @@ import {
   LucideAlertCircle,
   LucidePencil,
   LucideSave,
-  LucideX
+  LucideX,
+  LucidePieChart,
+  LucideActivity,
+  LucideCalendar
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -65,18 +68,40 @@ export function CourtsList({
     }
   });
 
-  const isSlotBooked = (court: Court, slotIndex: number) => {
+  const isSlotBooked = (court: Court, timeStr: string) => {
     if (!court.bookings) return false;
     
-    // Convert slot index to a Date for today
+    const [hours, minutes] = timeStr.split(':').map(Number);
     const slotTime = new Date();
-    slotTime.setHours(Math.floor(slotIndex / 2), (slotIndex % 2) * 30, 0, 0);
+    slotTime.setHours(hours, minutes, 0, 0);
     
     return court.bookings.some(booking => {
       const start = new Date(booking.startTime);
       const end = new Date(booking.endTime);
       return slotTime >= start && slotTime < end;
     });
+  };
+
+  // Calculate statistics
+  const totalSlotsCount = courts.length * timeSlots.length;
+  let occupiedSlotsCount = 0;
+  
+  courts.forEach(court => {
+    timeSlots.forEach(time => {
+      if (isSlotBooked(court, time)) {
+        occupiedSlotsCount++;
+      }
+    });
+  });
+  
+  const occupancyRate = totalSlotsCount > 0 
+    ? Math.round((occupiedSlotsCount / totalSlotsCount) * 100) 
+    : 0;
+
+  const getOccupancyColor = (rate: number) => {
+    if (rate >= 80) return "text-orange-600";
+    if (rate >= 50) return "text-blue-600";
+    return "text-emerald-600";
   };
 
   const handleStartEdit = (court: Court) => {
@@ -105,6 +130,59 @@ export function CourtsList({
 
   return (
     <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="bg-primary/5 border-primary/20 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+              Total Canchas
+            </CardTitle>
+            <LucideLayoutGrid className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-black tracking-tighter text-primary">
+              {courts.length} / {totalCapacity}
+            </div>
+            <p className="text-[10px] text-muted-foreground font-bold uppercase mt-1">
+              {registeredCount === totalCapacity ? "Capacidad completa" : `${totalCapacity - registeredCount} pendientes`}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-primary/5 border-primary/20 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+              Ocupación Hoy
+            </CardTitle>
+            <LucidePieChart className={cn("h-4 w-4", getOccupancyColor(occupancyRate))} />
+          </CardHeader>
+          <CardContent>
+            <div className={cn("text-3xl font-black tracking-tighter", getOccupancyColor(occupancyRate))}>
+              {occupancyRate}%
+            </div>
+            <p className="text-[10px] text-muted-foreground font-bold uppercase mt-1">
+              Basado en horario operativo
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-primary/5 border-primary/20 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+              Horario
+            </CardTitle>
+            <LucideCalendar className="h-4 w-4 text-emerald-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-black tracking-tighter text-emerald-700">
+              {openTime} - {closeTime}
+            </div>
+            <p className="text-[10px] text-muted-foreground font-bold uppercase mt-1">
+              Configurado en ajustes
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       {courts.length === 0 ? (
         <Card className="flex flex-col items-center justify-center p-12 text-center border-dashed border-2">
           <div className="bg-muted p-4 rounded-full mb-4">
@@ -184,8 +262,8 @@ export function CourtsList({
                   
                   {/* Dense Time Grid: 8 columns x 6 rows (00:00 - 23:30) */}
                   <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5 pt-2">
-                    {timeSlots.map((time, idx) => {
-                      const booked = isSlotBooked(court, idx);
+                    {timeSlots.map((time) => {
+                      const booked = isSlotBooked(court, time);
                       return (
                         <div 
                           key={time}

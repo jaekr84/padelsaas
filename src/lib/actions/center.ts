@@ -6,9 +6,14 @@ import { auth } from "@/auth";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function getCenterAction() {
+import { cookies } from "next/headers";
+
+export async function getCenterAction(id?: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const cookieStore = await cookies();
+  const activeCenterId = cookieStore.get("active_center_id")?.value;
 
   // Get the tenant for the user
   const userMember = await db.query.members.findFirst({
@@ -18,16 +23,35 @@ export async function getCenterAction() {
   if (!userMember) throw new Error("No tenant found for user");
 
   // Determine which center to fetch:
-  // 1. If user has a specifically assigned center in their membership, get that one.
-  // 2. Otherwise (e.g. for owners/admins without assignment), get the first center for the tenant.
+  // 1. If an ID is explicitly passed, use it (highest priority).
+  // 2. If an active center cookie is set, use it.
+  // 3. Fallback to session centerId or first center.
+  const centerIdToFetch = id || activeCenterId || session.user.centerId;
+
   const center = await db.query.centers.findFirst({
-    where: session.user.centerId 
-      ? eq(centers.id, session.user.centerId)
+    where: centerIdToFetch 
+      ? eq(centers.id, centerIdToFetch)
       : eq(centers.tenantId, userMember.tenantId),
     orderBy: (centers, { asc }) => [asc(centers.createdAt)],
   });
 
   return center;
+}
+
+export async function createCenterAction(data: { name: string }) {
+  const session = await auth();
+  if (!session?.user?.tenantId) throw new Error("Unauthorized");
+
+  const newCenter = await db.insert(centers).values({
+    tenantId: session.user.tenantId,
+    name: data.name,
+    courtsCount: 1,
+    openTime: "08:00",
+    closeTime: "23:00",
+  }).returning();
+
+  revalidatePath("/settings");
+  return { success: true, center: newCenter[0] };
 }
 
 export async function getCentersAction() {

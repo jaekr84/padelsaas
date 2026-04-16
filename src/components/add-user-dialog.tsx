@@ -121,10 +121,10 @@ export function AddUserDialog() {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit((v: any) => onSubmit(v))} className="space-y-4 py-4">
-            <FormField
+            <FormField<FormValues>
               control={form.control}
               name="name"
-              render={({ field }: any) => (
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nombre Completo</FormLabel>
                   <FormControl>
@@ -134,10 +134,10 @@ export function AddUserDialog() {
                 </FormItem>
               )}
             />
-            <FormField
+            <FormField<FormValues>
               control={form.control}
               name="email"
-              render={({ field }: any) => (
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel>Correo Electrónico</FormLabel>
                   <FormControl>
@@ -147,10 +147,10 @@ export function AddUserDialog() {
                 </FormItem>
               )}
             />
-            <FormField
+            <FormField<FormValues>
               control={form.control}
               name="role"
-              render={({ field }: any) => (
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel>Rol</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -171,16 +171,22 @@ export function AddUserDialog() {
                 </FormItem>
               )}
             />
-            <FormField
+            <FormField<FormValues>
               control={form.control}
               name="centerId"
-              render={({ field }: any) => (
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel>Sede Asignada</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value} 
+                    value={field.value || ""}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar sede" />
+                        <SelectValue placeholder="Seleccionar sede">
+                          {centers.find(c => c.id === field.value)?.name || "Seleccionar sede"}
+                        </SelectValue>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>

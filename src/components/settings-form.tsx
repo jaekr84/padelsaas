@@ -32,12 +32,18 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { updateCenterAction } from "@/lib/actions/center";
-import { useState } from "react";
-import { LucideSave, LucideCheckCircle2 } from "lucide-react";
+import { updateCenterAction, createCenterAction } from "@/lib/actions/center";
+import { updateTenantAction } from "@/lib/actions/tenant";
+import { useState, useEffect } from "react";
+import { LucideSave, LucideCheckCircle2, LucidePlus, LucideBuilding2, LucideBriefcase } from "lucide-react";
 import { capitalize } from "@/lib/formatters";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+const companySchema = z.object({
+  id: z.string(),
+  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+});
 
 const formSchema = z.object({
   id: z.string(),
@@ -66,41 +72,131 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+type CompanyValues = z.infer<typeof companySchema>;
 
-export function SettingsForm({ initialData }: { initialData: any }) {
+export function SettingsForm({ 
+  initialCenters, 
+  initialTenant 
+}: { 
+  initialCenters: any[], 
+  initialTenant: any 
+}) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [centers, setCenters] = useState(initialCenters);
+  const [selectedId, setSelectedId] = useState("empresa");
 
-  const form = useForm({
-    resolver: zodResolver(formSchema),
+  const activeCenter = centers.find(c => c.id === selectedId);
+
+  // Form for Centers
+  const centerForm = useForm<FormValues>({
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
-      id: initialData?.id || "",
-      name: initialData?.name || "",
-      description: initialData?.description || "",
-      address: initialData?.address || "",
-      city: initialData?.city || "",
-      state: initialData?.state || "",
-      country: initialData?.country || "Argentina",
-      phone: initialData?.phone || "",
-      whatsapp: initialData?.whatsapp || "",
-      website: initialData?.website || "",
-      courtsCount: initialData?.courtsCount || 1,
-      openTime: initialData?.openTime || "08:00",
-      closeTime: initialData?.closeTime || "23:00",
+      id: "",
+      name: "",
+      description: "",
+      address: "",
+      city: "",
+      state: "",
+      country: "Argentina",
+      phone: "",
+      whatsapp: "",
+      website: "",
+      courtsCount: 1,
+      openTime: "08:00",
+      closeTime: "23:00",
       amenities: {
-        hasBar: initialData?.amenities?.hasBar || false,
-        hasGrill: initialData?.amenities?.hasGrill || false,
-        hasLounge: initialData?.amenities?.hasLounge || false,
-        hasParking: initialData?.amenities?.hasParking || false,
-        hasPool: initialData?.amenities?.hasPool || false,
-        hasProShop: initialData?.amenities?.hasProShop || false,
-        hasWiFi: initialData?.amenities?.hasWiFi || false,
-        hasVestuarios: initialData?.amenities?.hasVestuarios || false,
+        hasBar: false,
+        hasGrill: false,
+        hasLounge: false,
+        hasParking: false,
+        hasPool: false,
+        hasProShop: false,
+        hasWiFi: false,
+        hasVestuarios: false,
       },
     },
   });
 
-  async function onSubmit(values: FormValues) {
+  // Form for Company (Tenant)
+  const companyForm = useForm<CompanyValues>({
+    resolver: zodResolver(companySchema),
+    defaultValues: {
+      id: initialTenant?.id || "",
+      name: initialTenant?.name || "",
+    },
+  });
+
+  // Watch names for reactive tabs
+  const watchedCenterName = centerForm.watch("name");
+  const watchedCompanyName = companyForm.watch("name");
+
+  // Reset center form when selected center changes
+  useEffect(() => {
+    if (activeCenter) {
+      centerForm.reset({
+        id: activeCenter.id,
+        name: activeCenter.name,
+        description: activeCenter.description || "",
+        address: activeCenter.address || "",
+        city: activeCenter.city || "",
+        state: activeCenter.state || "",
+        country: activeCenter.country || "Argentina",
+        phone: activeCenter.phone || "",
+        whatsapp: activeCenter.whatsapp || "",
+        website: activeCenter.website || "",
+        courtsCount: activeCenter.courtsCount || 1,
+        openTime: activeCenter.openTime || "08:00",
+        closeTime: activeCenter.closeTime || "23:00",
+        amenities: {
+          hasBar: activeCenter.amenities?.hasBar || false,
+          hasGrill: activeCenter.amenities?.hasGrill || false,
+          hasLounge: activeCenter.amenities?.hasLounge || false,
+          hasParking: activeCenter.amenities?.hasParking || false,
+          hasPool: activeCenter.amenities?.hasPool || false,
+          hasProShop: activeCenter.amenities?.hasProShop || false,
+          hasWiFi: activeCenter.amenities?.hasWiFi || false,
+          hasVestuarios: activeCenter.amenities?.hasVestuarios || false,
+        },
+      });
+    }
+  }, [activeCenter, centerForm]);
+
+  const handleCreateSede = async () => {
+    setLoading(true);
+    try {
+      const name = `Nueva Sede ${centers.length + 1}`;
+      const response = await createCenterAction({ name });
+      if (response.success && response.center) {
+        setCenters([...centers, response.center]);
+        setSelectedId(response.center.id);
+        toast.success("Nueva sede creada correctamente");
+      }
+    } catch (error) {
+      toast.error("Error al crear sede");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  async function onCompanySubmit(values: CompanyValues) {
+    setLoading(true);
+    setSuccess(false);
+    try {
+      const response = await updateTenantAction(values);
+      if (response.success) {
+        setSuccess(true);
+        toast.success("Información de la empresa actualizada");
+        setTimeout(() => setSuccess(false), 3000);
+      }
+    } catch (error) {
+      toast.error("Error al actualizar la empresa");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onCenterSubmit(values: FormValues) {
     setLoading(true);
     setSuccess(false);
     try {
@@ -112,51 +208,145 @@ export function SettingsForm({ initialData }: { initialData: any }) {
         city: capitalize(values.city),
         state: capitalize(values.state),
       };
+      
       const response = await updateCenterAction(formattedValues);
       
       if (response.success) {
         setSuccess(true);
-        form.reset(values); // Re-initialize form with saved values
+        // Update local centers list
+        setCenters(centers.map(c => c.id === values.id ? { ...c, ...formattedValues } : c));
         toast.success("Configuración guardada", {
-          description: "Los datos de tu centro han sido actualizados con éxito.",
+          description: "Los datos de la sede han sido actualizados.",
         });
         setTimeout(() => setSuccess(false), 3000);
       } else {
-        toast.error("Error al guardar", {
-          description: "No se pudieron guardar los cambios. Intenta nuevamente.",
-        });
+        toast.error("Error al guardar");
       }
     } catch (error) {
       console.error(error);
-      toast.error("Error de conexión", {
-        description: "Hubo un problema al comunicarse con el servidor.",
-      });
+      toast.error("Error de conexión");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit((v) => onSubmit(v))} className="space-y-8 pb-10">
-        <div className="flex items-center justify-between sticky top-20 z-20 bg-background/95 backdrop-blur py-2 border-b">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Configuración del Centro</h1>
-            <p className="text-muted-foreground">Administra la información pública y servicios de tu club.</p>
-          </div>
-          <Button 
-            type="submit" 
-            disabled={loading} 
-            variant={success ? "default" : "default"}
+    <div className="space-y-6 pb-10">
+      {/* Tab Switcher Interface */}
+      <div className="flex flex-wrap items-center gap-2 border-b pb-4 overflow-x-auto scrollbar-hide">
+        {/* Empresa Tab */}
+        <button
+          onClick={() => setSelectedId("empresa")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all whitespace-nowrap",
+            selectedId === "empresa"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
+          )}
+        >
+          <LucideBriefcase className="h-4 w-4" />
+          {selectedId === "empresa" ? watchedCompanyName : initialTenant?.name || "Empresa"}
+        </button>
+
+        <div className="h-6 w-px bg-border mx-1" />
+
+        {/* Center Tabs */}
+        {centers.map((center) => (
+          <button
+            key={center.id}
+            onClick={() => setSelectedId(center.id)}
             className={cn(
-              "gap-2 transition-all duration-300",
-              success && "bg-green-600 hover:bg-green-700 text-white border-green-600"
+              "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all whitespace-nowrap",
+              selectedId === center.id
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
             )}
           >
-            {success ? <LucideCheckCircle2 className="h-4 w-4 animate-in zoom-in" /> : <LucideSave className="h-4 w-4" />}
-            {loading ? "Guardando..." : success ? "¡Guardado con éxito!" : "Guardar Cambios"}
-          </Button>
-        </div>
+            <LucideBuilding2 className="h-4 w-4" />
+            {selectedId === center.id ? watchedCenterName : center.name}
+          </button>
+        ))}
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="rounded-full gap-2 border-dashed ml-2 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200"
+          onClick={handleCreateSede}
+          disabled={loading}
+        >
+          <LucidePlus className="h-4 w-4" />
+          Nueva Sede
+        </Button>
+      </div>
+
+      {selectedId === "empresa" ? (
+        /* EMPRESA FORM */
+        <Form {...companyForm}>
+          <form onSubmit={companyForm.handleSubmit(onCompanySubmit)} className="space-y-8">
+            <div className="flex items-center justify-between sticky top-20 z-20 bg-background/95 backdrop-blur py-2 border-b">
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">Configuración del Club</h1>
+                <p className="text-muted-foreground">Datos globales de tu organización.</p>
+              </div>
+              <Button 
+                type="submit" 
+                disabled={loading} 
+                className={cn(
+                  "gap-2 transition-all duration-300",
+                  success && "bg-green-600 hover:bg-green-700 text-white border-green-600"
+                )}
+              >
+                {success ? <LucideCheckCircle2 className="h-4 w-4 animate-in zoom-in" /> : <LucideSave className="h-4 w-4" />}
+                {loading ? "Guardando..." : success ? "¡Guardado con éxito!" : "Guardar Cambios Empresa"}
+              </Button>
+            </div>
+
+            <Card className="border-none shadow-md max-w-2xl">
+              <CardHeader>
+                <CardTitle>Información Institucional</CardTitle>
+                <CardDescription>Estos datos se usan para la marca general del club.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={companyForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nombre del Club / Empresa</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Padel Master Club" {...field} />
+                      </FormControl>
+                      <FormDescription>Nombre que aparecerá en listados y apps de jugadores.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          </form>
+        </Form>
+      ) : (
+        /* CENTER FORM */
+        <Form {...centerForm}>
+          <form onSubmit={centerForm.handleSubmit(onCenterSubmit)} className="space-y-8">
+            <div className="flex items-center justify-between sticky top-20 z-20 bg-background/95 backdrop-blur py-2 border-b">
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">
+                  {selectedId === activeCenter?.id ? watchedCenterName : activeCenter?.name}
+                </h1>
+                <p className="text-muted-foreground">Administra los detalles exclusivos de esta ubicación.</p>
+              </div>
+              <Button 
+                type="submit" 
+                disabled={loading} 
+                className={cn(
+                  "gap-2 transition-all duration-300",
+                  success && "bg-green-600 hover:bg-green-700 text-white border-green-600"
+                )}
+              >
+                {success ? <LucideCheckCircle2 className="h-4 w-4 animate-in zoom-in" /> : <LucideSave className="h-4 w-4" />}
+                {loading ? "Guardando..." : success ? "¡Guardado con éxito!" : "Guardar Cambios"}
+              </Button>
+            </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* Información General */}
@@ -168,9 +358,9 @@ export function SettingsForm({ initialData }: { initialData: any }) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
-                  control={form.control}
+                  control={centerForm.control}
                   name="name"
-                  render={({ field }: any) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nombre del Centro</FormLabel>
                       <FormControl>
@@ -181,9 +371,9 @@ export function SettingsForm({ initialData }: { initialData: any }) {
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={centerForm.control}
                   name="courtsCount"
-                  render={({ field }: any) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>Cantidad de Canchas</FormLabel>
                       <FormControl>
@@ -196,9 +386,9 @@ export function SettingsForm({ initialData }: { initialData: any }) {
                 />
               </div>
               <FormField
-                control={form.control}
+                control={centerForm.control}
                 name="description"
-                render={({ field }: any) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Descripción</FormLabel>
                     <FormControl>
@@ -225,9 +415,9 @@ export function SettingsForm({ initialData }: { initialData: any }) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
-                  control={form.control}
+                  control={centerForm.control}
                   name="openTime"
-                  render={({ field }: any) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>Apertura</FormLabel>
                       <Select 
@@ -258,9 +448,9 @@ export function SettingsForm({ initialData }: { initialData: any }) {
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={centerForm.control}
                   name="closeTime"
-                  render={({ field }: any) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>Cierre</FormLabel>
                       <Select 
@@ -305,9 +495,9 @@ export function SettingsForm({ initialData }: { initialData: any }) {
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField
-                control={form.control}
+                control={centerForm.control}
                 name="address"
-                render={({ field }: any) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Dirección</FormLabel>
                     <FormControl>
@@ -319,9 +509,9 @@ export function SettingsForm({ initialData }: { initialData: any }) {
               />
               <div className="grid grid-cols-2 gap-4">
                 <FormField
-                  control={form.control}
+                  control={centerForm.control}
                   name="city"
-                  render={({ field }: any) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>Localidad</FormLabel>
                       <FormControl>
@@ -332,9 +522,9 @@ export function SettingsForm({ initialData }: { initialData: any }) {
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={centerForm.control}
                   name="state"
-                  render={({ field }: any) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>Provincia</FormLabel>
                       <FormControl>
@@ -346,9 +536,9 @@ export function SettingsForm({ initialData }: { initialData: any }) {
                 />
               </div>
               <FormField
-                control={form.control}
+                control={centerForm.control}
                 name="country"
-                render={({ field }: any) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>País</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -380,9 +570,9 @@ export function SettingsForm({ initialData }: { initialData: any }) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
-                  control={form.control}
+                  control={centerForm.control}
                   name="phone"
-                  render={({ field }: any) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>Teléfono Fijo</FormLabel>
                       <FormControl>
@@ -393,9 +583,9 @@ export function SettingsForm({ initialData }: { initialData: any }) {
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={centerForm.control}
                   name="whatsapp"
-                  render={({ field }: any) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>WhatsApp</FormLabel>
                       <FormControl>
@@ -407,9 +597,9 @@ export function SettingsForm({ initialData }: { initialData: any }) {
                 />
               </div>
               <FormField
-                control={form.control}
+                control={centerForm.control}
                 name="website"
-                render={({ field }: any) => (
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Sitio Web</FormLabel>
                     <FormControl>
@@ -442,16 +632,16 @@ export function SettingsForm({ initialData }: { initialData: any }) {
                 ].map((item) => (
                   <FormField
                     key={item.name}
-                    control={form.control}
+                    control={centerForm.control}
                     name={item.name as any}
-                    render={({ field }: any) => (
+                    render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mr-2">
                         <FormLabel className="text-base cursor-pointer">
                           {item.label}
                         </FormLabel>
                         <FormControl>
                           <Switch
-                            checked={field.value}
+                            checked={field.value as boolean}
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
@@ -465,5 +655,7 @@ export function SettingsForm({ initialData }: { initialData: any }) {
         </div>
       </form>
     </Form>
+    )}
+  </div>
   );
 }

@@ -2,10 +2,15 @@ import NextAuth, { type DefaultSession } from "next-auth"
 import { JWT } from "next-auth/jwt"
 
 declare module "next-auth" {
-  /**
-   * Returned by `useSession`, `auth`, contains the session data.
-   */
+  interface User {
+    id?: string
+    role?: string
+    tenantId?: string
+    centerId?: string | null
+  }
+
   interface Session {
+    user: {
       id: string
       role: string
       tenantId: string
