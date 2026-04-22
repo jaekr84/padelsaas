@@ -4,9 +4,6 @@ import { useEffect } from "react";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
 } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -102,6 +99,7 @@ export function ManualReservationSheet({
   useEffect(() => {
     if (open && initialSlot) {
       form.reset({
+        reservationType: "single",
         guestName: "",
         courtId: initialSlot.courtId,
         startTimeStr: initialSlot.time,
@@ -114,7 +112,17 @@ export function ManualReservationSheet({
 
   const watchCourtId = form.watch("courtId");
   const watchStartTime = form.watch("startTimeStr");
+  const watchDuration = form.watch("durationMins");
   const currentPrice = form.watch("price");
+
+  const endTime = (() => {
+    if (!watchStartTime) return "--:--";
+    const [h, m] = watchStartTime.split(":").map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    d.setMinutes(d.getMinutes() + watchDuration);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  })();
 
   const watchDateStr = form.watch("dateStr");
   const watchReservationType = form.watch("reservationType");
@@ -130,17 +138,8 @@ export function ManualReservationSheet({
       if (!val) clearValidation();
       onOpenChange(val);
     }}>
-      <SheetContent className="overflow-y-auto transition-all duration-500 ease-in-out !max-w-[100vw] sm:!max-w-[95vw] lg:!max-w-[1400px] w-full p-6 sm:p-8">
-        <SheetHeader className="mb-6 mt-4">
-          <SheetTitle className="text-2xl font-black uppercase tracking-tighter">
-            Nueva Reserva
-          </SheetTitle>
-          <SheetDescription className="font-medium text-muted-foreground uppercase text-xs">
-            Reserva manual para {courtName} a las {form.watch("startTimeStr")}
-          </SheetDescription>
-        </SheetHeader>
-
-        <div className="grid gap-8 transition-all duration-500 lg:grid-cols-3">
+      <SheetContent className="overflow-y-auto transition-all duration-500 ease-in-out !w-[98vw] lg:!w-[95vw] lg:!max-w-[1750px] p-6 sm:p-8">
+        <div className="grid gap-8 transition-all duration-500 lg:grid-cols-[380px_1fr_1fr]">
           {/* Left Column: Form */}
           <div className="flex flex-col space-y-6">
             <Form {...form}>
@@ -362,12 +361,12 @@ export function ManualReservationSheet({
                           <FormControl>
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Seleccionar">
-                                {field.value} min
+                                {field.value} min {watchStartTime && `(Fin ${endTime})`}
                               </SelectValue>
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent alignItemWithTrigger={false} side="bottom" className="max-h-60 w-[var(--anchor-width)]">
-                            {[30, 60, 90, 120, 150, 180].map((mins) => {
+                            {[30, 60, 90, 120, 150, 180, 210, 240, 270, 300].map((mins) => {
                               return (
                                 <SelectItem key={mins} value={mins.toString()} className="cursor-pointer">
                                   {mins} minutos
@@ -507,15 +506,15 @@ export function ManualReservationSheet({
           <div className="transition-all duration-500 lg:border-l lg:pl-8 border-border">
             {selectedCourt || watchCourtId === "auto" ? (
               <div className="flex flex-col h-full space-y-4">
-                <div className="bg-emerald-500/5 rounded-lg p-4 border border-emerald-500/10 h-full flex flex-col">
-                  <div className="mb-4 flex flex-col gap-3">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-emerald-800 leading-relaxed">
-                      {watchCourtId === "auto" ? "Grilla Diferida (Auto Asignación)" : `Grilla de ${selectedCourt?.name}`}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-2">
+                <div className="h-full flex flex-col">
+                  <div className="mb-6 flex flex-col gap-1">
+                    <h2 className="text-2xl font-black uppercase tracking-tighter text-emerald-950">
+                      Horario de Reserva
+                    </h2>
+                    <div className="flex items-center gap-3">
                       <div className="relative group/time">
-                        <span className="bg-white/80 px-3 py-1.5 rounded-md shadow-sm text-sm font-black text-emerald-900 border border-emerald-500/10 flex items-center pr-8">
-                          Hora: {watchStartTime || "--:--"}
+                        <span className="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-md text-xl font-black flex items-center">
+                          {watchStartTime ? `${watchStartTime} a ${endTime}` : "--:-- a --:--"}
                         </span>
                         {watchStartTime && (
                           <button
@@ -525,30 +524,16 @@ export function ManualReservationSheet({
                               form.setValue("durationMins", 90, { shouldDirty: true });
                               clearValidation();
                             }}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center rounded-full bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors"
+                            className="absolute -right-2 -top-2 h-6 w-6 flex items-center justify-center rounded-full bg-destructive text-white shadow-lg hover:scale-110 transition-transform"
                             title="Limpiar horario"
                           >
                             <LucideX className="h-3 w-3" />
                           </button>
                         )}
                       </div>
-                      <span className="bg-emerald-600 text-white px-3 py-1.5 rounded-md shadow-sm text-sm font-black">
+                      <span className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-md text-sm font-black border border-emerald-200">
                         {form.watch("durationMins")} min
                       </span>
-                      {watchStartTime && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            form.setValue("startTimeStr", "", { shouldDirty: true });
-                            form.setValue("durationMins", 90, { shouldDirty: true });
-                            clearValidation();
-                          }}
-                          className="h-8 text-[10px] font-black uppercase text-emerald-800 hover:bg-emerald-100"
-                        >
-                          Limpiar
-                        </Button>
-                      )}
                     </div>
                   </div>
                   <div className="bg-white/40 p-3 rounded-md shadow-inner">
@@ -571,7 +556,6 @@ export function ManualReservationSheet({
 
                         if (!currentStart) {
                           form.setValue("startTimeStr", time, { shouldValidate: true, shouldDirty: true });
-                          form.setValue("durationMins", 30, { shouldValidate: true, shouldDirty: true });
                           return;
                         }
 
@@ -601,9 +585,8 @@ export function ManualReservationSheet({
                             form.setValue("durationMins", 30, { shouldValidate: true, shouldDirty: true });
                           }
                         } else {
-                          // Clicked an earlier or identical block -> reset
+                          // Clicked an earlier or identical block -> reset starting point but keep duration
                           form.setValue("startTimeStr", time, { shouldValidate: true, shouldDirty: true });
-                          form.setValue("durationMins", 30, { shouldValidate: true, shouldDirty: true });
                         }
                       }}
                     />
@@ -616,20 +599,15 @@ export function ManualReservationSheet({
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground bg-muted/30 rounded-xl border border-dashed border-muted">
+              <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground">
                 <p className="text-sm font-bold uppercase tracking-widest mb-2">Sin cancha seleccionada</p>
                 <p className="text-xs max-w-[200px]">Elige una cancha del menú para visualizar sus horarios en tiempo real aquí mismo.</p>
               </div>
             )}
           </div>
 
-          {/* Column 3: Validation Table (Always shown now, at the end) */}
           <div className="flex flex-col h-full min-h-[400px] lg:border-l lg:pl-8 border-border">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center">
-                <LucideSparkles className="h-4 w-4 mr-2 text-amber-500" />
-                Pre-Chequeo de Fechas
-              </h3>
               {validationResults && (
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-1 rounded">
@@ -649,8 +627,8 @@ export function ManualReservationSheet({
             </div>
 
             {validationResults ? (
-              <div className="flex-1 border rounded-xl overflow-hidden bg-white shadow-sm flex flex-col h-full max-h-[600px]">
-                <div className="overflow-y-auto flex-1">
+              <div className="flex-1 flex flex-col h-full max-h-[700px]">
+                <div className="overflow-y-auto overflow-x-hidden flex-1">
                   <table className="w-full text-left border-collapse">
                     <thead className="sticky top-0 bg-muted/50 backdrop-blur-md z-10">
                       <tr className="border-b">
@@ -748,7 +726,7 @@ export function ManualReservationSheet({
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground bg-muted/10 rounded-xl border border-dashed border-muted">
+              <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground">
                 <LucideSearch className="h-10 w-10 mb-4 opacity-20" />
                 <p className="text-[11px] font-black uppercase tracking-widest opacity-40 leading-relaxed">
                   Completa el formulario y simula <br /> para ver el chequeo de fechas aquí.

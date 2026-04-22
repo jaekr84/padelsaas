@@ -12,7 +12,7 @@ export const reservationFormSchema = z.object({
   courtId: z.string().default("auto"),
   dateStr: z.string().min(1, "Selecciona una fecha"),
   startTimeStr: z.string().min(1, "Horario inválido"),
-  durationMins: z.coerce.number().min(30).max(180),
+  durationMins: z.coerce.number().min(30).max(1440),
   price: z.coerce.number().min(0).default(0),
   recurringEndDateStr: z.string().optional(),
   recurringDays: z.array(z.number()).optional(),
@@ -175,8 +175,17 @@ export function useReservationForm({
   const updateValidationRow = (index: number, newData: any) => {
     if (!validationResults) return;
     const next = [...validationResults];
-    next[index] = { ...next[index], ...newData, status: 'ok', selected: true }; // Re-selecting on fix makes sense
+    next[index] = { ...next[index], ...newData, status: 'ok', selected: true };
     setValidationResults(next);
+
+    // If it's a single reservation, sync with the main form
+    if (form.getValues("reservationType") === "single") {
+      if (newData.courtId) form.setValue("courtId", newData.courtId);
+      if (newData.startTime) {
+        const timeStr = new Date(newData.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        form.setValue("startTimeStr", timeStr);
+      }
+    }
   };
 
   const toggleResultSelection = (index: number) => {
@@ -185,13 +194,18 @@ export function useReservationForm({
     const isSingle = form.getValues("reservationType") === "single";
 
     if (isSingle) {
-      // Radio-button behavior: only one can be selected
       const currentlySelected = next[index].selected;
       next.forEach((r, i) => {
         r.selected = (i === index) ? !currentlySelected : false;
       });
+      
+      // Sync with main form if selected
+      if (!currentlySelected) {
+        form.setValue("courtId", next[index].courtId);
+        const timeStr = new Date(next[index].startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        form.setValue("startTimeStr", timeStr);
+      }
     } else {
-      // Standard checkbox behavior
       next[index] = { ...next[index], selected: !next[index].selected };
     }
     setValidationResults(next);
