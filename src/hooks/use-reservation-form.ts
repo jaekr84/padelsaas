@@ -57,7 +57,7 @@ export function useReservationForm({
       guestName: "",
       courtId: "auto",
       dateStr: date.toISOString().split("T")[0],
-      startTimeStr: "18:00",
+      startTimeStr: "",
       durationMins: 90,
       price: 0,
       recurringEndDateStr: "",

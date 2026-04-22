@@ -35,20 +35,39 @@ import { CourtTimeGrid, TimeGridCourt } from "./court-time-grid";
 
 export type Court = TimeGridCourt;
 
-export const generateTimeSlots = (openTime: string, closeTime: string) => {
-  const allPossibleSlots = Array.from({ length: 48 }).map((_, i) => {
-    const hours = Math.floor(i / 2);
-    const minutes = i % 2 === 0 ? "00" : "30";
-    return `${hours.toString().padStart(2, '0')}:${minutes}`;
-  });
+export const generateTimeSlots = (openTime: string = "08:00", closeTime: string = "23:00") => {
+  const toMins = (t: string) => {
+    const [h, m] = (t || "08:00").trim().split(":").map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
 
-  return allPossibleSlots.filter(time => {
-    if (openTime <= closeTime) {
-      return time >= openTime && time <= closeTime;
-    } else {
-      return time >= openTime || time <= closeTime;
+  const startMins = toMins(openTime);
+  const endMins = toMins(closeTime);
+
+  const slots: string[] = [];
+  
+  // Linear generation: start exactly at startMins
+  if (startMins <= endMins) {
+    for (let m = startMins; m <= endMins; m += 30) {
+      const h = Math.floor(m / 60);
+      const mins = m % 60 === 0 ? "00" : "30";
+      slots.push(`${h.toString().padStart(2, '0')}:${mins}`);
     }
-  });
+  } else {
+    // Overnight logic: from start to 23:30, then 00:00 to end
+    for (let m = startMins; m < 1440; m += 30) {
+      const h = Math.floor(m / 60);
+      const mins = m % 60 === 0 ? "00" : "30";
+      slots.push(`${h.toString().padStart(2, '0')}:${mins}`);
+    }
+    for (let m = 0; m <= endMins; m += 30) {
+      const h = Math.floor(m / 60);
+      const mins = m % 60 === 0 ? "00" : "30";
+      slots.push(`${h.toString().padStart(2, '0')}:${mins}`);
+    }
+  }
+
+  return slots;
 };
 
 export const isSlotBooked = (court: Court, timeStr: string, baseDateStr?: string) => {
@@ -99,6 +118,15 @@ export function CourtsList({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [initialSlot, setInitialSlot] = useState<{ courtId: string; time: string } | null>(null);
   
+  const toMins = (t: string) => {
+    if (!t) return 0;
+    const [h, m] = t.trim().split(":").map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+
+  const openMins = toMins(openTime);
+  const closeMins = toMins(closeTime);
+
   const timeSlots = generateTimeSlots(openTime, closeTime);
 
   // Calculate statistics
@@ -186,7 +214,7 @@ export function CourtsList({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" key={`${center?.id}-${rawDateStr}`}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
         <h3 className="text-xl font-bold tracking-tight hidden lg:block">Rendimiento</h3>
         
@@ -361,8 +389,8 @@ export function CourtsList({
               <CardContent className="p-4">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      Disponibilidad Hoy (24hs)
+                    <span className="text-xs font-bold uppercase tracking-widest text-slate-700">
+                      Disponibilidad Operativa
                     </span>
                     <div className="flex items-center gap-3 text-[10px] font-bold uppercase">
                       <div className="flex items-center gap-1">

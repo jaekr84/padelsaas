@@ -38,34 +38,41 @@ export function CourtTimeGrid({
   const selectedEndMins = selectedStartMins > -1 ? selectedStartMins + selectedDurationMins : -1;
 
   return (
-    <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 gap-2 pt-2">
+    <div className="grid grid-cols-6 gap-1.5">
       {timeSlots.map((time) => {
         const booked = isSlotBooked(court, time);
-        
-        // Define if this slice falls into the selected range
         const slotMins = parseTime(time);
         const isSelected = selectedStartMins !== -1 && slotMins >= selectedStartMins && slotMins < selectedEndMins;
 
         return (
-          <div
+          <button
             key={time}
+            type="button"
             onClick={() => onSlotClick?.(court, time, booked)}
+            disabled={booked}
             className={cn(
-              "group relative flex flex-col items-center justify-center p-2 rounded-md text-xs font-bold transition-all border shadow-sm",
+              "group relative flex flex-col items-center justify-center h-10 rounded-lg text-[10px] font-bold transition-all border",
               booked
-                ? "bg-slate-400 border-slate-500 text-slate-50 opacity-60 cursor-not-allowed"
+                ? "bg-slate-200 border-slate-300 text-slate-500 cursor-not-allowed opacity-70"
                 : isSelected 
-                  ? "bg-primary border-primary text-primary-foreground scale-105 shadow-md cursor-pointer z-10"
-                  : "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 hover:bg-emerald-500 hover:text-white hover:scale-105 cursor-pointer"
+                  ? "bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/20 z-10 scale-[1.02]"
+                  : "bg-white border-slate-300 text-slate-800 hover:border-emerald-500 hover:text-emerald-900 hover:bg-emerald-50/50"
             )}
           >
             {time}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-30 pointer-events-none">
-              <div className="bg-slate-900 text-white px-2 py-1 rounded text-[10px] whitespace-nowrap shadow-xl">
-                {time} - {booked ? "Reservado" : "Disponible"}
+            {booked && (
+              <div className="absolute top-1 right-1">
+                <div className="h-1 w-1 rounded-full bg-slate-300" />
               </div>
-            </div>
-          </div>
+            )}
+            {!booked && isSelected && (
+              <div className="absolute -top-1 -right-1">
+                <div className="h-2 w-2 rounded-full bg-white shadow-sm flex items-center justify-center">
+                   <div className="h-1 w-1 rounded-full bg-emerald-600" />
+                </div>
+              </div>
+            )}
+          </button>
         );
       })}
     </div>

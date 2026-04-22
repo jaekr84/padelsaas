@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { cn } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -138,105 +139,209 @@ export function ManualReservationSheet({
       if (!val) clearValidation();
       onOpenChange(val);
     }}>
-      <SheetContent className="overflow-y-auto transition-all duration-500 ease-in-out !w-[98vw] lg:!w-[95vw] lg:!max-w-[1750px] p-6 sm:p-8">
-        <div className="grid gap-8 transition-all duration-500 lg:grid-cols-[380px_1fr_1fr]">
-          {/* Left Column: Form */}
-          <div className="flex flex-col space-y-6">
-            <Form {...form}>
-              <form onSubmit={onSubmit} className="space-y-6">
+      <SheetContent className="overflow-y-auto transition-all duration-500 ease-in-out !w-[98vw] lg:!w-[98vw] lg:!max-w-[1800px] p-0 border-none shadow-2xl bg-slate-50/95 backdrop-blur-xl">
+        <div className="flex flex-col h-full max-h-screen">
 
-                {/* Reservation Type Selector */}
-                <div className="bg-muted p-1 rounded-lg flex space-x-1 mb-6">
-                  <Button
-                    type="button"
-                    variant={watchReservationType === "single" ? "default" : "ghost"}
-                    className={`flex-1 text-xs font-bold tracking-wider ${watchReservationType !== "single" && "text-muted-foreground hover:text-foreground"}`}
-                    onClick={() => form.setValue("reservationType", "single")}
-                  >
-                    <LucideCalendarDays className="h-4 w-4 mr-2" />
-                    Simple
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={watchReservationType === "recurring" ? "default" : "ghost"}
-                    className={`flex-1 text-xs font-bold tracking-wider ${watchReservationType !== "recurring" && "text-muted-foreground hover:text-foreground"}`}
-                    onClick={() => {
-                      form.setValue("reservationType", "recurring");
-                      form.setValue("courtId", "auto");
-                    }}
-                  >
-                    <LucideRepeat className="h-4 w-4 mr-2" />
-                    Fija
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={watchReservationType === "block" ? "default" : "ghost"}
-                    className={`flex-1 text-xs font-bold tracking-wider ${watchReservationType !== "block" && "text-muted-foreground hover:text-foreground"}`}
-                    onClick={() => {
-                      form.setValue("reservationType", "block");
-                      form.setValue("guestName", "Bloqueo Técnico");
-                    }}
-                  >
-                    <LucideLock className="h-4 w-4 mr-2" />
-                    Bloqueo
-                  </Button>
-                </div>
+          <div className="flex-1 grid lg:grid-cols-3 h-full overflow-hidden">
+            {/* Left Column: Smart Form */}
+            <div className="border-r border-slate-300/80 bg-white p-6 overflow-y-auto custom-scrollbar">
+              <Form {...form}>
+                <form onSubmit={onSubmit} className="space-y-6">
+                  {/* Reservation Type Selector */}
+                  <div className="flex items-center bg-slate-100 p-1 rounded-xl mb-6">
+                    <button
+                      type="button"
+                      onClick={() => form.setValue("reservationType", "single")}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-xs font-bold transition-all",
+                        watchReservationType === "single" ? "bg-white text-emerald-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                      )}
+                    >
+                      Simple
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        form.setValue("reservationType", "recurring");
+                        form.setValue("courtId", "auto");
+                      }}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-xs font-bold transition-all",
+                        watchReservationType === "recurring" ? "bg-white text-emerald-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                      )}
+                    >
+                      Fija
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        form.setValue("reservationType", "block");
+                        form.setValue("guestName", "Bloqueo Técnico");
+                      }}
+                      className={cn(
+                        "flex-1 py-2 rounded-lg text-xs font-bold transition-all",
+                        watchReservationType === "block" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                      )}
+                    >
+                      Bloqueo
+                    </button>
+                  </div>
+                  {/* Guest Info Section */}
+                  {watchReservationType !== "block" && (
+                    <FormField
+                      control={form.control}
+                      name="guestName"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                            <FormLabel className="text-[11px] font-bold uppercase tracking-widest text-slate-700">Cliente / Referencia</FormLabel>
+                          </div>
+                          <FormControl>
+                            <div className="relative group">
+                              <Input
+                                placeholder="Nombre del jugador..."
+                                className="h-12 bg-white border-slate-300 text-base font-semibold focus:ring-emerald-500/20 focus:border-emerald-500 transition-all rounded-xl pl-4"
+                                autoFocus
+                                {...field}
+                                value={field.value ?? ""}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
-                {watchReservationType !== "block" && (
-                  <FormField
-                    control={form.control}
-                    name="guestName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="uppercase text-xs font-bold tracking-wider">Cliente / Referencia</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Juan Pérez"
-                            className="font-medium"
-                            autoFocus
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
+                  {/* Core Parameters Grid */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="dateStr"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500 flex items-center gap-2 h-4">
+                            <LucideCalendarDays className="h-3.5 w-3.5 shrink-0" />
+                            {watchReservationType === "recurring" ? "Inicio" : "Fecha"}
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="date"
+                              style={{ width: '100%', height: '48px' }}
+                              className="bg-slate-50 border-slate-200 font-bold text-slate-900 rounded-2xl focus:ring-emerald-500/20 focus:border-emerald-500 transition-all px-4"
+                              {...field}
+                              value={field.value ?? ""}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
-                <div className="flex flex-col space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="dateStr"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="uppercase text-xs font-bold tracking-wider">
-                          {watchReservationType === "recurring" ? "Fecha de Inicio" : "Fecha de Reserva"}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="date"
-                            className="w-full flex-1"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="startTimeStr"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500 flex items-center gap-2 h-4">
+                            <LucideLoader2 className="h-3.5 w-3.5 shrink-0" />
+                            Horario
+                          </FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger
+                                style={{ width: '100%', height: '48px' }}
+                                className="bg-slate-50 border-slate-200 font-bold text-slate-900 rounded-2xl focus:ring-emerald-500/20 focus:border-emerald-500 transition-all px-4"
+                              >
+                                <SelectValue placeholder="Hora..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="rounded-xl shadow-xl border-slate-300">
+                              {timeSlots.map((t) => (
+                                <SelectItem key={t} value={t} className="font-medium">{t}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
 
+                    <FormField
+                      control={form.control}
+                      name="durationMins"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500 flex items-center gap-2 h-4">
+                            <LucideRepeat className="h-3.5 w-3.5 shrink-0" />
+                            Duración
+                          </FormLabel>
+                          <Select onValueChange={(val) => field.onChange(parseInt(val || "0"))} value={field.value?.toString()}>
+                            <FormControl>
+                              <SelectTrigger
+                                style={{ width: '100%', height: '48px' }}
+                                className="bg-slate-50 border-slate-200 font-bold text-slate-900 rounded-2xl focus:ring-emerald-500/20 focus:border-emerald-500 transition-all px-4"
+                              >
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="rounded-xl shadow-xl border-slate-200">
+                              {[30, 60, 90, 120, 150, 180, 210, 240, 270, 300].map((mins) => (
+                                <SelectItem key={mins} value={mins.toString()} className="font-medium">
+                                  {mins} min
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="price"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500 flex items-center gap-2 h-4">
+                            <LucideDollarSign className="h-3.5 w-3.5 shrink-0" />
+                            Total
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative" style={{ width: '100%', height: '48px' }}>
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-emerald-600">$</span>
+                              <Input
+                                type="number"
+                                readOnly
+                                style={{ width: '100%', height: '100%' }}
+                                className="pl-10 pr-4 bg-slate-100/50 border-slate-200 font-bold text-slate-500 rounded-2xl cursor-default transition-all"
+                                {...field}
+                                value={field.value ?? ""}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage className="text-[10px]" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Recurring Details */}
                   {watchReservationType === "recurring" && (
-                    <div className="bg-primary/5 rounded-lg p-4 border border-primary/10 space-y-4">
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                       <FormField
                         control={form.control}
                         name="recurringEndDateStr"
                         render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="uppercase text-xs font-bold tracking-wider">Repetir Hasta (Fecha final)</FormLabel>
+                          <FormItem className="space-y-3">
+                            <FormLabel className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Repetir Hasta</FormLabel>
                             <FormControl>
                               <Input
                                 type="date"
-                                className="w-full"
+                                className="h-11 bg-white border-slate-200 font-semibold rounded-xl"
                                 {...field}
+                                value={field.value ?? ""}
                               />
                             </FormControl>
                             <FormMessage />
@@ -247,19 +352,14 @@ export function ManualReservationSheet({
                         control={form.control}
                         name="recurringDays"
                         render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="uppercase text-xs font-bold tracking-wider mb-2 block">Días de la semana</FormLabel>
-                            <div className="flex flex-wrap gap-2">
+                          <FormItem className="space-y-3">
+                            <FormLabel className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Días de la semana</FormLabel>
+                            <div className="flex gap-2">
                               {[
-                                { id: 1, label: "L" },
-                                { id: 2, label: "M" },
-                                { id: 3, label: "X" },
-                                { id: 4, label: "J" },
-                                { id: 5, label: "V" },
-                                { id: 6, label: "S" },
-                                { id: 0, label: "D" },
+                                { id: 1, label: "L" }, { id: 2, label: "M" }, { id: 3, label: "X" },
+                                { id: 4, label: "J" }, { id: 5, label: "V" }, { id: 6, label: "S" }, { id: 0, label: "D" }
                               ].map(day => (
-                                <Button
+                                <button
                                   key={day.id}
                                   type="button"
                                   onClick={() => {
@@ -269,11 +369,15 @@ export function ManualReservationSheet({
                                       : [...active, day.id];
                                     field.onChange(next);
                                   }}
-                                  variant={field.value?.includes(day.id) ? "default" : "outline"}
-                                  className={`h-10 w-10 p-0 rounded-full font-bold ${field.value?.includes(day.id) ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                                  className={cn(
+                                    "h-10 w-10 rounded-xl flex items-center justify-center text-xs font-bold transition-all border",
+                                    field.value?.includes(day.id)
+                                      ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-600/20"
+                                      : "bg-white border-slate-300 text-slate-700 hover:border-slate-400"
+                                  )}
                                 >
                                   {day.label}
-                                </Button>
+                                </button>
                               ))}
                             </div>
                             <FormMessage />
@@ -283,461 +387,281 @@ export function ManualReservationSheet({
                     </div>
                   )}
 
-                  {watchReservationType !== "recurring" && (
-                    <FormField
-                      control={form.control}
-                      name="courtId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="uppercase text-xs font-bold tracking-wider">Cancha (Opcional)</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="w-full h-auto min-h-10 text-left">
-                                <SelectValue placeholder="Seleccionar">
-                                  {field.value === "auto" ? (
-                                    <span className="font-bold text-emerald-700">🔄 Sugerir automática</span>
-                                  ) : (
-                                    <span className="whitespace-normal break-words line-clamp-2 italic">
-                                      {courts.find(c => c.id === field.value)?.name}
-                                    </span>
-                                  )}
-                                </SelectValue>
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent alignItemWithTrigger={false} side="bottom" className="max-h-60 w-[var(--anchor-width)]">
-                              <SelectItem value="auto" className="py-2.5 cursor-pointer whitespace-normal h-auto border-b bg-emerald-500/5 mb-1 text-emerald-800">
-                                <span className="line-clamp-2 leading-relaxed font-bold">🔄 Cualquier Cancha (Auto)</span>
-                              </SelectItem>
-                              {courts.map((c) => (
-                                <SelectItem key={c.id} value={c.id} className="py-2.5 cursor-pointer whitespace-normal h-auto">
-                                  <span className="line-clamp-2 leading-relaxed font-medium">{c.name}</span>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-
-                  <FormField
-                    control={form.control}
-                    name="startTimeStr"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="uppercase text-xs font-bold tracking-wider">Inicio</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="00:00">
-                                {field.value || undefined}
-                              </SelectValue>
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent alignItemWithTrigger={false} side="bottom" className="max-h-60 w-[var(--anchor-width)]">
-                            {Array.from({ length: 48 }).map((_, i) => {
-                              const h = Math.floor(i / 2).toString().padStart(2, "0");
-                              const m = i % 2 === 0 ? "00" : "30";
-                              const t = `${h}:${m}`;
-                              return <SelectItem key={t} value={t} className="cursor-pointer">{t}</SelectItem>;
-                            })}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-
-
-                  <FormField
-                    control={form.control}
-                    name="durationMins"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="uppercase text-xs font-bold tracking-wider">Duración (Fin)</FormLabel>
-                        <Select onValueChange={(val) => field.onChange(parseInt(val || "0"))} value={field.value?.toString()}>
-                          <FormControl>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Seleccionar">
-                                {field.value} min {watchStartTime && `(Fin ${endTime})`}
-                              </SelectValue>
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent alignItemWithTrigger={false} side="bottom" className="max-h-60 w-[var(--anchor-width)]">
-                            {[30, 60, 90, 120, 150, 180, 210, 240, 270, 300].map((mins) => {
-                              return (
-                                <SelectItem key={mins} value={mins.toString()} className="cursor-pointer">
-                                  {mins} minutos
-                                </SelectItem>
-                              );
-                            })}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="uppercase text-xs font-bold tracking-wider">Monto a Cobrar ($)</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-emerald-600">$</span>
-                            <Input
-                              type="number"
-                              className="pl-7 font-black text-lg h-12 bg-emerald-50/30 border-emerald-100"
-                              placeholder="0"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        {appliedRateInfo && (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 animate-in fade-in slide-in-from-top-1">
-                            <LucideDollarSign className="h-3 w-3" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">
-                              Tarifa: {appliedRateInfo.name} (${appliedRateInfo.price}/mod)
-                            </span>
-                          </div>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                </div>
-
-                <div className="flex flex-col gap-3 mt-8">
-                  {/* Phase 1: Not simulated yet or simple block */}
-                  {!validationResults && (
-                    <>
-                      {(watchReservationType === "recurring" || watchReservationType === "single") && (
-                        <Button
-                          type="button"
-                          onClick={onSimulateBatch}
-                          disabled={isValidating || loading}
-                          variant={watchReservationType === "recurring" ? "default" : "outline"}
-                          className={`w-full h-12 uppercase font-black tracking-widest transition-all ${watchReservationType === "recurring" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "border-emerald-600/20 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-600/40"
-                            }`}
-                        >
-                          {isValidating ? (
-                            <>
-                              <LucideLoader2 className="h-5 w-5 mr-2 animate-spin" />
-                              {watchReservationType === "recurring" ? "Simulando..." : "Verificando..."}
-                            </>
-                          ) : (
-                            <>
-                              <LucideSearch className="h-5 w-5 mr-2" />
-                              {watchReservationType === "recurring" ? "Simular Disponibilidad" : "Verificar Disponibilidad"}
-                            </>
-                          )}
-                        </Button>
-                      )}
-
-                      {/* Only show direct submit for Single (if not simulated) or Block */}
-                      {(watchReservationType === "single" || watchReservationType === "block") && (
-                        <Button
-                          type="submit"
-                          disabled={loading}
-                          className="w-full h-12 uppercase font-black tracking-widest transition-all"
-                        >
-                          {loading ? (
-                            <>
-                              <LucideLoader2 className="h-5 w-5 mr-2 animate-spin" />
-                              Procesando
-                            </>
-                          ) : (
-                            <>
-                              <LucideCheckCircle2 className="h-5 w-5 mr-2" />
-                              {watchReservationType === "block" ? "Bloquear Cancha" : "Confirmar Reserva"}
-                            </>
-                          )}
-                        </Button>
-                      )}
-                    </>
-                  )}
-
-                  {/* Phase 2: Results are present */}
-                  {validationResults && (
-                    <div className="flex flex-col gap-3">
-                      <Button
-                        type="submit"
-                        disabled={loading || selectedCount === 0 || hasConflictsInSelected}
-                        className={`w-full h-12 uppercase font-black tracking-widest transition-all ${selectedCount > 0 ? "bg-primary" : ""}`}
-                      >
-                        {loading ? (
-                          <>
-                            <LucideLoader2 className="h-5 w-5 mr-2 animate-spin" />
-                            Procesando
-                          </>
-                        ) : (
-                          <>
-                            <LucideCheckCircle2 className="h-5 w-5 mr-2" />
-                            {watchReservationType === "recurring"
-                              ? (selectedCount > 0 ? `Confirmar ${selectedCount} Reservas` : "Selecciona fechas")
-                              : (watchReservationType === "block" ? "Bloquear Cancha" : "Confirmar Reserva")
-                            }
-                          </>
-                        )}
-                      </Button>
-
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={clearValidation}
-                        className="w-full text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground h-10"
-                      >
-                        <LucideSearch className="h-3.5 w-3.5 mr-2" />
-                        Modificar parámetros / Volver
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </form>
-            </Form>
-          </div>
-
-          {/* Column 2: Court Visual Grid (Moved to middle) */}
-          <div className="transition-all duration-500 lg:border-l lg:pl-8 border-border">
-            {selectedCourt || watchCourtId === "auto" ? (
-              <div className="flex flex-col h-full space-y-4">
-                <div className="h-full flex flex-col">
-                  <div className="mb-6 flex flex-col gap-1">
-                    <h2 className="text-2xl font-black uppercase tracking-tighter text-emerald-950">
-                      Horario de Reserva
-                    </h2>
-                    <div className="flex items-center gap-3">
-                      <div className="relative group/time">
-                        <span className="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-md text-xl font-black flex items-center">
-                          {watchStartTime ? `${watchStartTime} a ${endTime}` : "--:-- a --:--"}
-                        </span>
-                        {watchStartTime && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              form.setValue("startTimeStr", "", { shouldDirty: true });
-                              form.setValue("durationMins", 90, { shouldDirty: true });
-                              clearValidation();
-                            }}
-                            className="absolute -right-2 -top-2 h-6 w-6 flex items-center justify-center rounded-full bg-destructive text-white shadow-lg hover:scale-110 transition-transform"
-                            title="Limpiar horario"
-                          >
-                            <LucideX className="h-3 w-3" />
-                          </button>
-                        )}
-                      </div>
-                      <span className="bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-md text-sm font-black border border-emerald-200">
-                        {form.watch("durationMins")} min
+                  {/* Applied Rate Info */}
+                  {appliedRateInfo && (
+                    <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100/50">
+                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-xs font-semibold tracking-tight">
+                        {appliedRateInfo.name} • <span className="font-bold">${appliedRateInfo.price}/módulo</span>
                       </span>
                     </div>
+                  )}
+
+                  {/* Actions Area */}
+                  <div className="pt-4 flex flex-col gap-4">
+                    {!validationResults ? (
+                      <div className="flex flex-col gap-3">
+                        {(watchReservationType === "recurring" || watchReservationType === "single") && (
+                          <Button
+                            type="button"
+                            onClick={onSimulateBatch}
+                            disabled={isValidating || loading}
+                            className="h-14 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl shadow-slate-900/10 transition-all active:scale-95"
+                          >
+                            {isValidating ? (
+                              <><LucideLoader2 className="h-4 w-4 mr-2 animate-spin" /> Verificando...</>
+                            ) : (
+                              <><LucideSearch className="h-4 w-4 mr-2" /> Validar Disponibilidad</>
+                            )}
+                          </Button>
+                        )}
+                        {(watchReservationType === "single" || watchReservationType === "block") && (
+                          <Button
+                            type="submit"
+                            disabled={loading}
+                            className="h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl shadow-emerald-600/20 transition-all active:scale-95"
+                          >
+                            {loading ? (
+                              <><LucideLoader2 className="h-4 w-4 mr-2 animate-spin" /> Procesando...</>
+                            ) : (
+                              <><LucideCheckCircle2 className="h-4 w-4 mr-2" /> {watchReservationType === "block" ? "Confirmar Bloqueo" : "Confirmar Reserva"}</>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3 animate-in zoom-in-95 duration-200">
+                        <Button
+                          type="submit"
+                          disabled={loading || selectedCount === 0 || hasConflictsInSelected}
+                          className="h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl shadow-emerald-600/20 transition-all active:scale-95"
+                        >
+                          {loading ? (
+                            <><LucideLoader2 className="h-4 w-4 mr-2 animate-spin" /> Guardando...</>
+                          ) : (
+                            <><LucideCheckCircle2 className="h-4 w-4 mr-2" /> Finalizar {selectedCount} Reservas</>
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={clearValidation}
+                          className="h-11 text-slate-500 font-bold uppercase tracking-widest text-[10px] hover:bg-slate-100 rounded-xl"
+                        >
+                          Modificar Parámetros
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  <div className="bg-white/40 p-3 rounded-md shadow-inner">
-                    <CourtTimeGrid
-                      court={selectedCourt || { id: "auto", name: "Cualquier", centerId: centerId, surface: "Panorámica", type: "Pádel", bookings: [] }}
-                      timeSlots={timeSlots}
-                      isSlotBooked={watchCourtId === "auto" ? () => false : isSlotBooked}
-                      selectedTime={watchStartTime}
-                      selectedDurationMins={form.watch("durationMins")}
-                      onSlotClick={(_, time, booked) => {
-                        if (booked) return;
-                        clearValidation();
-                        const currentStart = form.getValues("startTimeStr");
-                        const currentDuration = form.getValues("durationMins");
-
-                        const parseHmMins = (t: string) => {
-                          const [h, m] = t.split(":").map(Number);
-                          return h * 60 + m;
-                        };
-
-                        if (!currentStart) {
-                          form.setValue("startTimeStr", time, { shouldValidate: true, shouldDirty: true });
-                          return;
-                        }
-
-                        const clickedMins = parseHmMins(time);
-                        const currentStartMins = parseHmMins(currentStart);
-
-                        if (clickedMins > currentStartMins) {
-                          // User clicked a block after the start time -> EXTEND duration
-                          const newDuration = clickedMins - currentStartMins + 30; // +30 so it includes the clicked block
-
-                          // Check if it hits any already-booked block in between
-                          let valid = true;
-                          for (let m = currentStartMins; m <= clickedMins; m += 30) {
-                            const hs = Math.floor(m / 60).toString().padStart(2, '0');
-                            const ms = (m % 60) === 0 ? '00' : '30';
-                            if (watchCourtId !== "auto" && selectedCourt && isSlotBooked(selectedCourt, `${hs}:${ms}`)) {
-                              valid = false;
-                              break;
-                            }
-                          }
-
-                          if (valid) {
-                            form.setValue("durationMins", newDuration, { shouldValidate: true, shouldDirty: true });
-                          } else {
-                            // Obstacle hit -> reset to this new single block
-                            form.setValue("startTimeStr", time, { shouldValidate: true, shouldDirty: true });
-                            form.setValue("durationMins", 30, { shouldValidate: true, shouldDirty: true });
-                          }
-                        } else {
-                          // Clicked an earlier or identical block -> reset starting point but keep duration
-                          form.setValue("startTimeStr", time, { shouldValidate: true, shouldDirty: true });
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="mt-auto pt-6 px-2 text-center">
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest opacity-60">
-                      Haz clic en los bloques libres para pre-seleccionar la hora
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground">
-                <p className="text-sm font-bold uppercase tracking-widest mb-2">Sin cancha seleccionada</p>
-                <p className="text-xs max-w-[200px]">Elige una cancha del menú para visualizar sus horarios en tiempo real aquí mismo.</p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col h-full min-h-[400px] lg:border-l lg:pl-8 border-border">
-            <div className="mb-4 flex items-center justify-between">
-              {validationResults && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-1 rounded">
-                    {validationResults.length} FECHAS
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={clearValidation}
-                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                    title="Reiniciar búsqueda"
-                  >
-                    <LucideX className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              )}
+                </form>
+              </Form>
             </div>
 
-            {validationResults ? (
-              <div className="flex-1 flex flex-col h-full max-h-[700px]">
-                <div className="overflow-y-auto overflow-x-hidden flex-1">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="sticky top-0 bg-muted/50 backdrop-blur-md z-10">
-                      <tr className="border-b">
-                        <th className="p-3 text-[10px] font-black uppercase tracking-wider opacity-60">Fecha</th>
-                        <th className="p-3 text-[10px] font-black uppercase tracking-wider opacity-60">Cancha</th>
-                        <th className="p-3 text-[10px] font-black uppercase tracking-wider opacity-60">Horario</th>
-                        <th className="p-3 text-[10px] font-black uppercase tracking-wider opacity-60 text-right">Confirmar</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {validationResults.map((result, idx) => (
-                        <tr key={idx} className={`transition-colors ${!result.selected ? 'opacity-40 grayscale-[0.5]' : (result.status === 'conflict' ? 'bg-amber-500/5' : 'hover:bg-muted/30')}`}>
-                          <td className="p-3">
-                            <p className="text-xs font-bold">{result.dateStr}</p>
-                          </td>
-                          <td className="p-3">
-                            <div className="flex flex-col gap-1.5">
-                              <p className="text-[11px] font-bold text-gray-700">{result.courtName}</p>
-                              <div className="flex flex-col gap-1 w-24">
-                                <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-tighter text-muted-foreground/70">
-                                  <span>Ocupación</span>
-                                  <span>{result.usagePct}%</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-200/50">
-                                  <div
-                                    className={`h-full transition-all duration-500 ${result.usagePct > 80 ? 'bg-red-500' :
-                                        result.usagePct > 50 ? 'bg-amber-500' :
-                                          'bg-emerald-500'
-                                      }`}
-                                    style={{ width: `${result.usagePct}%` }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <div className="flex flex-col gap-1">
-                              <p className="text-[11px] font-black">
-                                {new Date(result.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                              {result.selected && result.alternatives.length > 0 && (
-                                <Select onValueChange={(val) => {
-                                  const alt = result.alternatives.find((a: any) => a.label === val);
-                                  if (alt) {
-                                    updateValidationRow(idx, {
-                                      startTime: alt.startTime,
-                                      endTime: alt.endTime,
-                                      courtId: alt.courtId,
-                                      courtName: alt.courtName
-                                    });
-                                  }
-                                }}>
-                                  <SelectTrigger className="h-7 text-[10px] bg-amber-100 border-amber-200 text-amber-900 font-bold px-2 py-0">
-                                    <SelectValue placeholder="Ver alternativas" />
-                                  </SelectTrigger>
-                                  <SelectContent alignItemWithTrigger={false} side="bottom">
-                                    {result.alternatives.map((alt: any, aIdx: number) => (
-                                      <SelectItem key={aIdx} value={alt.label} className="text-[11px]">
-                                        {alt.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => toggleResultSelection(idx)}
-                              className="group relative transition-all duration-200 hover:scale-110 active:scale-95 outline-none"
-                              title={result.selected ? "Desmarcar para no reservar" : "Marcar para reservar"}
-                            >
-                              {result.selected ? (
-                                result.status === 'ok' ? (
-                                  <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] ring-4 ring-emerald-500/10 transition-colors">
-                                    <LucideCheck className="h-4 w-4" />
-                                  </div>
-                                ) : (
-                                  <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.3)] ring-4 ring-amber-500/10 animate-pulse">
-                                    <LucideAlertTriangle className="h-4 w-4" />
-                                  </div>
-                                )
-                              ) : (
-                                <div className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-dashed border-muted-foreground/30 text-muted-foreground/40 bg-muted/10 hover:border-muted-foreground/60 transition-all">
-                                  <div className="h-2 w-2 rounded-full bg-muted-foreground/20 group-hover:bg-muted-foreground/40" />
-                                </div>
-                              )}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            {/* Middle Column: Visual Interaction */}
+            <div className="bg-white p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar border-r border-slate-300/80">
+              {/* Visual Grid Section */}
+              <div className="space-y-6">
+                <div className="flex items-end justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                      <LucideCalendarDays className="h-4 w-4 text-emerald-600" />
+                      Visualización de Horarios
+                    </h3>
+                    <p className="text-[11px] font-medium text-slate-500">Cancha: {courtName}</p>
+                  </div>
+                  {watchStartTime && (
+                    <div className="bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-lg shadow-emerald-600/20 flex items-center gap-3 animate-in fade-in zoom-in-95">
+                      <span className="text-lg font-black tracking-tight">{watchStartTime} — {endTime}</span>
+                      <div className="h-4 w-px bg-white/20" />
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase">{watchDuration}m</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            form.setValue("startTimeStr", "", { shouldDirty: true });
+                            form.setValue("durationMins", 90, { shouldDirty: true });
+                            clearValidation();
+                          }}
+                          className="h-5 w-5 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center transition-colors"
+                        >
+                          <LucideX className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground">
-                <LucideSearch className="h-10 w-10 mb-4 opacity-20" />
-                <p className="text-[11px] font-black uppercase tracking-widest opacity-40 leading-relaxed">
-                  Completa el formulario y simula <br /> para ver el chequeo de fechas aquí.
+
+                <div className="bg-white rounded-3xl p-4 border border-slate-300 shadow-sm">
+                  <CourtTimeGrid
+                    court={selectedCourt || { id: "auto", name: "Cualquier", centerId: centerId, surface: "Panorámica", type: "Pádel", bookings: [] }}
+                    timeSlots={timeSlots}
+                    isSlotBooked={watchCourtId === "auto" ? () => false : isSlotBooked}
+                    selectedTime={watchStartTime}
+                    selectedDurationMins={form.watch("durationMins")}
+                    onSlotClick={(_, time, booked) => {
+                      if (booked) return;
+                      clearValidation();
+
+                      const parseHmMinsLocal = (t: string) => {
+                        if (!t) return 0;
+                        const [h, m] = t.split(":").map(Number);
+                        return h * 60 + m;
+                      };
+
+                      const clickedMins = parseHmMinsLocal(time);
+                      const currentStart = form.getValues("startTimeStr");
+                      const currentDuration = form.getValues("durationMins");
+
+                      if (!currentStart) {
+                        form.setValue("startTimeStr", time, { shouldValidate: true, shouldDirty: true });
+                        return;
+                      }
+
+                      const startMins = parseHmMinsLocal(currentStart);
+                      const endMins = startMins + currentDuration;
+
+                      // LÓGICA PRO:
+                      // 1. Si clicamos el mismo inicio -> Limpiar
+                      // 2. Si clicamos dentro del rango o inmediatamente después -> Extender/Ajustar duración
+                      // 3. Si clicamos fuera (lejos o antes) -> Mover el inicio
+                      if (time === currentStart) {
+                        form.setValue("startTimeStr", "", { shouldValidate: true, shouldDirty: true });
+                      } else if (clickedMins > startMins && clickedMins <= endMins + 60) {
+                        const newDuration = clickedMins - startMins + 30;
+                        form.setValue("durationMins", newDuration, { shouldValidate: true, shouldDirty: true });
+                      } else {
+                        // Clicking far away or before -> MOVE START
+                        form.setValue("startTimeStr", time, { shouldValidate: true, shouldDirty: true });
+                        // Siempre reseteamos a 90m al cambiar de bloque de inicio para cumplir con el estándar solicitado
+                        form.setValue("durationMins", 90, { shouldValidate: true, shouldDirty: true });
+                      }
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] text-center font-bold text-slate-700 uppercase tracking-widest">
+                  Toca un bloque para iniciar • Toca un bloque posterior para extender
                 </p>
               </div>
-            )}
+            </div>
 
-            <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-              <p className="text-[10px] text-muted-foreground font-medium uppercase leading-relaxed">
-                TIP: Si hay conflictos, selecciona uno de los horarios sugeridos por el motor o cancela y ajusta la reserva.
-              </p>
+            {/* Right Column: Results Section */}
+            <div className="bg-slate-100/50 p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+              {/* Dynamic Results Section */}
+              <div className={cn(
+                "transition-all duration-500",
+                validationResults ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+              )}>
+                {validationResults && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <LucideCheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        Disponibilidad {watchReservationType === "recurring" ? "Proyectada" : "Confirmada"}
+                      </h3>
+                      <div className="flex gap-2">
+                        <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">
+                          {selectedCount} Seleccionadas
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="max-h-[800px] overflow-y-auto custom-scrollbar border-t border-slate-200">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-100 border-b border-slate-200">
+                              <th className="px-4 py-3 text-[10px] font-bold text-slate-700 uppercase tracking-widest">Fecha</th>
+                              <th className="px-4 py-3 text-[10px] font-bold text-slate-700 uppercase tracking-widest">Estado</th>
+                              <th className="px-4 py-3 text-[10px] font-bold text-slate-700 uppercase tracking-widest">Hora</th>
+                              <th className="px-4 py-3 text-[10px] font-bold text-slate-700 uppercase tracking-widest text-right">#</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {validationResults.map((result, idx) => (
+                              <tr key={idx} className={cn(
+                                "transition-all",
+                                !result.selected && "opacity-40 grayscale",
+                                result.status === 'conflict' && "bg-amber-50/50"
+                              )}>
+                                <td className="px-4 py-3">
+                                  <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-slate-900">{result.dateStr}</span>
+                                    <span className="text-[10px] font-bold text-slate-700 uppercase tracking-tight">Sábado</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex flex-col gap-2">
+                                    <span className="text-[10px] font-bold text-slate-700 truncate max-w-[100px]">{result.courtName}</span>
+                                    <div className="flex items-center gap-2">
+                                      <div className="h-1 w-12 bg-slate-100 rounded-full overflow-hidden">
+                                        <div
+                                          className={cn(
+                                            "h-full transition-all duration-700",
+                                            result.usagePct > 80 ? "bg-red-500" : result.usagePct > 50 ? "bg-amber-500" : "bg-emerald-500"
+                                          )}
+                                          style={{ width: `${result.usagePct}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex flex-col gap-1.5">
+                                    <span className="text-xs font-black text-slate-900">
+                                      {new Date(result.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                    {result.selected && result.alternatives.length > 0 && (
+                                      <Select onValueChange={(val) => {
+                                        const alt = result.alternatives.find((a: any) => a.label === val);
+                                        if (alt) updateValidationRow(idx, alt);
+                                      }}>
+                                        <SelectTrigger className="h-7 text-[9px] bg-amber-50 border-amber-100 text-amber-700 font-bold rounded-lg px-2 shadow-none">
+                                          <SelectValue placeholder="Alternativas" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-slate-200">
+                                          {result.alternatives.map((alt: any, aIdx: number) => (
+                                            <SelectItem key={aIdx} value={alt.label} className="text-[10px] font-bold">
+                                              {alt.label}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleResultSelection(idx)}
+                                    className={cn(
+                                      "h-8 w-8 rounded-xl flex items-center justify-center transition-all",
+                                      result.selected
+                                        ? (result.status === 'ok' ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "bg-amber-500 text-white shadow-lg shadow-amber-500/20 animate-pulse")
+                                        : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                                    )}
+                                  >
+                                    {result.selected ? <LucideCheck className="h-4 w-4" /> : <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />}
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+              </div>
+
+              {!validationResults && (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-slate-200 rounded-[40px] bg-white/30">
+                  <div className="h-16 w-16 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-300 mb-4">
+                    <LucideSearch className="h-8 w-8" />
+                  </div>
+                  <h4 className="text-slate-900 font-bold uppercase tracking-widest text-[10px] mb-2">Motor de Reserva Listo</h4>
+                  <p className="text-slate-500 text-[10px] max-w-[240px] leading-relaxed">
+                    Completa los datos y valida la disponibilidad para proyectar las reservas y resolver conflictos inteligentes.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
