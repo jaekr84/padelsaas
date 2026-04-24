@@ -70,16 +70,17 @@ export const generateTimeSlots = (openTime: string = "08:00", closeTime: string 
   return slots;
 };
 
-export const isSlotBooked = (court: Court, timeStr: string, baseDateStr?: string) => {
+import { parseArgentineDate } from "@/lib/date-utils";
+
+export const isSlotBooked = (court: Court, timeStr: string, baseDateStr?: string, openTime?: string) => {
   if (!court.bookings) return false;
   
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  let slotTime;
-  if (baseDateStr) {
-    const [y, m, d] = baseDateStr.split('-').map(Number);
-    slotTime = new Date(y, m - 1, d, hours, minutes, 0, 0);
-  } else {
-    slotTime = new Date();
+  const slotTime = baseDateStr 
+    ? parseArgentineDate(baseDateStr, timeStr, openTime)
+    : new Date();
+
+  if (!baseDateStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
     slotTime.setHours(hours, minutes, 0, 0);
   }
   
@@ -135,7 +136,7 @@ export function CourtsList({
   
   courts.forEach(court => {
     timeSlots.forEach(time => {
-      if (isSlotBooked(court, time, rawDateStr)) {
+      if (isSlotBooked(court, time, rawDateStr, openTime)) {
         occupiedSlotsCount++;
       }
     });
@@ -148,7 +149,7 @@ export function CourtsList({
   const getCourtOccupancy = (court: Court) => {
     let occupied = 0;
     timeSlots.forEach(time => {
-      if (isSlotBooked(court, time, rawDateStr)) {
+      if (isSlotBooked(court, time, rawDateStr, openTime)) {
         occupied++;
       }
     });
@@ -407,7 +408,7 @@ export function CourtsList({
                   <CourtTimeGrid 
                     court={court}
                     timeSlots={timeSlots}
-                    isSlotBooked={(c, t) => isSlotBooked(c, t, rawDateStr)}
+                    isSlotBooked={(c, t) => isSlotBooked(c, t, rawDateStr, openTime)}
                     onSlotClick={handleCellClick}
                   />
                 </div>

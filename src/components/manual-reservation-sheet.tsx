@@ -57,10 +57,10 @@ import { useState } from "react";
 
 import { parseArgentineDate } from "@/lib/date-utils";
 
-export const isSlotBooked = (court: any, time: string, dateStr: string) => {
+export const isSlotBooked = (court: any, time: string, dateStr: string, openTime?: string) => {
   if (!court.bookings || !Array.isArray(court.bookings)) return false;
 
-  const slotTime = parseArgentineDate(dateStr, time);
+  const slotTime = parseArgentineDate(dateStr, time, openTime);
 
   return court.bookings.some((b: any) => {
     try {
@@ -596,10 +596,7 @@ export function ManualReservationSheet({
                       isGlobalView={watchCourtId === "auto"} 
                       allCourts={activeCourts} 
                       timeSlots={timeSlots} 
-                      isSlotBooked={(c, t) => {
-                        const dateStr = watchDateStr || format(new Date(), "yyyy-MM-dd");
-                        return isSlotBooked(c, t, dateStr);
-                      }} 
+                      isSlotBooked={(c, t) => isSlotBooked(c, t, watchDateStr, openTime)}
                       selectedTime={watchStartTime} 
                       selectedDurationMins={watchDuration} 
                       onSlotClick={(c, t) => { 

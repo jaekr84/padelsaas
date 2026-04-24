@@ -115,7 +115,7 @@ export function useReservationForm({
     const values = form.getValues();
     setIsValidating(true);
     try {
-      const startDateTime = parseArgentineDate(values.dateStr, values.startTimeStr);
+      const startDateTime = parseArgentineDate(values.dateStr, values.startTimeStr, center?.openTime);
 
       const batchDates = [];
 
@@ -215,7 +215,7 @@ export function useReservationForm({
   const onSubmit = async (values: ReservationFormValues) => {
     setLoading(true);
     try {
-      const startDateTime = parseArgentineDate(values.dateStr, values.startTimeStr);
+      const startDateTime = parseArgentineDate(values.dateStr, values.startTimeStr, center?.openTime);
 
       const endDateTime = new Date(startDateTime);
       endDateTime.setMinutes(startDateTime.getMinutes() + values.durationMins);

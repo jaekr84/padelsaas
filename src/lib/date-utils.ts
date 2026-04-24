@@ -7,13 +7,25 @@ const ARG_OFFSET = "-03:00";
  * Convierte un string de fecha y hora (en horario de Argentina) a un objeto Date (UTC)
  * @param dateStr Formato "YYYY-MM-DD"
  * @param timeStr Formato "HH:mm"
+ * @param openTime Opcional. Si se provee, habilita lógica de madrugada (overnight).
  */
-export function parseArgentineDate(dateStr: string, timeStr: string): Date {
+export function parseArgentineDate(dateStr: string, timeStr: string, openTime?: string): Date {
   const combined = `${dateStr}T${timeStr}:00${ARG_OFFSET}`;
   const date = new Date(combined);
   
   if (isNaN(date.getTime())) {
     throw new Error(`Fecha o hora inválida: ${dateStr} ${timeStr}`);
+  }
+
+  // Lógica de Madrugada: Si la hora seleccionada es menor a la de apertura (ej: 00:30 < 08:00),
+  // se asume que el usuario se refiere a la madrugada del día siguiente al seleccionado en el calendario,
+  // ya que ese turno pertenece conceptualmente a la "noche" del día elegido.
+  if (openTime) {
+    const [openH] = openTime.split(":").map(Number);
+    const [timeH] = timeStr.split(":").map(Number);
+    if (timeH < openH) {
+      date.setDate(date.getDate() + 1);
+    }
   }
   
   return date;

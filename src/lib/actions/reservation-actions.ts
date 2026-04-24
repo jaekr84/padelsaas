@@ -323,24 +323,32 @@ export async function validateBatchReservationsAction(
     // Check if past
     const isPast = isPastArgentina(req.startTime);
 
-    const dayStart = new Date(req.startTime);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(req.startTime);
-    dayEnd.setHours(23, 59, 59, 999);
+    const argDateStr = getDateStringArgentina(req.startTime);
+    const dayStart = parseArgentineDate(argDateStr, "00:00");
+    const dayEnd = parseArgentineDate(argDateStr, "23:59");
+    dayEnd.setSeconds(59, 999);
 
     const dayBookings = allCenterBookings.filter(b => 
       b.startTime.getTime() < dayEnd.getTime() && b.endTime.getTime() > dayStart.getTime()
     );
 
-    const TOTAL_HOURS = 18;
+    // Include current batch's pending reservations for the same day/court in usage calculation
+    const dayPending = pendingValidations.filter(p => 
+      p.startTime.getTime() < dayEnd.getTime() && p.endTime.getTime() > dayStart.getTime()
+    );
+
+    const TOTAL_HOURS = 16;
     const courtUsage = centerCourts.map(c => {
-      const bookedMs = dayBookings
+      const dbBookedMs = dayBookings
         .filter(b => b.courtId === c.id)
-        .reduce((acc, b) => acc + (b.endTime.getTime() - b.startTime.getTime()), 0);
-      const bookedHours = bookedMs / (1000 * 60 * 60);
+        .reduce((acc, b) => acc + (Math.min(b.endTime.getTime(), dayEnd.getTime()) - Math.max(b.startTime.getTime(), dayStart.getTime())), 0);
+      const pendingBookedMs = dayPending
+        .filter(p => p.courtId === c.id)
+        .reduce((acc, p) => acc + (Math.min(p.endTime.getTime(), dayEnd.getTime()) - Math.max(p.startTime.getTime(), dayStart.getTime())), 0);
+      const totalBookedHours = (dbBookedMs + pendingBookedMs) / (1000 * 60 * 60);
       return {
         id: c.id,
-        usagePct: Math.round((bookedHours / TOTAL_HOURS) * 100)
+        usagePct: Math.min(100, Math.round((totalBookedHours / TOTAL_HOURS) * 100))
       };
     });
 

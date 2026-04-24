@@ -444,9 +444,9 @@ export function FixedReservationManager({
                     </span>
                   </div>
                   {validationResults.filter(r => r.status === 'conflict').length > 0 && (
-                    <div className="flex items-center gap-2 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100">
-                      <LucideAlertTriangle className="h-4 w-4 text-red-600" />
-                      <span className="text-[10px] font-black text-red-700 uppercase tracking-widest">
+                    <div className="flex items-center gap-2 bg-red-600 px-3 py-1.5 rounded-lg shadow-lg shadow-red-200 animate-bounce">
+                      <LucideAlertTriangle className="h-4 w-4 text-white" />
+                      <span className="text-[10px] font-black text-white uppercase tracking-widest">
                         {validationResults.filter(r => r.status === 'conflict').length} Conflictos
                       </span>
                     </div>
@@ -474,7 +474,15 @@ export function FixedReservationManager({
                       const dateStr = format(new Date(result.startTime), "yyyy-MM-dd");
 
                       return (
-                        <tr key={idx} className={cn("hover:bg-slate-50/50 transition-colors", result.status === 'conflict' && "bg-red-50/30")}>
+                        <tr 
+                          key={idx} 
+                          className={cn(
+                            "hover:bg-slate-50/80 transition-all border-l-[6px]", 
+                            result.status === 'conflict' 
+                              ? "bg-red-50/60 border-l-red-500/80" 
+                              : "border-l-transparent"
+                          )}
+                        >
                           <td className="p-4 text-center border-r border-slate-100">
                             <Checkbox
                               checked={result.selected}
@@ -502,8 +510,8 @@ export function FixedReservationManager({
                                 key={court.id} 
                                 className={cn(
                                     "p-3 border-r border-slate-100 text-center transition-all",
-                                    isSelected && !isBusy && "bg-emerald-500/10",
-                                    isSelected && isBusy && "bg-red-500/10"
+                                    isSelected && !isBusy && "bg-emerald-500/15 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.2)]",
+                                    isSelected && isBusy && "bg-red-500/20 shadow-[inset_0_0_0_1px_rgba(239,68,68,0.2)]"
                                 )}
                               >
                                 <div className="flex items-center justify-center gap-2">
@@ -513,9 +521,9 @@ export function FixedReservationManager({
                                     </span>
 
                                     {isBusy ? (
-                                        <div className="flex items-center gap-1.5 h-8 px-2 rounded-lg bg-red-50 border border-red-100 min-w-[75px] justify-center">
-                                            <LucideX className="h-2.5 w-2.5 text-red-500" />
-                                            <span className="text-[7px] font-black text-red-600 uppercase tracking-tighter">Ocupado</span>
+                                        <div className="flex items-center gap-1.5 h-8 px-2 rounded-lg bg-red-100 border border-red-200 min-w-[75px] justify-center shadow-sm">
+                                            <LucideX className="h-3 w-3 text-red-600 font-black" />
+                                            <span className="text-[8px] font-black text-red-700 uppercase tracking-tighter">Ocupado</span>
                                         </div>
                                     ) : (
                                         <button
