@@ -258,6 +258,7 @@ interface ValidationResult {
   status: 'ok' | 'conflict';
   selected: boolean;
   usagePct: number;
+  courtUsages: Record<string, number>; // New property for per-court usage
   alternatives: any[];
 }
 
@@ -399,12 +400,27 @@ export async function validateBatchReservationsAction(
     }
 
     // CASE 2: Multi-date or Recurring (Traditional one-row-per-date logic)
+    // SMART COURT SELECTION LOGIC
     let finalCourtId = req.courtId;
     let conflict = false;
-    let assignedCourtName = "Auto";
+    let assignedCourtName = "Desconocida";
 
-    if (finalCourtId === "auto") {
-      const freeCourts = [];
+    // 1. Try the requested court first (if not 'auto')
+    let primaryBusy = true;
+    if (finalCourtId !== "auto") {
+      const overlapDB = dayBookings.some(b => 
+          b.courtId === finalCourtId && (req.startTime.getTime() < b.endTime.getTime() && req.endTime.getTime() > b.startTime.getTime())
+      );
+      const overlapMemory = pendingValidations.some(p => 
+          p.courtId === finalCourtId && (req.startTime.getTime() < p.endTime.getTime() && req.endTime.getTime() > p.startTime.getTime())
+      );
+      primaryBusy = overlapDB || overlapMemory;
+    }
+
+    // 2. If 'auto' or primary is busy, search for the BEST alternative
+    if (finalCourtId === "auto" || primaryBusy) {
+      const availableOptions = [];
+      
       for (const c of centerCourts) {
         const overlapDB = dayBookings.some(b => 
           b.courtId === c.id && (req.startTime.getTime() < b.endTime.getTime() && req.endTime.getTime() > b.startTime.getTime())
@@ -414,31 +430,30 @@ export async function validateBatchReservationsAction(
         );
 
         if (!overlapDB && !overlapMemory) {
-          // Count usage for this court on this day
-          const usage = dayBookings.filter(b => b.courtId === c.id).length +
-                        pendingValidations.filter(p => p.courtId === c.id).length;
-          freeCourts.push({ id: c.id, name: c.name, usage });
+          // Calculate usage for this court on this specific day to prioritize "less used" ones
+          const usageCount = dayBookings.filter(b => b.courtId === c.id).length +
+                             pendingValidations.filter(p => p.courtId === c.id).length;
+          availableOptions.push({ id: c.id, name: c.name, usageCount });
         }
       }
 
-      if (freeCourts.length > 0) {
-        freeCourts.sort((a, b) => a.usage - b.usage);
-        finalCourtId = freeCourts[0].id;
-        assignedCourtName = freeCourts[0].name;
+      if (availableOptions.length > 0) {
+        // Sort by usage (ascending) to pick the one with "most availability"
+        availableOptions.sort((a, b) => a.usageCount - b.usageCount);
+        finalCourtId = availableOptions[0].id;
+        assignedCourtName = availableOptions[0].name;
+        conflict = false; // We found an alternative, so it's OK
       } else {
+        // No court is free at this time
         conflict = true;
+        const requestedCourt = centerCourts.find(c => c.id === req.courtId);
+        assignedCourtName = requestedCourt?.name || (req.courtId === "auto" ? "Cualquiera" : "Desconocida");
       }
     } else {
+      // Primary court was fixed and it's free
       const selected = centerCourts.find(c => c.id === finalCourtId);
       assignedCourtName = selected?.name || "Desconocida";
-      const overlapDB = dayBookings.some(b => 
-          b.courtId === finalCourtId && (req.startTime.getTime() < b.endTime.getTime() && req.endTime.getTime() > b.startTime.getTime())
-      );
-      const overlapMemory = pendingValidations.some(p => 
-          p.courtId === finalCourtId && (req.startTime.getTime() < p.endTime.getTime() && req.endTime.getTime() > p.startTime.getTime())
-      );
-
-      if (overlapDB || overlapMemory) conflict = true;
+      conflict = false;
     }
 
     if (!conflict) {
@@ -496,6 +511,10 @@ export async function validateBatchReservationsAction(
       return aDist - bDist;
     });
 
+    // Create a map for all court usages for this row
+    const usagesMap: Record<string, number> = {};
+    courtUsage.forEach(u => { usagesMap[u.id] = u.usagePct; });
+
     finalResults.push({
       dateStr: req.startTime.toLocaleDateString('es-AR'),
       originalStartTime: req.startTime,
@@ -505,7 +524,8 @@ export async function validateBatchReservationsAction(
       courtName: assignedCourtName,
       status: conflict ? ('conflict' as const) : ('ok' as const),
       selected: true, 
-      usagePct: courtUsage.find(u => u.id === finalCourtId)?.usagePct || 0,
+      usagePct: usagesMap[finalCourtId] || 0,
+      courtUsages: usagesMap,
       alternatives
     });
   }

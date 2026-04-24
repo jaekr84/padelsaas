@@ -134,7 +134,7 @@ export function ManualReservationSheet({
   const calendarClassNames = {
     root: "w-full h-full flex flex-col",
     months: "flex-1 flex flex-col w-full relative justify-center",
-    month: "flex flex-col items-center justify-center w-full h-full space-y-8 px-7",
+    month: "flex flex-col items-center justify-center w-full h-full space-y-2 px-2",
     caption: "flex justify-center relative items-center w-full mb-4",
     caption_label: "text-lg font-black text-slate-900 uppercase tracking-[0.4em]",
     nav: "static",
@@ -173,16 +173,29 @@ export function ManualReservationSheet({
 
   // Pre-fill form when sheet opens with an initial slot
   useEffect(() => {
-    if (open && initialSlot) {
-      form.reset({
-        reservationType: "single",
-        guestName: "",
-        courtId: "auto", // Always start in global mode for time selection
-        startTimeStr: initialSlot.time,
-        durationMins: 90,
-        price: 15000,
-        dateStr: globalDateStr || new Date().toISOString().split("T")[0],
-      });
+    if (open) {
+      const today = new Date().toISOString().split("T")[0];
+      if (initialSlot) {
+        form.reset({
+          reservationType: "single",
+          guestName: "",
+          courtId: initialSlot.courtId, // Use the specific court if coming from the grid
+          startTimeStr: initialSlot.time,
+          durationMins: 90,
+          price: 15000,
+          dateStr: globalDateStr || today,
+        });
+      } else {
+        form.reset({
+          reservationType: "single",
+          guestName: "",
+          courtId: "auto",
+          startTimeStr: "",
+          durationMins: 90,
+          price: 15000,
+          dateStr: today,
+        });
+      }
     }
   }, [open, initialSlot, form, globalDateStr]);
 
@@ -277,827 +290,345 @@ export function ManualReservationSheet({
       }
       onOpenChange(val);
     }}>
-      <SheetContent className="overflow-y-auto transition-all duration-500 ease-in-out !w-[98vw] lg:!w-[98vw] lg:!max-w-[1800px] p-0 border-none shadow-2xl bg-slate-50/95 backdrop-blur-xl">
-        <div className="flex flex-col h-full max-h-screen">
+      <SheetContent className="overflow-hidden transition-all duration-500 ease-in-out !w-[95vw] lg:!max-w-[900px] p-0 border-none shadow-2xl bg-white rounded-l-[32px]">
+        <div className="flex flex-col h-full max-h-screen overflow-hidden">
+          <div className="px-8 py-5 bg-white border-b border-slate-100 flex items-center justify-between z-10 shrink-0">
+            <div className="flex items-center gap-5">
+              <div className="flex items-center justify-center size-11 rounded-2xl bg-slate-950 text-white shadow-xl shadow-slate-200 ring-4 ring-slate-50">
+                <LucideCalendarDays className="size-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight uppercase">Nueva Reserva</h2>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-[9px] font-bold text-emerald-600 uppercase tracking-wider border border-emerald-100">Manual</span>
+                </div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] leading-none mt-1">Configuración y Disponibilidad</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => onOpenChange(false)} 
+              className="group p-2.5 hover:bg-slate-50 rounded-2xl transition-all duration-300 text-slate-400 hover:text-slate-900 active:scale-95"
+            >
+              <LucideX className="size-5 transition-transform group-hover:rotate-90" />
+            </button>
+          </div>
 
-          <div className="flex-1 grid lg:grid-cols-3 h-full overflow-hidden">
-            {/* Left Column: Smart Form */}
-            <div className="border-r border-slate-300/80 bg-white p-6 overflow-y-auto custom-scrollbar">
+          <div className="flex-1 grid lg:grid-cols-[380px_1fr] h-full overflow-hidden bg-slate-50/30">
+            <div className="border-r border-slate-100 bg-white p-6 overflow-y-auto custom-scrollbar shadow-[10px_0_30px_-15px_rgba(0,0,0,0.03)] z-10">
               <Form {...form}>
                 <form onSubmit={onSubmit} className="space-y-6">
-                  {/* Reservation Type Selector */}
-                  <div className="flex items-center bg-slate-100 p-1 rounded-xl mb-6">
-                    <button
-                      type="button"
-                      onClick={() => form.setValue("reservationType", "single")}
-                      className={cn(
-                        "flex-1 py-2 rounded-lg text-xs font-bold transition-all",
-                        watchReservationType === "single" ? "bg-white text-emerald-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                      )}
-                    >
-                      Simple
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        form.setValue("reservationType", "block");
-                        form.setValue("guestName", "Bloqueo Técnico");
-                      }}
-                      className={cn(
-                        "flex-1 py-2 rounded-lg text-xs font-bold transition-all",
-                        watchReservationType === "block" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                      )}
-                    >
-                      Bloqueo
-                    </button>
+                  {/* Selector de Tipo con diseño premium */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Modalidad de Reserva</label>
+                    <div className="flex p-1.5 bg-slate-50 border border-slate-100 rounded-2xl">
+                      <button 
+                        type="button" 
+                        onClick={() => form.setValue("reservationType", "single")} 
+                        className={cn(
+                          "flex-1 py-2.5 rounded-xl text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-2", 
+                          watchReservationType === "single" ? "bg-white text-emerald-700 shadow-sm ring-1 ring-slate-200/50" : "text-slate-400 hover:text-slate-600"
+                        )}
+                      >
+                        <LucideCheck className={cn("size-3", watchReservationType === "single" ? "opacity-100" : "opacity-0")} />
+                        Reserva Simple
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => form.setValue("reservationType", "block")} 
+                        className={cn(
+                          "flex-1 py-2.5 rounded-xl text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-2", 
+                          watchReservationType === "block" ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50" : "text-slate-400 hover:text-slate-600"
+                        )}
+                      >
+                        <LucideAlertTriangle className={cn("size-3", watchReservationType === "block" ? "opacity-100" : "opacity-0")} />
+                        Bloqueo Técnico
+                      </button>
+                    </div>
                   </div>
-                  {/* Guest Info Section */}
-                  {watchReservationType !== "block" && (
-                    <FormField
-                      control={form.control}
-                      name="guestName"
-                      render={({ field }) => (
-                        <FormItem className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                            <FormLabel className="text-[11px] font-bold uppercase tracking-widest text-slate-700">Cliente / Referencia</FormLabel>
-                          </div>
+                  
+                  <div className="space-y-4">
+                    {/* Selector de Cancha */}
+                    <FormField control={form.control} name="courtId" render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Cancha Seleccionada</FormLabel>
+                        <Select onValueChange={(val) => { if (val) { field.onChange(val); clearValidation(); } }} value={field.value ?? "auto"}>
+                          <FormControl>
+                            <SelectTrigger className="h-14 text-sm font-bold rounded-2xl border-slate-200 bg-white/50 hover:bg-white hover:border-emerald-500/50 hover:shadow-sm focus:ring-emerald-500/10 transition-all px-4 group">
+                              <div className="flex items-center gap-3">
+                                <div className="size-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                                  <LucideMapPin className="size-4" />
+                                </div>
+                                <SelectValue placeholder="Seleccionar cancha">
+                                  {field.value === "auto" 
+                                    ? "Asignación Automática" 
+                                    : courts.find(c => c.id === field.value)?.name || field.value}
+                                </SelectValue>
+                              </div>
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="rounded-[24px] border-slate-100 shadow-2xl p-2 min-w-[240px]">
+                            <SelectItem value="auto" className="rounded-xl py-3 px-3 text-sm font-semibold focus:bg-emerald-50 focus:text-emerald-700">
+                              <div className="flex items-center gap-3">
+                                <div className="size-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                                  <LucideSparkles className="size-4 text-emerald-500" />
+                                </div>
+                                <span>Asignación Automática</span>
+                              </div>
+                            </SelectItem>
+                            <div className="h-px bg-slate-100 my-2 mx-2" />
+                            {courts.map((c) => (
+                              <SelectItem key={c.id} value={c.id} className="rounded-xl py-3 px-3 text-sm font-semibold focus:bg-emerald-50 focus:text-emerald-700 mb-1">
+                                <div className="flex items-center gap-3">
+                                  <div className="size-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-focus:text-emerald-600">
+                                    <LucideMapPin className="size-4" />
+                                  </div>
+                                  <div className="flex flex-col text-left">
+                                    <span>{c.name}</span>
+                                  </div>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    {watchReservationType !== "block" && (
+                      <FormField control={form.control} name="guestName" render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Información del Cliente</FormLabel>
                           <FormControl>
                             <div className="relative group">
-                              <Input
-                                placeholder="Nombre del jugador..."
-                                className="h-12 bg-white border-slate-300 text-base font-semibold focus:ring-emerald-500/20 focus:border-emerald-500 transition-all rounded-xl pl-4"
-                                autoFocus
-                                {...field}
-                                value={field.value ?? ""}
+                              <Input 
+                                placeholder="Nombre completo..." 
+                                className="h-14 pl-14 text-sm font-semibold rounded-2xl border-slate-200 bg-white/50 hover:bg-white focus:border-emerald-500 focus:ring-emerald-500/10 transition-all duration-300" 
+                                {...field} 
+                                value={field.value ?? ""} 
                               />
+                              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-focus-within:bg-emerald-50 group-focus-within:text-emerald-600 transition-all">
+                                <LucideSearch className="size-4" />
+                              </div>
                             </div>
                           </FormControl>
-                          <FormMessage />
                         </FormItem>
-                      )}
-                    />
-                  )}
-
-                  {/* Core Parameters Section: Side-by-Side Layout */}
-                  <div className="grid grid-cols-3 gap-6">
-                    <div className="col-span-2">
-                      <FormField
-                        control={form.control}
-                        name="dateStr"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2 px-1">
-                              <LucideCalendarDays className="h-3.5 w-3.5 text-emerald-500" />
-                              Calendario de Reserva
-                            </FormLabel>
-                            <FormControl>
-                              <div className="bg-white border border-slate-200 rounded-3xl p-0 shadow-sm shadow-slate-200/40 relative overflow-hidden group min-h-[440px] flex flex-col items-center justify-center">
-                                <Calendar
-                                  mode="single"
-                                  selected={watchDateStr ? new Date(watchDateStr + 'T00:00:00') : undefined}
-                                  onSelect={(date: any) => {
-                                    if (date) {
-                                      form.setValue("dateStr", format(date, "yyyy-MM-dd"), { shouldDirty: true, shouldValidate: true });
-                                    }
-                                  }}
-                                  initialFocus
-                                  locale={es}
-                                  className="w-full h-full"
-                                  classNames={calendarClassNames as any}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage className="text-[10px]" />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="col-span-1 flex flex-col gap-5 py-2">
-                      <FormField
-                        control={form.control}
-                        name="startTimeStr"
-                        render={({ field }) => (
-                          <FormItem className="space-y-2">
-                            <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 px-1">
-                              <LucideClock className="h-3 w-3 text-emerald-500" />
-                              Horario
-                            </FormLabel>
-                            <Select
-                              onValueChange={(val) => {
-                                if (!val) return;
-                                field.onChange(val);
-                                if (inspectedIndex !== null && validationResults) {
-                                  const activeDateStr = inspectedDate || watchDateStr;
-                                  const [yyyy, mm, dd] = activeDateStr.split("-").map(Number);
-                                  const [h, m] = val.split(":").map(Number);
-                                  const newStartTime = new Date(yyyy, mm - 1, dd, h, m, 0, 0);
-                                  const currentDuration = form.getValues("durationMins");
-                                  const newEndTime = new Date(newStartTime.getTime() + currentDuration * 60000);
-                                  updateValidationRow(inspectedIndex, { startTime: newStartTime, endTime: newEndTime });
-                                }
-                              }}
-                              value={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger className="w-full h-14 bg-slate-50 border-slate-200 text-slate-900 font-bold rounded-2xl focus:ring-emerald-500/20 focus:border-emerald-500 transition-all px-4">
-                                  <SelectValue placeholder="Hora..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="rounded-xl border-slate-200">
-                                {timeSlots.map((t) => (
-                                  <SelectItem key={t} value={t} className="font-medium">{t}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="durationMins"
-                        render={({ field }) => (
-                          <FormItem className="space-y-2">
-                            <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 px-1">
-                              <LucideRepeat className="h-3 w-3 text-emerald-500" />
-                              Duración
-                            </FormLabel>
-                            <Select
-                              onValueChange={(val) => {
-                                if (!val) return;
-                                const mins = parseInt(val);
-                                field.onChange(mins);
-                                if (inspectedIndex !== null && validationResults) {
-                                  const startStr = form.getValues("startTimeStr");
-                                  if (startStr) {
-                                    const activeDateStr = inspectedDate || watchDateStr;
-                                    const [yyyy, mm, dd] = activeDateStr.split("-").map(Number);
-                                    const [h, m] = startStr.split(":").map(Number);
-                                    const newStartTime = new Date(yyyy, mm - 1, dd, h, m, 0, 0);
-                                    const newEndTime = new Date(newStartTime.getTime() + mins * 60000);
-                                    updateValidationRow(inspectedIndex, { startTime: newStartTime, endTime: newEndTime });
-                                  }
-                                }
-                              }}
-                              value={field.value?.toString()}
-                            >
-                              <FormControl>
-                                <SelectTrigger className="w-full h-14 bg-slate-50 border-slate-200 text-slate-900 font-bold rounded-2xl focus:ring-emerald-500/20 focus:border-emerald-500 transition-all px-4">
-                                  <SelectValue />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="rounded-xl border-slate-200">
-                                {[30, 60, 90, 120, 150, 180, 210, 240, 270, 300].map((mins) => (
-                                  <SelectItem key={mins} value={mins.toString()} className="font-medium">{mins} min</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormItem>
-                        )}
-                      />
-
-                      {appliedRateInfo && (
-                        <div className="space-y-2">
-                          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 px-1">
-                            <LucideTag className="h-3 w-3 text-emerald-500" />
-                            Tarifa Base
-                          </div>
-                          <div className="w-full h-14 flex items-center gap-3 px-4 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100/50">
-                            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                            <span className="text-xs font-bold truncate">
-                              ${appliedRateInfo.price} Por Módulo
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      <FormField
-                        control={form.control}
-                        name="price"
-                        render={({ field }) => (
-                          <FormItem className="space-y-2">
-                            <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 px-1">
-                              <LucideDollarSign className="h-3 w-3 text-emerald-500" />
-                              Precio Final
-                            </FormLabel>
-                            <FormControl>
-                              <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
-                                  <span className="text-emerald-600 font-bold text-lg">$</span>
-                                </div>
-                                <Input
-                                  type="number"
-                                  readOnly
-                                  className="w-full h-14 pl-10 bg-slate-50 border-slate-200 text-slate-900 font-bold text-lg rounded-2xl shadow-none cursor-default border-dashed"
-                                  {...field}
-                                  value={field.value ?? ""}
-                                />
-                              </div>
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Recurring Details */}
-                  {watchReservationType === "recurring" && (
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <FormField
-                        control={form.control}
-                        name="recurringEndDateStr"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Repetir Hasta</FormLabel>
-                            <Popover>
-                              <FormControl>
-                                <PopoverTrigger
-                                  render={
-                                    <Button
-                                      variant={"outline"}
-                                      className={cn(
-                                        "w-full h-11 bg-white border-slate-200 font-semibold rounded-xl justify-start text-left px-4 hover:bg-slate-50 transition-all",
-                                        !field.value && "text-slate-400"
-                                      )}
-                                    >
-                                      <LucideCalendarDays className="mr-2 h-4 w-4 text-emerald-600" />
-                                      {field.value ? (
-                                        format(new Date(field.value + 'T00:00:00'), "PPP", { locale: es })
-                                      ) : (
-                                        <span>Seleccionar fecha</span>
-                                      )}
-                                    </Button>
-                                  }
-                                />
-                              </FormControl>
-                              <PopoverContent className="w-auto p-0 rounded-2xl shadow-2xl border-slate-200" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value ? new Date(field.value + 'T00:00:00') : undefined}
-                                  onSelect={(date) => {
-                                    if (date) {
-                                      field.onChange(format(date, "yyyy-MM-dd"));
-                                    }
-                                  }}
-                                  initialFocus
-                                  locale={es}
-                                  className="rounded-2xl"
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="recurringDays"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Días de la semana</FormLabel>
-                            <div className="flex gap-2">
-                              {[
-                                { id: 1, label: "L" }, { id: 2, label: "M" }, { id: 3, label: "X" },
-                                { id: 4, label: "J" }, { id: 5, label: "V" }, { id: 6, label: "S" }, { id: 0, label: "D" }
-                              ].map(day => (
-                                <button
-                                  key={day.id}
-                                  type="button"
-                                  onClick={() => {
-                                    const active = field.value || [];
-                                    const next = active.includes(day.id)
-                                      ? active.filter((d: number) => d !== day.id)
-                                      : [...active, day.id];
-                                    field.onChange(next);
-                                  }}
-                                  className={cn(
-                                    "h-10 w-10 rounded-xl flex items-center justify-center text-xs font-bold transition-all border",
-                                    field.value?.includes(day.id)
-                                      ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-600/20"
-                                      : "bg-white border-slate-300 text-slate-700 hover:border-slate-400"
-                                  )}
-                                >
-                                  {day.label}
-                                </button>
-                              ))}
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  )}
-
-
-
-                  {/* Actions Area */}
-                  <div className="pt-4 flex flex-col gap-4">
-                    {!validationResults ? (
-                      <div className="flex flex-col gap-3">
-                        {(watchReservationType === "recurring" || watchReservationType === "single") && (
-                          <Button
-                            type="button"
-                            onClick={onSimulateBatch}
-                            disabled={isValidating || loading}
-                            className="h-14 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl shadow-slate-900/10 transition-all active:scale-95"
-                          >
-                            {isValidating ? (
-                              <><LucideLoader2 className="h-4 w-4 mr-2 animate-spin" /> Verificando...</>
-                            ) : (
-                              <><LucideSearch className="h-4 w-4 mr-2" /> Validar Disponibilidad</>
-                            )}
-                          </Button>
-                        )}
-                        {(watchReservationType === "single" || watchReservationType === "block") && (
-                          <Button
-                            type="submit"
-                            disabled={loading}
-                            className="h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl shadow-emerald-600/20 transition-all active:scale-95"
-                          >
-                            {loading ? (
-                              <><LucideLoader2 className="h-4 w-4 mr-2 animate-spin" /> Procesando...</>
-                            ) : (
-                              <><LucideCheckCircle2 className="h-4 w-4 mr-2" /> {watchReservationType === "block" ? "Confirmar Bloqueo" : "Confirmar Reserva"}</>
-                            )}
-                          </Button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-3 animate-in zoom-in-95 duration-200">
-                        <Button
-                          type="submit"
-                          disabled={loading || selectedCount === 0 || hasConflictsInSelected}
-                          className="h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl shadow-emerald-600/20 transition-all active:scale-95 disabled:bg-slate-300 disabled:shadow-none"
-                        >
-                          {loading ? (
-                            <><LucideLoader2 className="h-4 w-4 mr-2 animate-spin" /> Guardando...</>
-                          ) : hasConflictsInSelected ? (
-                            <><LucideAlertTriangle className="h-4 w-4 mr-2" /> Resuelve Conflictos</>
-                          ) : selectedCount === 0 ? (
-                            <><LucideSearch className="h-4 w-4 mr-2" /> Selecciona Fechas</>
-                          ) : (
-                            <><LucideCheckCircle2 className="h-4 w-4 mr-2" /> Finalizar {selectedCount} Reservas</>
-                          )}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={clearValidation}
-                          className="h-11 text-slate-500 font-bold uppercase tracking-widest text-[10px] hover:bg-slate-100 rounded-xl"
-                        >
-                          Modificar Parámetros
-                        </Button>
-                      </div>
+                      )} />
                     )}
                   </div>
+
+                  <div className="space-y-4">
+                    <FormField control={form.control} name="dateStr" render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Fecha de Reserva</FormLabel>
+                        <Popover>
+                          <PopoverTrigger
+                            render={
+                              <Button variant="outline" className="w-full h-14 justify-start text-left font-bold rounded-2xl border-slate-200 bg-white/50 hover:bg-white hover:border-emerald-500/50 hover:shadow-sm transition-all px-4 group">
+                                <div className="size-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors mr-3">
+                                  <LucideCalendarDays className="size-4" />
+                                </div>
+                                {watchDateStr ? format(new Date(watchDateStr + 'T12:00:00'), "PPP", { locale: es }) : "Seleccionar fecha"}
+                              </Button>
+                            }
+                          />
+                          <PopoverContent className="w-auto p-0 rounded-3xl overflow-hidden border-none shadow-2xl" align="start">
+                            <Calendar 
+                              mode="single" 
+                              selected={watchDateStr ? new Date(watchDateStr + 'T12:00:00') : undefined} 
+                              onSelect={(date: any) => { if (date) { form.setValue("dateStr", format(date, "yyyy-MM-dd"), { shouldDirty: true }); clearValidation(); } }} 
+                              initialFocus 
+                              locale={es} 
+                              classNames={calendarClassNames as any}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </FormItem>
+                    )} />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField control={form.control} name="startTimeStr" render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Hora</FormLabel>
+                          <Select onValueChange={(val) => { if (val) { field.onChange(val); clearValidation(); } }} value={field.value ?? ""}>
+                            <FormControl>
+                              <SelectTrigger className="h-14 text-sm font-bold rounded-2xl border-slate-200 bg-white/50 hover:bg-white hover:border-emerald-500/50 hover:shadow-sm focus:ring-emerald-500/10 px-4 group">
+                                <div className="flex items-center gap-3">
+                                  <div className="size-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                                    <LucideClock className="size-4" />
+                                  </div>
+                                  <SelectValue placeholder="--:--" />
+                                </div>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="rounded-[24px] border-slate-100 shadow-2xl p-2 max-h-[300px]">
+                              {timeSlots.map((t) => (
+                                <SelectItem key={t} value={t} className="rounded-xl py-2.5 px-3 text-sm font-bold focus:bg-emerald-50 focus:text-emerald-700 mb-1">
+                                  {t}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="durationMins" render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Duración</FormLabel>
+                          <Select onValueChange={(val) => { if (val) { field.onChange(parseInt(val)); clearValidation(); } }} value={field.value?.toString() ?? ""}>
+                            <FormControl>
+                              <SelectTrigger className="h-14 text-sm font-bold rounded-2xl border-slate-200 bg-white/50 hover:bg-white hover:border-emerald-500/50 hover:shadow-sm focus:ring-emerald-500/10 px-4 group">
+                                <div className="flex items-center gap-3">
+                                  <div className="size-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                                    <LucideRepeat className="size-4" />
+                                  </div>
+                                  <SelectValue placeholder="90 min">
+                                    {field.value ? `${field.value} min` : "90 min"}
+                                  </SelectValue>
+                                </div>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="rounded-[24px] border-slate-100 shadow-2xl p-2">
+                              {[30, 60, 90, 120, 150, 180].map((m) => (
+                                <SelectItem key={m} value={m.toString()} className="rounded-xl py-2.5 px-3 text-sm font-bold focus:bg-emerald-50 focus:text-emerald-700 mb-1">
+                                  {m} min
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )} />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100">
+                      {/* 
+                        Para reservas recurrentes mantenemos el flujo de simulación.
+                        Para reservas simples o bloqueos, permitimos confirmación directa.
+                      */}
+                      {(watchReservationType === "single" || watchReservationType === "block") ? (
+                        <Button 
+                          type="submit" 
+                          disabled={loading}
+                          className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+                        >
+                          {loading ? (
+                            <LucideLoader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <>
+                              <LucideCheckCircle2 className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                              <span className="tracking-tight">CONFIRMAR {watchReservationType === "block" ? "BLOQUEO" : "RESERVA"}</span>
+                            </>
+                          )}
+                        </Button>
+                      ) : (
+                        // Flujo para Reservas Recurrentes
+                        !validationResults ? (
+                          <Button 
+                            type="button" 
+                            onClick={onSimulateBatch}
+                            disabled={isValidating}
+                            className="w-full h-14 bg-slate-950 hover:bg-slate-900 text-white font-bold rounded-2xl shadow-lg shadow-slate-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+                          >
+                            {isValidating ? (
+                              <LucideLoader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              <>
+                                <LucideSparkles className="h-5 w-5 group-hover:rotate-12 transition-transform text-emerald-400" />
+                                <span className="tracking-tight">CONSULTAR DISPONIBILIDAD</span>
+                              </>
+                            )}
+                          </Button>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="bg-emerald-50 text-emerald-700 p-3 rounded-xl text-xs font-medium flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+                              <LucideCheck className="size-4 shrink-0" />
+                              Validación completada. Revisa los resultados antes de confirmar.
+                            </div>
+                            <Button 
+                              type="submit" 
+                              disabled={loading}
+                              className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+                            >
+                              {loading ? (
+                                <LucideLoader2 className="h-5 w-5 animate-spin" />
+                              ) : (
+                                <>
+                                  <LucideCheckCircle2 className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                                  <span className="tracking-tight">CONFIRMAR {validationResults.length} SESIONES</span>
+                                </>
+                              )}
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              onClick={clearValidation} 
+                              className="w-full h-10 text-slate-500 font-semibold hover:bg-slate-50 rounded-xl"
+                            >
+                              Modificar parámetros
+                            </Button>
+                          </div>
+                        )
+                      )}
+                    </div>
                 </form>
               </Form>
             </div>
 
-            {/* Middle Column: Visual Interaction */}
-            <div className="bg-white p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar border-r border-slate-300/80">
-              {/* Visual Grid Section */}
-              <div className="space-y-6">
-                <div className="flex items-end justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                      <LucideCalendarDays className="h-4 w-4 text-emerald-600" />
-                      {inspectedIndex !== null ? `Cancha: ${gridCourt?.name}` : "Disponibilidad del Club"}
-                      {isPreviewLoading && <LucideLoader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />}
-                    </h3>
-
-                    {inspectedIndex !== null && validationResults && (
-                      <p className={cn(
-                        "text-[9px] font-bold uppercase tracking-tighter flex items-center gap-1.5",
-                        validationResults[inspectedIndex].status === 'conflict' ? "text-amber-600" : "text-emerald-600"
-                      )}>
-                        <span className={cn(
-                          "h-1 w-1 rounded-full animate-pulse",
-                          validationResults[inspectedIndex].status === 'conflict' ? "bg-amber-500" : "bg-emerald-500"
-                        )} />
-                        {validationResults[inspectedIndex].status === 'conflict'
-                          ? `Validando Conflicto: ${validationResults[inspectedIndex].dateStr}`
-                          : `Inspeccionando: ${validationResults[inspectedIndex].dateStr}`
-                        }
-                      </p>
-                    )}
+            <div className="p-8 flex flex-col h-full overflow-hidden">
+              <div className="space-y-6 flex flex-col h-full">
+                <div className="flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="size-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">Mapa de Disponibilidad</h3>
                   </div>
                   {watchStartTime && (
-                    <div className="bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-lg shadow-emerald-600/20 flex items-center gap-3 animate-in fade-in zoom-in-95">
-                      <span className="text-lg font-black tracking-tight">{watchStartTime} — {endTime}</span>
-                      <div className="h-4 w-px bg-white/20" />
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase">{watchDuration}m</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            // Si estamos inspeccionando una fila de resultados -> SOLO LIMPIAR ESA FILA
-                            if (inspectedIndex !== null && validationResults) {
-                              updateValidationRow(inspectedIndex, {
-                                selected: false,
-                                status: 'conflict',
-                                courtName: 'Sin Selección'
-                              });
-                              // También limpiamos el form para feedback visual en la grilla
-                              form.setValue("startTimeStr", "", { shouldDirty: true });
-                            } else {
-                              // Caso normal: Limpieza global del formulario
-                              form.setValue("startTimeStr", "", { shouldDirty: true });
-                              form.setValue("durationMins", 90, { shouldDirty: true });
-                              clearValidation();
-                            }
-                          }}
-                          className="h-5 w-5 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center transition-colors"
-                        >
-                          <LucideX className="h-3 w-3" />
-                        </button>
+                    <div className="flex items-center gap-3 bg-white border border-slate-100 px-4 py-2 rounded-2xl shadow-sm animate-in fade-in zoom-in-95">
+                      <LucideClock className="size-3.5 text-emerald-600" />
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-slate-900 leading-none">{watchStartTime} — {endTime}</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">{watchDuration} minutos</span>
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="bg-white rounded-3xl p-4 border border-slate-300 shadow-sm relative overflow-hidden min-h-[400px]">
-                  {isPreviewLoading && (
-                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center gap-3 animate-in fade-in duration-300">
-                      <div className="h-10 w-10 rounded-full border-4 border-slate-100 border-t-emerald-500 animate-spin shadow-lg" />
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sincronizando Disponibilidad...</span>
-                    </div>
-                  )}
-
-                  <CourtTimeGrid
-                    court={gridCourt}
-                    isGlobalView={watchCourtId === "auto"}
-                    allCourts={activeCourts}
-                    timeSlots={timeSlots}
-                    isSlotBooked={(c, t) => {
-                      const dateStr = inspectedDate || watchDateStr;
-                      if (watchCourtId === "auto") {
-                        // Global view: A slot is 'booked' if ALL active courts are occupied
-                        return activeCourts.length > 0 && activeCourts.every(court => isSlotBooked(court, t, dateStr));
-                      }
-                      // Single court view
-                      if (!c || c.id === "auto") return false;
-                      return isSlotBooked(c, t, dateStr);
-                    }}
-                    selectedTime={watchStartTime}
-                    selectedDurationMins={form.watch("durationMins")}
-                    onSlotClick={(clickedCourt, time, booked) => {
-                      if (booked) return;
-
-                      const parseHmMinsLocal = (t: string) => {
-                        if (!t) return 0;
-                        const [h, m] = t.split(":").map(Number);
-                        return h * 60 + m;
-                      };
-
-                      const clickedMins = parseHmMinsLocal(time);
-                      const currentStart = form.getValues("startTimeStr");
-                      const currentDuration = form.getValues("durationMins");
-
-                      let nextStart = (currentStart === time) ? "" : time;
-                      let nextDuration = currentDuration;
-
-                      // Caso A: No hay inspección -> Flujo estándar de nueva reserva
-                      if (inspectedIndex === null) {
-                        clearValidation();
-                        form.setValue("startTimeStr", nextStart, { shouldValidate: true, shouldDirty: true });
-                        form.setValue("durationMins", nextDuration, { shouldValidate: true, shouldDirty: true });
-                        // We stay in 'auto' mode during the selection phase to show global availability
-                        // form.setValue("courtId", clickedCourt.id, { shouldValidate: true, shouldDirty: true });
-                      }
-                      // Caso B: Estamos inspeccionando una fila de resultados -> MODIFICAR SOLO ESA FILA
-                      else if (validationResults && nextStart) {
-                        const activeDateStr = inspectedDate || watchDateStr;
-                        const [yyyy, mm, dd] = activeDateStr.split("-").map(Number);
-                        const [h, m] = nextStart.split(":").map(Number);
-                        const newStartTime = new Date(yyyy, mm - 1, dd, h, m, 0, 0);
-                        const newEndTime = new Date(newStartTime.getTime() + nextDuration * 60000);
-
-                        updateValidationRow(inspectedIndex, {
-                          startTime: newStartTime,
-                          endTime: newEndTime,
-                          courtId: clickedCourt.id,
-                          courtName: clickedCourt.name
-                        });
-
-                        // Sincronizamos el form para feedback visual inmediato en la grilla
-                        form.setValue("startTimeStr", nextStart, { shouldDirty: true });
-                        form.setValue("durationMins", nextDuration, { shouldDirty: true });
-                        form.setValue("courtId", clickedCourt.id, { shouldDirty: true });
-                      }
-                    }}
-                  />
+                <div className="flex-1 min-h-0 bg-white rounded-[24px] border border-slate-100 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] overflow-hidden relative group">
+                  <div className="h-full overflow-y-auto p-4 custom-scrollbar bg-gradient-to-b from-white to-slate-50/30">
+                    <CourtTimeGrid 
+                      court={gridCourt} 
+                      isGlobalView={watchCourtId === "auto"} 
+                      allCourts={activeCourts} 
+                      timeSlots={timeSlots} 
+                      isSlotBooked={(c, t) => {
+                        const dateStr = watchDateStr || format(new Date(), "yyyy-MM-dd");
+                        return isSlotBooked(c, t, dateStr);
+                      }} 
+                      selectedTime={watchStartTime} 
+                      selectedDurationMins={watchDuration} 
+                      onSlotClick={(c, t) => { 
+                        form.setValue("courtId", c.id); 
+                        form.setValue("startTimeStr", t); 
+                      }} 
+                    />
+                  </div>
                 </div>
-                <div className="flex flex-col items-center gap-5 mt-4">
-                  <p className="text-[10px] text-center font-bold text-slate-500 uppercase tracking-widest">
-                    Toca un bloque para iniciar • Toca un bloque posterior para extender
+
+                {/* Legend Premium */}
+                <div className="flex items-center justify-between px-2 py-4 shrink-0 border-t border-slate-100/50 mt-auto">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <span className="size-1 rounded-full bg-slate-300" />
+                    Selección inteligente de turnos
                   </p>
-
-                  {watchCourtId === "auto" && activeCourts.length > 0 && (
-                    <div className="bg-slate-50/80 border border-slate-200/60 px-5 py-3 rounded-2xl flex flex-wrap justify-center items-center gap-6 shadow-sm backdrop-blur-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="flex gap-1 items-center bg-white p-1.5 px-2 rounded-lg border border-slate-100 shadow-sm">
-                          {Array.from({ length: Math.min(3, activeCourts.length) }).map((_, i) => (
-                            <div key={`green-${i}`} className="h-1.5 w-3.5 bg-emerald-500 rounded-full" />
-                          ))}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest leading-none mb-1">Club Vacío</span>
-                          <span className="text-[9px] font-bold text-slate-400 leading-none">Todas las canchas libres</span>
-                        </div>
-                      </div>
-
-                      <div className="hidden sm:block w-px h-6 bg-slate-200" />
-
-                      <div className="flex items-center gap-3">
-                        <div className="flex gap-1 items-center bg-white p-1.5 px-2 rounded-lg border border-slate-100 shadow-sm">
-                          {Array.from({ length: Math.min(3, activeCourts.length) }).map((_, i) => (
-                            <div key={`mix-${i}`} className={cn("h-1.5 w-3.5 rounded-full", i === 0 ? "bg-slate-300" : "bg-emerald-500")} />
-                          ))}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest leading-none mb-1">Ocupación Parcial</span>
-                          <span className="text-[9px] font-bold text-slate-400 leading-none">Gris = Ocupada, Verde = Libre</span>
-                        </div>
-                      </div>
-
-                      <div className="hidden sm:block w-px h-6 bg-slate-200" />
-
-                      <div className="flex items-center gap-3">
-                        <div className="flex gap-1 items-center bg-white p-1.5 px-2 rounded-lg border border-slate-100 shadow-sm">
-                          {Array.from({ length: Math.min(3, activeCourts.length) }).map((_, i) => (
-                            <div key={`gray-${i}`} className="h-1.5 w-3.5 bg-slate-300 rounded-full" />
-                          ))}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest leading-none mb-1">Club Lleno</span>
-                          <span className="text-[9px] font-bold text-amber-600/70 leading-none">Sin canchas disponibles</span>
-                        </div>
-                      </div>
+                  <div className="flex items-center gap-5">
+                    <div className="flex items-center gap-2">
+                      <div className="size-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
+                      <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Libre</span>
                     </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Results Section */}
-            <div className="bg-slate-100/50 p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
-              {/* Dynamic Results Section */}
-              <div className={cn(
-                "transition-all duration-500",
-                validationResults ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
-              )}>
-                {validationResults && (
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                        <LucideCheckCircle2 className="h-4 w-4 text-emerald-600" />
-                        Disponibilidad {watchReservationType === "recurring" ? "Proyectada" : "Confirmada"}
-                      </h3>
-                      <div className="flex gap-2">
-                        <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">
-                          {selectedCount} Seleccionadas
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="max-h-[800px] overflow-y-auto custom-scrollbar border-t border-slate-200">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-slate-100 border-b border-slate-200">
-                            <th className="px-4 py-3 text-[10px] font-bold text-slate-700 uppercase tracking-widest">Fecha</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-slate-700 uppercase tracking-widest">Estado</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-slate-700 uppercase tracking-widest">Hora</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-slate-700 uppercase tracking-widest text-right">#</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {validationResults.map((result, idx) => (
-                            <tr
-                              key={idx}
-                              onClick={() => handleInspectRow(idx)}
-                              className={cn(
-                                "transition-all cursor-pointer hover:bg-slate-200/50",
-                                !result.selected && "opacity-40 grayscale",
-                                result.status === 'conflict' && "bg-amber-50/50",
-                                inspectedIndex === idx && "bg-emerald-50 ring-1 ring-inset ring-emerald-500/20"
-                              )}>
-                              {/* 1. FECHA */}
-                              <td className="px-4 py-3">
-                                <div className="flex flex-col">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                                    {new Date(result.startTime).toLocaleDateString('es-AR', { weekday: 'long' })}
-                                  </span>
-                                  <span className="text-xs font-black text-slate-900">{result.dateStr}</span>
-                                </div>
-                              </td>
-
-                              {/* 2. CANCHA / RESOLUCIÓN */}
-                              <td className="px-4 py-3">
-                                <div className="flex flex-col gap-1">
-                                  <div className="flex flex-col gap-1">
-                                    <span className={cn(
-                                      "text-[10px] font-bold uppercase tracking-tight",
-                                      result.status === 'conflict' ? "text-amber-600" : "text-emerald-600"
-                                    )}>
-                                      {result.status === 'conflict' ? "Conflicto" : "Cancha Asignada"}
-                                    </span>
-
-                                    <Select onValueChange={(val) => {
-                                      // 1. Check if it's an automatic alternative
-                                      const alt = result.alternatives.find((a: any) => a.label === val);
-                                      if (alt) {
-                                        updateValidationRow(idx, alt);
-                                        // If inspecting this row, update global form state too
-                                        if (inspectedIndex === idx) {
-                                          const s = new Date(alt.startTime);
-                                          const e = new Date(alt.endTime);
-                                          form.setValue("startTimeStr", s.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
-                                          form.setValue("durationMins", Math.round((e.getTime() - s.getTime()) / 60000));
-                                          form.setValue("courtId", alt.courtId);
-                                        }
-                                        return;
-                                      }
-                                      // 2. Check if it's a manual court selection
-                                      const court = courts.find((c: any) => c.id === val);
-                                      if (court) {
-                                        updateValidationRow(idx, { courtId: court.id, courtName: court.name });
-                                        if (inspectedIndex === idx) {
-                                          form.setValue("courtId", court.id);
-                                        }
-                                      }
-                                    }}>
-                                      <SelectTrigger className={cn(
-                                        "h-auto p-0 border-none bg-transparent shadow-none rounded-lg -ml-1 px-1 w-full justify-start transition-all",
-                                        result.status === 'conflict' ? "hover:bg-amber-100/50" : "hover:bg-slate-100/50"
-                                      )}>
-                                        <div className={cn(
-                                          "flex items-center gap-2 text-xs font-black truncate max-w-[150px]",
-                                          result.status === 'conflict' ? "text-amber-700" : "text-slate-900"
-                                        )}>
-                                          {result.status === 'conflict' && result.courtId === 'auto' ? (
-                                            <>⚠️ Todas Ocupadas</>
-                                          ) : (
-                                            <>{result.courtId === 'auto' ? 'Asignación Automática' : result.courtName}</>
-                                          )}
-                                          <LucideChevronDown className={cn(
-                                            "h-3 w-3",
-                                            result.status === 'conflict' ? "text-amber-400" : "text-slate-400"
-                                          )} />
-                                        </div>
-                                      </SelectTrigger>
-                                      <SelectContent className="rounded-2xl border-slate-200 shadow-2xl min-w-[320px] p-2 overflow-hidden bg-white/95 backdrop-blur-md">
-                                        {result.alternatives.length > 0 && (
-                                          <>
-                                            <div className="px-3 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50 rounded-xl mb-2 border border-slate-100 flex items-center gap-2">
-                                              <LucideClock className="h-3 w-3" />
-                                              Sugerencias para el {result.dateStr}
-                                            </div>
-                                            <div className="space-y-1 mb-3">
-                                              {result.alternatives.map((alt: any, aIdx: number) => {
-                                                const altDate = new Date(alt.startTime);
-                                                const timeStr = altDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                                return (
-                                                  <SelectItem key={aIdx} value={alt.label} className="rounded-xl py-2.5 px-3 cursor-pointer">
-                                                    <div className="flex items-center justify-between w-full gap-4">
-                                                      <div className="flex items-center gap-3">
-                                                        <div className={cn(
-                                                          "h-8 w-8 rounded-lg flex items-center justify-center",
-                                                          result.status === 'conflict' ? "bg-amber-50" : "bg-slate-100"
-                                                        )}>
-                                                          <LucideClock className={cn("h-4 w-4", result.status === 'conflict' ? "text-amber-600" : "text-slate-500")} />
-                                                        </div>
-                                                        <div className="flex flex-col text-left">
-                                                          <span className="text-[11px] font-black text-slate-900 leading-none mb-1">{timeStr}</span>
-                                                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{alt.courtName}</span>
-                                                        </div>
-                                                      </div>
-                                                      <div className={cn(
-                                                        "px-2 py-0.5 rounded-md text-white text-[9px] font-black uppercase tracking-wider",
-                                                        result.status === 'conflict' ? "bg-emerald-600" : "bg-slate-900"
-                                                      )}>
-                                                        {result.status === 'conflict' ? "Disponible" : `${100 - alt.usagePct}% Libre`}
-                                                      </div>
-                                                    </div>
-                                                  </SelectItem>
-                                                );
-                                              })}
-                                            </div>
-                                          </>
-                                        )}
-
-                                        <div className="px-3 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50 rounded-xl mb-2 border border-slate-100 flex items-center gap-2">
-                                          <LucideSearch className="h-3 w-3" />
-                                          Selección Manual
-                                        </div>
-                                        <div className="space-y-1">
-                                          {courts.map((court: any) => (
-                                            <SelectItem key={court.id} value={court.id} className="rounded-xl py-2.5 px-3 cursor-pointer">
-                                              <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center">
-                                                  <LucideCalendarDays className="h-4 w-4 text-slate-500" />
-                                                </div>
-                                                <div className="flex flex-col text-left">
-                                                  <span className="text-[11px] font-black text-slate-900 leading-none mb-1">{court.name}</span>
-                                                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Cambiar Foco</span>
-                                                </div>
-                                              </div>
-                                            </SelectItem>
-                                          ))}
-                                        </div>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div className="flex items-center gap-1.5 mt-0.5">
-                                    <div className="h-1 w-10 bg-slate-200 rounded-full overflow-hidden">
-                                      <div
-                                        className={cn(
-                                          "h-full transition-all duration-700",
-                                          result.usagePct > 80 ? "bg-red-500" : result.usagePct > 50 ? "bg-amber-500" : "bg-emerald-500"
-                                        )}
-                                        style={{ width: `${result.usagePct}%` }}
-                                      />
-                                    </div>
-                                    <span className="text-[9px] font-bold text-slate-400">{result.usagePct}%</span>
-                                  </div>
-                                </div>
-                              </td>
-
-                              {/* 3. HORA */}
-                              <td className="px-4 py-3">
-                                <span className="text-xs font-black text-slate-900">
-                                  {new Date(result.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                              </td>
-
-                              {/* 4. SELECCIÓN */}
-                              <td className="px-4 py-3 text-right">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleResultSelection(idx);
-                                  }}
-                                  className={cn(
-                                    "h-8 w-8 rounded-xl flex items-center justify-center transition-all ml-auto",
-                                    result.selected
-                                      ? (result.status === 'ok' ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "bg-amber-500 text-white shadow-lg shadow-amber-500/20 animate-pulse")
-                                      : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-                                  )}
-                                >
-                                  {result.selected ? <LucideCheck className="h-4 w-4" /> : <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />}
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Batch Summary */}
-                    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Resumen de Operación</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-black text-slate-900">{selectedCount} Sesiones</span>
-                          <span className="text-[10px] font-bold text-slate-400">•</span>
-                          {hasConflictsInSelected ? (
-                            <span className="text-[10px] font-bold text-amber-600 uppercase tracking-tighter flex items-center gap-1">
-                              <LucideAlertTriangle className="h-3 w-3" />
-                              Hay conflictos seleccionados
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter flex items-center gap-1">
-                              <LucideCheck className="h-3 w-3" />
-                              Sin conflictos
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Monto Total</span>
-                        <div className="text-xl font-black text-slate-900 tracking-tight">
-                          {formatArsCurrency(selectedCount * currentPrice)}
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <div className="size-2 rounded-full bg-slate-200" />
+                      <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Ocupada</span>
                     </div>
                   </div>
-                )}
-              </div>
-
-              {!validationResults && (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-slate-200 rounded-[40px] bg-white/30">
-                  <div className="h-16 w-16 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-300 mb-4">
-                    <LucideSearch className="h-8 w-8" />
-                  </div>
-                  <h4 className="text-slate-900 font-bold uppercase tracking-widest text-[10px] mb-2">Motor de Reserva Listo</h4>
-                  <p className="text-slate-500 text-[10px] max-w-[240px] leading-relaxed">
-                    Completa los datos y valida la disponibilidad para proyectar las reservas y resolver conflictos inteligentes.
-                  </p>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>

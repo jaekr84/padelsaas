@@ -175,7 +175,9 @@ export function useReservationForm({
   const updateValidationRow = (index: number, newData: any) => {
     if (!validationResults) return;
     const next = [...validationResults];
-    next[index] = { ...next[index], ...newData, status: 'ok', selected: true };
+    // Respect status from newData, otherwise fallback to existing or 'ok'
+    const finalStatus = newData.status !== undefined ? newData.status : (next[index].status || 'ok');
+    next[index] = { ...next[index], ...newData, status: finalStatus, selected: true };
     setValidationResults(next);
 
     // If it's a single reservation, sync with the main form
