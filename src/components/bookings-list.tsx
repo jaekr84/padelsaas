@@ -29,9 +29,11 @@ interface BookingsListProps {
   globalDate?: string;
 }
 
+import { getTodayArgentina } from "@/lib/date-utils";
+
 export function BookingsList({ bookings, globalDate }: BookingsListProps) {
   const router = useRouter();
-  const rawDateStr = globalDate || new Date().toISOString().split("T")[0];
+  const rawDateStr = globalDate || getTodayArgentina();
   const [_y, _m, _d] = rawDateStr.split('-').map(Number);
   const activeDateObj = new Date(_y, _m - 1, _d);
 
@@ -58,7 +60,12 @@ export function BookingsList({ bookings, globalDate }: BookingsListProps) {
   };
 
   const formatTime = (date: Date | string) => {
-    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const d = new Date(date);
+    return new Intl.DateTimeFormat("es-AR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "America/Argentina/Buenos_Aires",
+    }).format(d);
   };
 
   const getStatusBadge = (status: string) => {

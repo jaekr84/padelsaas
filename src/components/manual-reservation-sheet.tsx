@@ -55,13 +55,12 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useState } from "react";
 
-// Utilities
+import { parseArgentineDate } from "@/lib/date-utils";
+
 export const isSlotBooked = (court: any, time: string, dateStr: string) => {
   if (!court.bookings || !Array.isArray(court.bookings)) return false;
 
-  const [h, m] = time.split(":").map(Number);
-  const [y, mon, d] = dateStr.split("-").map(Number);
-  const slotTime = new Date(y, mon - 1, d, h, m, 0, 0);
+  const slotTime = parseArgentineDate(dateStr, time);
 
   return court.bookings.some((b: any) => {
     try {

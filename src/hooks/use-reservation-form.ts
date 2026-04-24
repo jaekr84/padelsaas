@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createReservationAction, createBatchReservationsAction, validateBatchReservationsAction } from "@/lib/actions/reservation-actions";
 import { capitalize } from "@/lib/formatters";
+import { parseArgentineDate, isPastArgentina } from "@/lib/date-utils";
 
 export const reservationFormSchema = z.object({
   reservationType: z.enum(["single", "recurring", "block"]).default("single"),
@@ -114,9 +115,7 @@ export function useReservationForm({
     const values = form.getValues();
     setIsValidating(true);
     try {
-      const [hours, minutes] = values.startTimeStr.split(":").map(Number);
-      const [yyyy, mm, dd] = values.dateStr.split("-").map(Number);
-      const startDateTime = new Date(yyyy, mm - 1, dd, hours, minutes, 0, 0);
+      const startDateTime = parseArgentineDate(values.dateStr, values.startTimeStr);
 
       const batchDates = [];
 
@@ -216,10 +215,7 @@ export function useReservationForm({
   const onSubmit = async (values: ReservationFormValues) => {
     setLoading(true);
     try {
-      const [hours, minutes] = values.startTimeStr.split(":").map(Number);
-      const [yyyy, mm, dd] = values.dateStr.split("-").map(Number);
-      
-      const startDateTime = new Date(yyyy, mm - 1, dd, hours, minutes, 0, 0);
+      const startDateTime = parseArgentineDate(values.dateStr, values.startTimeStr);
 
       const endDateTime = new Date(startDateTime);
       endDateTime.setMinutes(startDateTime.getMinutes() + values.durationMins);
