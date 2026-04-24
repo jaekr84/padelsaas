@@ -17,6 +17,9 @@ interface CourtTimeGridProps {
   onSlotClick?: (court: TimeGridCourt, time: string, booked: boolean) => void;
   selectedTime?: string;
   selectedDurationMins?: number;
+  isGlobalView?: boolean;
+  allCourts?: TimeGridCourt[];
+  dateStr?: string;
 }
 
 export function CourtTimeGrid({
@@ -26,6 +29,9 @@ export function CourtTimeGrid({
   onSlotClick,
   selectedTime,
   selectedDurationMins = 30,
+  isGlobalView = false,
+  allCourts = [],
+  dateStr
 }: CourtTimeGridProps) {
   
   // Helper to parse "HH:MM" into minutes from start of day
@@ -60,9 +66,37 @@ export function CourtTimeGrid({
             )}
           >
             {time}
+            
+            {/* Ocupación Visual (Solo en modo Global) */}
+            {isGlobalView && !booked && allCourts.length > 0 && (
+              <div className="absolute bottom-1 flex gap-0.5 px-1 w-full justify-center">
+                {allCourts.map((c, i) => {
+                  const isOccupied = c.bookings?.some(b => {
+                    try {
+                      const bStart = new Date(b.startTime);
+                      const bEnd = new Date(b.endTime);
+                      const slotMins = parseTime(time);
+                      const startMins = bStart.getHours() * 60 + bStart.getMinutes();
+                      const endMins = bEnd.getHours() * 60 + bEnd.getMinutes();
+                      return slotMins >= startMins && slotMins < endMins;
+                    } catch (e) { return false; }
+                  });
+                  return (
+                    <div 
+                      key={i} 
+                      className={cn(
+                        "h-0.5 flex-1 rounded-full transition-colors",
+                        isOccupied ? "bg-slate-300" : "bg-emerald-400 shadow-[0_0_2px_rgba(52,211,153,0.5)]"
+                      )} 
+                    />
+                  );
+                })}
+              </div>
+            )}
+
             {booked && (
               <div className="absolute top-1 right-1">
-                <div className="h-1 w-1 rounded-full bg-slate-300" />
+                <div className="h-1 w-1 rounded-full bg-slate-400 shadow-sm" />
               </div>
             )}
             {!booked && isSelected && (

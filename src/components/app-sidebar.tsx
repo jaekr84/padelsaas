@@ -50,23 +50,32 @@ export function AppSidebar() {
   const { data: session } = useSession();
   const [centers, setCenters] = useState<any[]>([]);
   const [courts, setCourts] = useState<any[]>([]);
+  const [activeCenter, setActiveCenter] = useState<any>(null);
   const [isResModalOpen, setIsResModalOpen] = useState(false);
   
   const isAdmin = session?.user?.role === "admin";
-  const activeCenterId = (session?.user as any)?.centerId;
-  const activeCenter = centers.find(c => c.id === activeCenterId);
+  const activeCenterId = activeCenter?.id;
 
   useEffect(() => {
-    async function loadCenters() {
+    async function loadData() {
       try {
-        const data = await getCentersAction();
-        setCenters(data);
+        const [centersData, currentCenter] = await Promise.all([
+          getCentersAction(),
+          import("@/lib/actions/center").then(m => m.getCenterAction())
+        ]);
+        setCenters(centersData);
+        if (currentCenter) {
+          setActiveCenter(currentCenter);
+        } else if (centersData.length > 0) {
+          // Fallback to the main branch (first created) if absolutely no context
+          setActiveCenter(centersData[0]);
+        }
       } catch (error) {
-        console.error("Error loading centers:", error);
+        console.error("Error loading center data:", error);
       }
     }
     if (session?.user?.id) {
-      loadCenters();
+      loadData();
     }
   }, [session]);
 

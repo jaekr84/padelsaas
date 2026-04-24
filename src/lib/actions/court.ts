@@ -8,12 +8,12 @@ import { revalidatePath } from "next/cache";
 
 import { cookies } from "next/headers";
 
-export async function getCourtsAction(dateStr?: string) {
+export async function getCourtsAction(dateStr?: string, centerIdToFetch?: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const cookieStore = await cookies();
-  const activeCenterId = cookieStore.get("active_center_id")?.value;
+  const activeCenterId = centerIdToFetch || cookieStore.get("active_center_id")?.value;
 
   // Get the tenant for the user
   const userMember = await db.query.members.findFirst({
@@ -23,11 +23,11 @@ export async function getCourtsAction(dateStr?: string) {
   if (!userMember) throw new Error("No tenant found for user");
 
   // Get the center for this user (explicit cookie > assigned center > first one)
-  const centerIdToFetch = activeCenterId || session.user.centerId;
+  const finalCenterId = activeCenterId || session.user.centerId;
 
   const center = await db.query.centers.findFirst({
-    where: centerIdToFetch 
-      ? eq(centers.id, centerIdToFetch)
+    where: finalCenterId 
+      ? eq(centers.id, finalCenterId)
       : eq(centers.tenantId, userMember.tenantId),
     orderBy: (centers, { asc }) => [asc(centers.createdAt)],
   });

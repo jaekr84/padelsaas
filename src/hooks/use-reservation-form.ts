@@ -149,7 +149,7 @@ export function useReservationForm({
             rowEnd.setMinutes(rowStart.getMinutes() + values.durationMins);
             batchDates.push({
               courtId: values.courtId,
-              centerId: centerId,
+              centerId: centerId || center?.id, // Ensure we have a centerId
               guestName: values.guestName || "Cliente",
               price: values.price,
               startTime: rowStart,

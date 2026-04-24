@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import { LucideBuilding2, LucideCheckCircle2 } from "lucide-react";
 import { setActiveCenterAction } from "@/lib/actions/session";
@@ -18,12 +18,12 @@ interface Center {
   name: string;
 }
 
-export function CenterSwitcher({ 
-  centers, 
-  activeId 
-}: { 
-  centers: Center[]; 
-  activeId?: string 
+export function CenterSwitcher({
+  centers,
+  activeId
+}: {
+  centers: Center[];
+  activeId?: string
 }) {
   const router = useRouter();
   const [currentId, setCurrentId] = useState(activeId || centers[0]?.id);
@@ -33,7 +33,7 @@ export function CenterSwitcher({
     if (activeId && activeId !== currentId) {
       setCurrentId(activeId);
     }
-  }, [activeId, currentId]);
+  }, [activeId]);
 
   const handleSwitch = async (id: string) => {
     setLoading(true);
@@ -57,12 +57,13 @@ export function CenterSwitcher({
     );
   }
 
-  const currentCenterName = centers.find(c => c.id === currentId)?.name;
+  const currentCenter = centers.find(c => c.id === currentId);
+  const isMainBranch = centers.indexOf(currentCenter!) === 0;
 
   return (
     <div className="px-3 py-2 w-full">
-      <Select 
-        value={currentId || ""} 
+      <Select
+        value={currentId || ""}
         onValueChange={(val) => val && handleSwitch(val)}
         disabled={loading}
       >
@@ -70,12 +71,12 @@ export function CenterSwitcher({
           <div className="flex items-center gap-2 truncate">
             <LucideBuilding2 className="h-4 w-4 text-primary shrink-0" />
             <SelectValue placeholder="Seleccionar sede">
-              {currentCenterName || "Seleccionar sede"}
+              {currentCenter?.name || "Seleccionar sede"}
             </SelectValue>
           </div>
         </SelectTrigger>
         <SelectContent>
-          {centers.map((center) => (
+          {centers.map((center, index) => (
             <SelectItem key={center.id} value={center.id} className="cursor-pointer">
               <div className="flex items-center gap-2">
                 <span>{center.name}</span>

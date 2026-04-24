@@ -66,7 +66,7 @@ export async function getCentersAction() {
     with: {
       pricingSchedules: true,
     },
-    orderBy: (centers, { asc }) => [asc(centers.name)],
+    orderBy: (centers, { asc }) => [asc(centers.createdAt)],
   });
 
   return tenantCenters;
