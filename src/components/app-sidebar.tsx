@@ -23,7 +23,8 @@ import {
   LucideDumbbell,
   LucideCalendar,
   LucidePlusCircle,
-  LucidePlus
+  LucidePlus,
+  LucideRepeat
 } from "lucide-react";
 import { UserNav } from "@/components/user-nav";
 import Link from "next/link";
@@ -39,6 +40,7 @@ import { Button } from "./ui/button";
 const navItems = [
   { title: "Home", icon: LucideHome, href: "/home" },
   { title: "Reservas", icon: LucideCalendar, href: "/bookings" },
+  { title: "Fijas", icon: LucideRepeat, href: "/fixed-reservations" },
   { title: "Canchas", icon: LucideDumbbell, href: "/courts" },
   { title: "Jugadores", icon: LucideUsers, href: "/players" },
   { title: "Usuarios", icon: LucideUsers, href: "/users", adminOnly: true },
