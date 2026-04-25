@@ -6,9 +6,10 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
+  SelectGroup,
 } from "@/components/ui/select";
-import { LucideMapPin, LucideChevronDown, LucideActivity } from "lucide-react";
+import { LucideMapPin, LucideChevronDown } from "lucide-react";
 import { setActiveCenterAction } from "@/lib/actions/session";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -52,7 +53,7 @@ export function CenterSwitcher({
   };
 
   if (centers.length === 0) {
-    return <div className="h-10 w-full animate-pulse bg-slate-50 border border-slate-200" />;
+    return <div className="h-9 w-full animate-pulse bg-slate-100 border border-slate-200 rounded-sm" />;
   }
 
   const currentCenter = centers.find(c => c.id === currentId);
@@ -64,43 +65,47 @@ export function CenterSwitcher({
         onValueChange={(val) => val && handleSwitch(val)}
         disabled={loading}
       >
-        <SelectTrigger className="w-full h-10 bg-white border-slate-200 rounded-none hover:border-slate-400 transition-all px-3 focus:ring-0 shadow-sm">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 truncate">
-              <LucideMapPin className={cn(
-                "h-3.5 w-3.5 shrink-0 transition-colors",
-                loading ? "text-blue-600 animate-pulse" : "text-slate-400"
-              )} />
-              <SelectValue placeholder="SELECCIONAR SEDE">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-900 truncate">
-                  {currentCenter?.name || "SELECCIONAR SEDE"}
-                </span>
-              </SelectValue>
-            </div>
-            <LucideChevronDown className="h-3 w-3 text-slate-300 ml-2" />
+        <SelectTrigger className="w-full h-9 bg-white border border-slate-200 rounded-sm transition-none px-3 focus:ring-1 focus:ring-blue-800 shadow-none">
+          <div className="flex items-center gap-2.5 w-full">
+            <LucideMapPin className={cn(
+              "h-3.5 w-3.5 shrink-0 transition-colors",
+              loading ? "text-blue-800 animate-pulse" : "text-slate-400"
+            )} />
+            <SelectValue placeholder="SELECCIONAR SEDE">
+              <span className="text-[10px] font-bold uppercase tracking-tight text-slate-950 truncate">
+                {currentCenter?.name || "SELECCIONAR SEDE"}
+              </span>
+            </SelectValue>
+            <LucideChevronDown className="h-3.5 w-3.5 text-slate-300 ml-auto" />
           </div>
         </SelectTrigger>
-        <SelectContent className="rounded-none border-slate-200 p-0 shadow-2xl bg-white min-w-[200px]">
-          <div className="bg-slate-50 px-3 py-2 border-b border-slate-200">
-            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">Panel de Control / Ubicaciones</span>
-          </div>
-          {centers.map((center) => (
-            <SelectItem 
-                key={center.id} 
-                value={center.id} 
-                className={cn(
-                    "cursor-pointer rounded-none py-3 px-4 transition-colors border-l-2 border-l-transparent",
-                    "focus:bg-slate-950 focus:text-white",
-                    center.id === currentId && "bg-slate-50 border-l-blue-800 text-blue-800"
-                )}
-            >
-              <span className="text-[10px] font-black uppercase tracking-widest leading-none">
-                {center.name}
-              </span>
-            </SelectItem>
-          ))}
+        <SelectContent className="rounded-sm border border-slate-200 p-0 shadow-lg bg-white min-w-[200px] animate-none overflow-hidden">
+          <SelectGroup>
+            <div className="bg-slate-100 px-3 py-1.5 border-b border-slate-200">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Ubicaciones / Sedes</span>
+            </div>
+            {centers.map((center) => (
+              <SelectItem 
+                  key={center.id} 
+                  value={center.id} 
+                  className={cn(
+                      "relative flex items-center cursor-pointer rounded-none py-2.5 px-3 transition-colors border-b border-slate-50 last:border-b-0",
+                      "focus:bg-blue-800 focus:text-white",
+                      center.id === currentId && "bg-slate-50 border-l-2 border-l-blue-800 text-blue-800 font-medium"
+                  )}
+              >
+                <span className="text-[10px] font-bold uppercase tracking-tight">
+                  {center.name}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectGroup>
         </SelectContent>
       </Select>
     </div>
   );
 }
+
+
+
+

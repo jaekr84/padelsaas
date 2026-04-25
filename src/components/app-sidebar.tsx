@@ -112,24 +112,29 @@ export function AppSidebar() {
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r border-slate-200 shadow-none bg-white">
       <SidebarHeader className="p-4 space-y-4">
-        {/* Logo Terminal Area */}
-        <div className="flex items-center gap-3 px-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-slate-950 text-white shadow-[4px_4px_0px_rgba(30,64,175,1)]">
-            <LucideBox className="h-6 w-6" />
-          </div>
-          <div className="grid flex-1 text-left group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-black uppercase tracking-tighter text-slate-950 leading-none">Padel Industrial</span>
-            <div className="flex items-center gap-1.5 mt-1">
-              {isAdmin ? (
-                <LucideShieldAlert className="h-2.5 w-2.5 text-blue-800" />
-              ) : (
-                <LucideMonitor className="h-2.5 w-2.5 text-slate-400" />
-              )}
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
-                {isAdmin ? "Admin Console" : "Terminal Operativa"}
-              </span>
+        <div className="flex items-center justify-between px-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+          <div className="flex items-center gap-3 group-data-[collapsible=icon]:hidden">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-slate-950 text-white shadow-[4px_4px_0px_rgba(30,64,175,1)]">
+              <LucideBox className="h-6 w-6" />
+            </div>
+            <div className="grid flex-1 text-left">
+              <span className="text-sm font-black uppercase tracking-tighter text-slate-950 leading-none">Padel Industrial</span>
+              <div className="flex items-center gap-1.5 mt-1">
+                {isAdmin ? (
+                  <LucideShieldAlert className="h-2.5 w-2.5 text-blue-800" />
+                ) : (
+                  <LucideMonitor className="h-2.5 w-2.5 text-slate-400" />
+                )}
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {isAdmin ? "Admin Console" : "Terminal Operativa"}
+                </span>
+              </div>
             </div>
           </div>
+          <SidebarTrigger className={cn(
+            "h-8 w-8 border border-slate-200 rounded-none hover:bg-slate-950 hover:text-white transition-none",
+            "group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:bg-slate-950 group-data-[collapsible=icon]:text-white group-data-[collapsible=icon]:border-none"
+          )} />
         </div>
 
         {/* Center Switcher Container */}
@@ -140,12 +145,6 @@ export function AppSidebar() {
           />
         </div>
 
-        {/* Mini Sidebar Trigger */}
-        <div className="hidden group-data-[collapsible=icon]:flex justify-center pt-2">
-          <SidebarTrigger className="h-10 w-10 border border-slate-100 hover:bg-slate-50 transition-all rounded-none">
-            <LucideChevronRight className="h-4 w-4 text-slate-400" />
-          </SidebarTrigger>
-        </div>
       </SidebarHeader>
 
       <SidebarContent className="px-3 pt-4">
@@ -166,12 +165,12 @@ export function AppSidebar() {
                       "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:border-l-0",
                       pathname === item.href
                         ? "bg-slate-950 text-white border-l-blue-800 font-black shadow-lg shadow-blue-900/10"
-                        : "text-slate-500 border-l-transparent hover:bg-slate-50 hover:text-slate-950 hover:border-l-slate-200"
+                        : "text-slate-500 border-l-transparent hover:bg-slate-50 hover:border-l-slate-200"
                     )}
                   >
                     <item.icon className={cn(
                       "h-4 w-4 shrink-0",
-                      pathname === item.href ? "text-blue-400" : "text-slate-400 group-hover:text-slate-950"
+                      pathname === item.href ? "text-blue-400" : "text-slate-400"
                     )} />
                     <span className="ml-3 text-[10px] font-black uppercase tracking-widest group-data-[collapsible=icon]:hidden">
                       {item.title}
