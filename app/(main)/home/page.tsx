@@ -12,11 +12,62 @@ import {
   LucideUsers, 
   LucideTarget 
 } from "lucide-react";
+import { db } from "@/db";
+import { bookings, sales, users, courts } from "@/db/schema";
+import { count, sql, and, gte, lte, asc, desc } from "drizzle-orm";
+import { formatCurrency, formatTime } from "@/lib/formatters";
 
 export default async function HomePage() {
   const session = await auth();
   const userName = session?.user?.name?.split(" ")[0] || "Administrador";
 
+  // 1. Reservas de Hoy
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const [bookingsToday] = await db
+    .select({ count: count() })
+    .from(bookings)
+    .where(
+      and(
+        gte(bookings.startTime, today),
+        lte(bookings.startTime, tomorrow)
+      )
+    );
+
+  // 2. Ingresos Mes Corriente
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const [salesMonth] = await db
+    .select({ total: sql<number>`sum(cast(${sales.total} as numeric))` })
+    .from(sales)
+    .where(gte(sales.createdAt, firstDayOfMonth));
+
+  // 3. Jugadores Activos (Usuarios registrados)
+  const [totalPlayers] = await db
+    .select({ count: count() })
+    .from(users);
+
+  // 4. Próximos Partidos (Reservas que aún no terminaron)
+  const upcomingBookings = await db.query.bookings.findMany({
+    where: gte(bookings.endTime, new Date()),
+    with: {
+      court: true,
+      user: true,
+    },
+    orderBy: [asc(bookings.startTime)],
+    limit: 6,
+  });
+
+  // 5. Actividad Reciente (Últimas ventas)
+  const recentSales = await db.query.sales.findMany({
+    orderBy: [desc(sales.createdAt)],
+    limit: 5,
+    with: {
+      center: true
+    }
+  });
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-2">
@@ -28,9 +79,9 @@ export default async function HomePage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Reservas Hoy", value: "24", icon: LucideCalendar, color: "text-blue-500", bg: "bg-blue-500/10" },
-          { label: "Ingresos Mes", value: "$124,500", icon: LucideTrendingUp, color: "text-green-500", bg: "bg-green-500/10" },
-          { label: "Jugadores Activos", value: "842", icon: LucideUsers, color: "text-orange-500", bg: "bg-orange-500/10" },
+          { label: "Reservas Hoy", value: bookingsToday.count.toString(), icon: LucideCalendar, color: "text-blue-500", bg: "bg-blue-500/10" },
+          { label: "Ingresos Mes", value: formatCurrency(salesMonth?.total || 0), icon: LucideTrendingUp, color: "text-green-500", bg: "bg-green-500/10" },
+          { label: "Jugadores Activos", value: totalPlayers.count.toString(), icon: LucideUsers, color: "text-orange-500", bg: "bg-orange-500/10" },
           { label: "Ocupación", value: "78%", icon: LucideTarget, color: "text-primary", bg: "bg-primary/10" },
         ].map((stat) => (
           <Card key={stat.label} className="border-none shadow-md bg-card/50 backdrop-blur-sm">
@@ -59,8 +110,37 @@ export default async function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground border-2 border-dashed rounded-xl">
-              [Gráfico de Actividad]
+            <div className="space-y-4">
+              {recentSales.map((sale) => (
+                <div key={sale.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50/50 border border-slate-100/50">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                      <LucideTrendingUp className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">
+                        Venta {sale.saleNumber}
+                      </p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        {sale.customerName} • {formatTime(sale.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-black text-slate-900">
+                      {formatCurrency(sale.total)}
+                    </p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase">
+                      {sale.paymentMethod}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {recentSales.length === 0 && (
+                <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm italic">
+                  No hay ventas registradas recientemente
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -74,18 +154,29 @@ export default async function HomePage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
-                    C{i}
+              {upcomingBookings.map((booking) => (
+                <div key={booking.id} className="flex items-center gap-4 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors border border-transparent hover:border-slate-100">
+                  <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center font-black text-blue-600 text-xs">
+                    {booking.court?.name?.split(" ").pop()}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground">Cancha {i} - Americano</p>
-                    <p className="text-xs text-muted-foreground">19:30 - 21:00</p>
+                    <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">
+                      {booking.court?.name} - {booking.guestName || booking.user?.name || "Reserva"}
+                    </p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                    </p>
                   </div>
-                  <div className="text-xs font-medium text-green-500">Ocupado</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-green-500 bg-green-500/10 px-2 py-1 rounded-md">
+                    Programado
+                  </div>
                 </div>
               ))}
+              {upcomingBookings.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  No hay partidos programados próximamente.
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

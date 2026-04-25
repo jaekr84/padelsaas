@@ -24,7 +24,10 @@ import {
   LucideCalendar,
   LucidePlusCircle,
   LucidePlus,
-  LucideRepeat
+  LucideRepeat,
+  LucidePackage,
+  LucideShoppingCart,
+  LucideScanBarcode
 } from "lucide-react";
 import { UserNav } from "@/components/user-nav";
 import Link from "next/link";
@@ -39,10 +42,13 @@ import { Button } from "./ui/button";
 
 const navItems = [
   { title: "Home", icon: LucideHome, href: "/home" },
+  { title: "Punto de Venta", icon: LucideScanBarcode, href: "/sales" },
   { title: "Reservas", icon: LucideCalendar, href: "/bookings" },
   { title: "Fijas", icon: LucideRepeat, href: "/fixed-reservations" },
   { title: "Canchas", icon: LucideDumbbell, href: "/courts" },
   { title: "Jugadores", icon: LucideUsers, href: "/players" },
+  { title: "Kiosco / Stock", icon: LucidePackage, href: "/inventory" },
+  { title: "Compras", icon: LucideShoppingCart, href: "/purchases" },
   { title: "Usuarios", icon: LucideUsers, href: "/users", adminOnly: true },
   { title: "Configuración", icon: LucideSettings, href: "/settings", adminOnly: true },
 ];
