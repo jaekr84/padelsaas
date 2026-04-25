@@ -19,7 +19,8 @@ import {
   LucideClock,
   LucideUser,
   LucideLayoutGrid,
-  LucideDollarSign
+  LucideDollarSign,
+  LucideCreditCard
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -122,6 +123,7 @@ export function BookingsList({ bookings, globalDate }: BookingsListProps) {
               <TableHead className="font-black uppercase text-[10px] tracking-widest">Cliente</TableHead>
               <TableHead className="font-black uppercase text-[10px] tracking-widest">Monto</TableHead>
               <TableHead className="font-black uppercase text-[10px] tracking-widest text-right">Estado</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest text-right">Acción</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -168,6 +170,21 @@ export function BookingsList({ bookings, globalDate }: BookingsListProps) {
                   </TableCell>
                   <TableCell className="text-right">
                     {getStatusBadge(booking.status)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {booking.paymentStatus === "pending" && booking.status !== "cancelled" ? (
+                      <Button 
+                        size="sm" 
+                        variant="default"
+                        className="h-8 bg-blue-600 hover:bg-blue-700 font-bold uppercase text-[10px] gap-2 rounded-lg"
+                        onClick={() => router.push(`/sales?bookingId=${booking.id}`)}
+                      >
+                        <LucideCreditCard className="h-3 w-3" />
+                        Cobrar
+                      </Button>
+                    ) : booking.paymentStatus === "paid" ? (
+                      <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">Pagado</span>
+                    ) : null}
                   </TableCell>
                 </TableRow>
               ))

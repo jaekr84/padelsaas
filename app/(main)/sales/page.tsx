@@ -1,8 +1,10 @@
 import { db } from "@/db";
-import { products, centers } from "@/db/schema";
+import { products, centers, bookings } from "@/db/schema";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { POSView } from "@/components/sales/pos-view";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { LucideHistory, LucideShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -16,6 +18,23 @@ export default async function SalesPage() {
   });
 
   const allCenters = await db.query.centers.findMany();
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+  const unpaidBookings = await db.query.bookings.findMany({
+    where: and(
+      eq(bookings.paymentStatus, "pending"),
+      gte(bookings.startTime, todayStart),
+      lte(bookings.startTime, tomorrowStart)
+    ),
+    with: {
+      court: true,
+      user: true,
+    }
+  });
 
   return (
     <div className="flex-1 bg-slate-50/50 flex flex-col h-full">
@@ -39,10 +58,13 @@ export default async function SalesPage() {
       </header>
 
       <div className="flex-1 overflow-hidden">
-        <POSView 
-          products={allProducts} 
-          centers={allCenters} 
-        />
+        <Suspense fallback={<div className="h-full flex items-center justify-center font-bold uppercase text-slate-400 animate-pulse">Iniciando Terminal...</div>}>
+          <POSView 
+            products={allProducts} 
+            centers={allCenters} 
+            unpaidBookings={unpaidBookings}
+          />
+        </Suspense>
       </div>
     </div>
   );

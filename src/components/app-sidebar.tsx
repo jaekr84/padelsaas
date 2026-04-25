@@ -42,6 +42,7 @@ import { Button } from "./ui/button";
 
 const navItems = [
   { title: "Home", icon: LucideHome, href: "/home" },
+  { title: "Reportes", icon: LucideLayoutDashboard, href: "/reports" },
   { title: "Punto de Venta", icon: LucideScanBarcode, href: "/sales" },
   { title: "Reservas", icon: LucideCalendar, href: "/bookings" },
   { title: "Fijas", icon: LucideRepeat, href: "/fixed-reservations" },

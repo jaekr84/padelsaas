@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { sales, saleItems, products, productBatches, productStock, inventoryTransactions } from "@/db/schema";
+import { sales, saleItems, products, productBatches, productStock, inventoryTransactions, bookings } from "@/db/schema";
 import { eq, sql, asc, and, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
@@ -16,12 +16,15 @@ export async function createSaleAction(data: {
   charge: number;
   total: number;
   items: {
-    productId: string;
+    productId?: string;
+    bookingId?: string;
+    categoryId?: string;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
   }[];
 }) {
+  const CANCHAS_CATEGORY_ID = "2346a106-97d9-4ca8-b6eb-ea880ad8df0b";
   try {
     const session = await auth();
     const userId = session?.user?.id;
@@ -47,60 +50,78 @@ export async function createSaleAction(data: {
         userId: userId,
       }).returning();
 
-      // 3. Procesar ítems y descontar stock
+      // 3. Procesar ítems
       for (const item of data.items) {
+        // 3.1 Determinar categoría si no viene
+        let categoryId = item.categoryId;
+        if (item.bookingId) {
+          categoryId = CANCHAS_CATEGORY_ID;
+        } else if (item.productId && !categoryId) {
+          const product = await tx.query.products.findFirst({
+            where: eq(products.id, item.productId),
+            columns: { categoryId: true }
+          });
+          categoryId = product?.categoryId || undefined;
+        }
+
         // Registrar el ítem de venta
         await tx.insert(saleItems).values({
           saleId: newSale.id,
           productId: item.productId,
+          bookingId: item.bookingId,
+          categoryId: categoryId,
           quantity: item.quantity,
           unitPrice: item.unitPrice.toString(),
           totalPrice: item.totalPrice.toString(),
         });
 
-        // 3.1 Descontar stock del producto en este centro
-        await tx.update(productStock)
-          .set({ 
-            stock: sql`${productStock.stock} - ${item.quantity}`,
-            updatedAt: new Date()
-          })
-          .where(and(
-            eq(productStock.productId, item.productId),
-            eq(productStock.centerId, data.centerId)
-          ));
+        // 3.1 Si es una reserva, marcar como pagada
+        if (item.bookingId) {
+          await tx.update(bookings)
+            .set({ paymentStatus: 'paid' })
+            .where(eq(bookings.id, item.bookingId));
+        }
 
-        // 3.2 Registrar transacción de inventario
-        await tx.insert(inventoryTransactions).values({
-          productId: item.productId,
-          centerId: data.centerId,
-          userId: userId,
-          type: "sale",
-          quantity: -item.quantity,
-          reason: `Venta ${saleNumber}`,
-        });
+        // 3.2 Si es un producto, descontar stock
+        if (item.productId) {
+          await tx.update(productStock)
+            .set({ 
+              stock: sql`${productStock.stock} - ${item.quantity}`,
+              updatedAt: new Date()
+            })
+            .where(and(
+              eq(productStock.productId, item.productId),
+              eq(productStock.centerId, data.centerId)
+            ));
 
-        // Descontar de los lotes (Lógica interna para mantener consistencia de vencimientos)
-        let remainingToDeduct = item.quantity;
-        
-        // Buscamos lotes con stock de este producto en este centro, ordenados por fecha de vencimiento
-        const batches = await tx.select()
-          .from(productBatches)
-          .where(and(
-            eq(productBatches.productId, item.productId),
-            eq(productBatches.centerId, data.centerId)
-          ))
-          .orderBy(asc(productBatches.expiryDate));
+          // Registrar transacción de inventario
+          await tx.insert(inventoryTransactions).values({
+            productId: item.productId,
+            centerId: data.centerId,
+            userId: userId,
+            type: "sale",
+            quantity: -item.quantity,
+            reason: `Venta ${saleNumber}`,
+          });
 
-        for (const batch of batches) {
-          if (remainingToDeduct <= 0) break;
+          // Descontar de los lotes
+          let remainingToDeduct = item.quantity;
+          const batches = await tx.select()
+            .from(productBatches)
+            .where(and(
+              eq(productBatches.productId, item.productId),
+              eq(productBatches.centerId, data.centerId)
+            ))
+            .orderBy(asc(productBatches.expiryDate));
 
-          const deductFromThisBatch = Math.min(batch.quantity, remainingToDeduct);
-          
-          await tx.update(productBatches)
-            .set({ quantity: batch.quantity - deductFromThisBatch })
-            .where(eq(productBatches.id, batch.id));
-          
-          remainingToDeduct -= deductFromThisBatch;
+          for (const batch of batches) {
+            if (remainingToDeduct <= 0) break;
+            const deductFromThisBatch = Math.min(batch.quantity, remainingToDeduct);
+            await tx.update(productBatches)
+              .set({ quantity: batch.quantity - deductFromThisBatch })
+              .where(eq(productBatches.id, batch.id));
+            remainingToDeduct -= deductFromThisBatch;
+          }
         }
       }
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { 
   LucideScanBarcode, 
   LucideUser, 
@@ -14,10 +15,18 @@ import {
   LucideCircleDollarSign,
   LucidePercent,
   LucideBadgePercent,
-  LucideCheck
+  LucideCheck,
+  LucideCalendarClock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { 
   Select, 
   SelectContent, 
@@ -33,9 +42,10 @@ import { formatCurrency } from "@/lib/formatters";
 interface POSViewProps {
   products: any[];
   centers: any[];
+  unpaidBookings: any[];
 }
 
-export function POSView({ products, centers }: POSViewProps) {
+export function POSView({ products, centers, unpaidBookings }: POSViewProps) {
   const [cart, setCart] = useState<any[]>([]);
   const [customerName, setCustomerName] = useState("Consumidor Final");
   const [paymentMethod, setPaymentMethod] = useState("Efectivo");
@@ -45,6 +55,8 @@ export function POSView({ products, centers }: POSViewProps) {
   const [charge, setCharge] = useState(0);
   const [search, setSearch] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isReservationsOpen, setIsReservationsOpen] = useState(false);
+  const searchParams = useSearchParams();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,15 +65,53 @@ export function POSView({ products, centers }: POSViewProps) {
     searchInputRef.current?.focus();
   }, []);
 
+  // Manejar bookingId desde la URL
+  useEffect(() => {
+    const bookingId = searchParams.get("bookingId");
+    if (bookingId && unpaidBookings.length > 0) {
+      const booking = unpaidBookings.find(b => b.id === bookingId);
+      if (booking) {
+        addBookingToCart(booking);
+      }
+    }
+  }, [searchParams, unpaidBookings]);
+
+  const addBookingToCart = (booking: any) => {
+    const bookingId = `BOOKING-${booking.id}`;
+    const existing = cart.find(item => item.cartId === bookingId);
+    
+    if (!existing) {
+      setCart([...cart, { 
+        cartId: bookingId,
+        id: booking.id, // Para el backend es el bookingId
+        bookingId: booking.id,
+        name: `RESERVA: ${booking.court?.name} - ${booking.guestName || booking.user?.name || "S/N"}`,
+        sku: "RESERVA",
+        quantity: 1, 
+        price: Number(booking.price) || 0,
+        isBooking: true
+      }]);
+      toast.success("Reserva añadida al carrito");
+    } else {
+      toast.error("Esta reserva ya está en el carrito");
+    }
+    setIsReservationsOpen(false);
+  };
+
   const addToCart = (product: any) => {
-    const existing = cart.find(item => item.id === product.id);
+    const cartId = `PROD-${product.id}`;
+    const existing = cart.find(item => item.cartId === cartId);
     if (existing) {
       setCart(cart.map(item => 
-        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        item.cartId === cartId ? { ...item, quantity: item.quantity + 1 } : item
       ));
     } else {
       setCart([...cart, { 
-        ...product, 
+        cartId,
+        id: product.id, 
+        productId: product.id,
+        name: product.name,
+        sku: product.sku,
         quantity: 1, 
         price: Number(product.sellPrice) || 0 
       }]);
@@ -70,13 +120,13 @@ export function POSView({ products, centers }: POSViewProps) {
     searchInputRef.current?.focus();
   };
 
-  const removeFromCart = (id: string) => {
-    setCart(cart.filter(item => item.id !== id));
+  const removeFromCart = (cartId: string) => {
+    setCart(cart.filter(item => item.cartId !== cartId));
   };
 
-  const updateQuantity = (id: string, delta: number) => {
+  const updateQuantity = (cartId: string, delta: number) => {
     setCart(cart.map(item => {
-      if (item.id === id) {
+      if (item.cartId === cartId) {
         const newQty = Math.max(1, item.quantity + delta);
         return { ...item, quantity: newQty };
       }
@@ -105,7 +155,8 @@ export function POSView({ products, centers }: POSViewProps) {
         charge,
         total,
         items: cart.map(item => ({
-          productId: item.id,
+          productId: item.productId,
+          bookingId: item.bookingId,
           quantity: item.quantity,
           unitPrice: item.price,
           totalPrice: item.price * item.quantity
@@ -189,6 +240,79 @@ export function POSView({ products, centers }: POSViewProps) {
           </div>
         </div>
 
+        {/* Botones de Acceso Rápido / Reservas */}
+        <div className="flex gap-4">
+          <Dialog open={isReservationsOpen} onOpenChange={setIsReservationsOpen}>
+            <DialogTrigger render={
+              <Button className="h-16 flex-1 bg-white border border-slate-100 shadow-sm rounded-3xl text-slate-900 hover:bg-slate-50 transition-all gap-4">
+                <div className="h-10 w-10 bg-orange-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-100">
+                  <LucideCalendarClock className="h-6 w-6" />
+                </div>
+                <div className="text-left">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cobrar</p>
+                  <p className="text-sm font-black uppercase">Próximas Reservas</p>
+                </div>
+                <div className="ml-auto bg-slate-100 px-3 py-1 rounded-full text-[10px] font-black text-slate-500">
+                  {unpaidBookings.length} PENDIENTES
+                </div>
+              </Button>
+            } />
+            <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] border-none shadow-2xl p-8">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-black uppercase tracking-tight text-slate-900 flex items-center gap-3">
+                  <div className="h-10 w-10 bg-orange-500 rounded-xl flex items-center justify-center text-white">
+                    <LucideCalendarClock className="h-6 w-6" />
+                  </div>
+                  Reservas Pendientes de Cobro
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-6 max-h-[400px] overflow-auto pr-2">
+                {unpaidBookings.map((booking) => (
+                  <button
+                    key={booking.id}
+                    onClick={() => addBookingToCart(booking)}
+                    className="w-full p-4 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-100 flex items-center justify-between transition-all group text-left"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className="font-black text-slate-900 uppercase text-sm tracking-tight">
+                        {booking.court?.name} - {booking.guestName || booking.user?.name || "Sin nombre"}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} HS
+                        <span className="h-1 w-1 bg-slate-300 rounded-full" />
+                        ID: {booking.id.slice(0, 8)}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black text-blue-600 tracking-tighter">
+                        {formatCurrency(booking.price)}
+                      </p>
+                      <span className="text-[9px] font-black text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-md uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                        Añadir
+                      </span>
+                    </div>
+                  </button>
+                ))}
+                {unpaidBookings.length === 0 && (
+                  <div className="text-center py-12 text-slate-400 font-bold uppercase tracking-widest text-xs">
+                    No hay reservas pendientes de pago para hoy
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Button className="h-16 flex-1 bg-white border border-slate-100 shadow-sm rounded-3xl text-slate-900 hover:bg-slate-50 transition-all gap-4 opacity-50 cursor-not-allowed">
+            <div className="h-10 w-10 bg-blue-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
+              <LucideShoppingCart className="h-6 w-6" />
+            </div>
+            <div className="text-left">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Acceso</p>
+              <p className="text-sm font-black uppercase">Otros Servicios</p>
+            </div>
+          </Button>
+        </div>
+
         {/* Tabla de Items (Excel-Style) */}
         <div className="flex-1 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
           <div className="bg-slate-50/50 px-8 py-4 border-b border-slate-100 flex justify-between items-center">
@@ -220,25 +344,36 @@ export function POSView({ products, centers }: POSViewProps) {
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {cart.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <tr key={item.cartId} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="px-8 py-4">
                         <div className="flex flex-col">
-                          <span className="font-black text-slate-700 uppercase text-sm tracking-tight">{item.name}</span>
-                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">SKU: {item.sku}</span>
+                          <span className={cn(
+                            "font-black uppercase text-sm tracking-tight",
+                            item.isBooking ? "text-blue-600" : "text-slate-700"
+                          )}>{item.name}</span>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{item.sku}</span>
                         </div>
                       </td>
                       <td className="px-8 py-4">
                         <div className="flex items-center justify-center gap-3">
                           <button 
-                            onClick={() => updateQuantity(item.id, -1)}
-                            className="h-8 w-8 rounded-lg border border-slate-100 flex items-center justify-center text-slate-400 hover:bg-white hover:text-red-500 hover:shadow-md transition-all"
+                            onClick={() => updateQuantity(item.cartId, -1)}
+                            disabled={item.isBooking}
+                            className={cn(
+                              "h-8 w-8 rounded-lg border border-slate-100 flex items-center justify-center text-slate-400 transition-all",
+                              item.isBooking ? "opacity-30 cursor-not-allowed" : "hover:bg-white hover:text-red-500 hover:shadow-md"
+                            )}
                           >
                             <LucideMinus className="h-3 w-3" />
                           </button>
                           <span className="font-black text-slate-900 text-lg w-8 text-center tracking-tighter">{item.quantity}</span>
                           <button 
-                            onClick={() => updateQuantity(item.id, 1)}
-                            className="h-8 w-8 rounded-lg border border-slate-100 flex items-center justify-center text-slate-400 hover:bg-white hover:text-blue-600 hover:shadow-md transition-all"
+                            onClick={() => updateQuantity(item.cartId, 1)}
+                            disabled={item.isBooking}
+                            className={cn(
+                              "h-8 w-8 rounded-lg border border-slate-100 flex items-center justify-center text-slate-400 transition-all",
+                              item.isBooking ? "opacity-30 cursor-not-allowed" : "hover:bg-white hover:text-blue-600 hover:shadow-md"
+                            )}
                           >
                             <LucidePlus className="h-3 w-3" />
                           </button>
@@ -252,7 +387,7 @@ export function POSView({ products, centers }: POSViewProps) {
                       </td>
                       <td className="px-8 py-4 text-center">
                         <button 
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => removeFromCart(item.cartId)}
                           className="h-10 w-10 rounded-xl text-slate-200 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center mx-auto"
                         >
                           <LucideTrash2 className="h-5 w-5" />
@@ -289,7 +424,7 @@ export function POSView({ products, centers }: POSViewProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Terminal</label>
-                <Select value={terminalId} onValueChange={(val) => val && setTerminalId(val)}>
+                <Select value={terminalId} onValueChange={(val: string | null) => val && setTerminalId(val)}>
                   <SelectTrigger className="bg-transparent border-none p-0 h-auto focus:ring-0 font-black text-slate-800 uppercase tracking-tighter">
                     <div className="flex items-center gap-2">
                       <LucideLaptop className="h-4 w-4 text-blue-500" />
@@ -306,7 +441,7 @@ export function POSView({ products, centers }: POSViewProps) {
 
               <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Medio de Pago</label>
-                <Select value={paymentMethod} onValueChange={(val) => val && setPaymentMethod(val)}>
+                <Select value={paymentMethod} onValueChange={(val: string | null) => val && setPaymentMethod(val)}>
                   <SelectTrigger className="bg-transparent border-none p-0 h-auto focus:ring-0 font-black text-slate-800 uppercase tracking-tighter">
                     <div className="flex items-center gap-2">
                       {paymentMethod === "Efectivo" ? <LucideBanknote className="h-4 w-4 text-emerald-500" /> : <LucideCreditCard className="h-4 w-4 text-blue-500" />}

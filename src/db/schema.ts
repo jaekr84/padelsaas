@@ -131,6 +131,7 @@ export const bookings = pgTable("booking", {
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time").notNull(),
   status: text("status").notNull().default("pending"), // pending, confirmed, cancelled
+  paymentStatus: text("payment_status").notNull().default("pending"), // pending, paid, partially_paid
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -278,6 +279,8 @@ export const saleItems = pgTable("sale_items", {
   quantity: integer("quantity").notNull(),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
+  bookingId: uuid("booking_id").references(() => bookings.id),
+  categoryId: uuid("category_id").references(() => productCategories.id),
 });
 
 // --- PURCHASES ---
@@ -380,6 +383,7 @@ export const salesRelations = relations(sales, ({ one, many }) => ({
 export const saleItemsRelations = relations(saleItems, ({ one }) => ({
   sale: one(sales, { fields: [saleItems.saleId], references: [sales.id] }),
   product: one(products, { fields: [saleItems.productId], references: [products.id] }),
+  category: one(productCategories, { fields: [saleItems.categoryId], references: [productCategories.id] }),
 }));
 
 export const purchasesRelations = relations(purchases, ({ one, many }) => ({
