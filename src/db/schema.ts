@@ -126,6 +126,8 @@ export const bookings = pgTable("booking", {
     .references(() => courts.id, { onDelete: "cascade" }),
   userId: text("user_id")
     .references(() => users.id, { onDelete: "cascade" }),
+  customerId: uuid("customer_id")
+    .references(() => customers.id, { onDelete: "set null" }),
   guestName: text("guest_name"),
   price: integer("price"),
   startTime: timestamp("start_time").notNull(),
@@ -253,12 +255,34 @@ export const cashRegisters = pgTable("cash_register", {
   notes: text("notes"),
 });
 
+// --- CRM / CLIENTES ---
+
+export const customers = pgTable("customer", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  dni: text("dni").unique(),
+  phone: text("phone").unique(),
+  email: text("email"),
+  birthDate: timestamp("birth_date"),
+  category: text("category").default("Frecuente"), // Frecuente, VIP, Ocasional, etc.
+  padelLevel: text("padel_level"), // 1.0 a 7.0 o 7ma, 6ta...
+  notes: text("notes"),
+  balance: decimal("balance", { precision: 10, scale: 2 }).default("0"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // --- VENTAS (POS) ---
 
 export const sales = pgTable("sales", {
   id: uuid("id").primaryKey().defaultRandom(),
   saleNumber: text("sale_number").unique(),
   customerName: text("customer_name").default("Consumidor Final"),
+  customerId: uuid("customer_id").references(() => customers.id, { onDelete: "set null" }),
   paymentMethod: text("payment_method").notNull(), // Efectivo, Transferencia, Tarjeta, etc.
   terminalId: text("terminal_id"), // Para identificar desde qué caja se vendió
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
@@ -374,8 +398,30 @@ export const productStockRelations = relations(productStock, ({ one }) => ({
   center: one(centers, { fields: [productStock.centerId], references: [centers.id] }),
 }));
 
+export const terminals = pgTable("terminals", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const paymentMethods = pgTable("payment_methods", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // 'cash', 'card', 'transfer', 'other'
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const salesRelations = relations(sales, ({ one, many }) => ({
   center: one(centers, { fields: [sales.centerId], references: [centers.id] }),
+  customer: one(customers, { fields: [sales.customerId], references: [customers.id] }),
   items: many(saleItems),
   cashRegister: one(cashRegisters, { fields: [sales.cashRegisterId], references: [cashRegisters.id] }),
 }));
@@ -400,4 +446,8 @@ export const purchaseItemsRelations = relations(purchaseItems, ({ one }) => ({
 export const productBatchesRelations = relations(productBatches, ({ one }) => ({
   product: one(products, { fields: [productBatches.productId], references: [products.id] }),
   center: one(centers, { fields: [productBatches.centerId], references: [centers.id] }),
+}));
+
+export const customersRelations = relations(customers, ({ one }) => ({
+  tenant: one(tenants, { fields: [customers.tenantId], references: [tenants.id] }),
 }));

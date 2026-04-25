@@ -56,6 +56,7 @@ import { es } from "date-fns/locale";
 import { useState } from "react";
 
 import { parseArgentineDate } from "@/lib/date-utils";
+import { CustomerSelect } from "./customers/customer-select";
 
 export const isSlotBooked = (court: any, time: string, dateStr: string, openTime?: string) => {
   if (!court.bookings || !Array.isArray(court.bookings)) return false;
@@ -397,17 +398,14 @@ export function ManualReservationSheet({
                         <FormItem className="space-y-2">
                           <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Información del Cliente</FormLabel>
                           <FormControl>
-                            <div className="relative group">
-                              <Input 
-                                placeholder="Nombre completo..." 
-                                className="h-14 pl-14 text-sm font-semibold rounded-2xl border-slate-200 bg-white/50 hover:bg-white focus:border-emerald-500 focus:ring-emerald-500/10 transition-all duration-300" 
-                                {...field} 
-                                value={field.value ?? ""} 
-                              />
-                              <div className="absolute left-4 top-1/2 -translate-y-1/2 size-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-focus-within:bg-emerald-50 group-focus-within:text-emerald-600 transition-all">
-                                <LucideSearch className="size-4" />
-                              </div>
-                            </div>
+                            <CustomerSelect 
+                              defaultValue={form.getValues("customerId")}
+                              onSelect={(customer) => {
+                                form.setValue("customerId", customer.id);
+                                form.setValue("guestName", `${customer.firstName} ${customer.lastName}`);
+                              }}
+                              placeholder={field.value || "Buscar cliente..."}
+                            />
                           </FormControl>
                         </FormItem>
                       )} />

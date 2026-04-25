@@ -10,6 +10,7 @@ import { parseArgentineDate, isPastArgentina } from "@/lib/date-utils";
 export const reservationFormSchema = z.object({
   reservationType: z.enum(["single", "recurring", "block"]).default("single"),
   guestName: z.string().optional(),
+  customerId: z.string().optional().nullable(),
   courtId: z.string().default("auto"),
   dateStr: z.string().min(1, "Selecciona una fecha"),
   startTimeStr: z.string().min(1, "Horario inválido"),
@@ -56,6 +57,7 @@ export function useReservationForm({
     defaultValues: {
       reservationType: "single",
       guestName: "",
+      customerId: null,
       courtId: "auto",
       dateStr: date.toISOString().split("T")[0],
       startTimeStr: "",
@@ -232,6 +234,7 @@ export function useReservationForm({
             courtId: r.courtId,
             centerId: centerId,
             guestName: formattedName,
+            customerId: values.customerId,
             price: values.price,
             startTime: new Date(r.startTime),
             endTime: new Date(r.endTime),
@@ -273,6 +276,7 @@ export function useReservationForm({
         const response = await createReservationAction({
           courtId: finalCourtId,
           guestName: formattedName,
+          customerId: values.customerId,
           price: values.price,
           startTime: finalStart,
           endTime: finalEnd,

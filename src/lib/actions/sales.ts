@@ -8,6 +8,7 @@ import { auth } from "@/auth";
 
 export async function createSaleAction(data: {
   customerName: string;
+  customerId?: string | null;
   paymentMethod: string;
   terminalId: string;
   centerId: string;
@@ -40,6 +41,7 @@ export async function createSaleAction(data: {
       const [newSale] = await tx.insert(sales).values({
         saleNumber,
         customerName: data.customerName || "Consumidor Final",
+        customerId: data.customerId,
         paymentMethod: data.paymentMethod,
         terminalId: data.terminalId,
         centerId: data.centerId,

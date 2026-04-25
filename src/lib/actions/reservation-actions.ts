@@ -15,6 +15,7 @@ export async function createReservationAction(data: {
   startTime: string | Date;
   endTime: string | Date;
   centerId: string;
+  customerId?: string | null;
 }) {
   const start = new Date(data.startTime);
   const end = new Date(data.endTime);
@@ -119,6 +120,7 @@ export async function createReservationAction(data: {
       await tx.insert(bookings).values({
         courtId: finalCourtId,
         guestName: data.guestName,
+        customerId: data.customerId,
         price: data.price,
         startTime: start,
         endTime: end,
@@ -139,6 +141,7 @@ export async function createBatchReservationsAction(
     courtId: string;
     centerId: string;
     guestName: string;
+    customerId?: string | null;
     price: number;
     startTime: Date;
     endTime: Date;
@@ -228,6 +231,7 @@ export async function createBatchReservationsAction(
         await tx.insert(bookings).values({
           courtId: finalCourtId,
           guestName: req.guestName,
+          customerId: req.customerId,
           price: req.price,
           startTime: req.startTime,
           endTime: req.endTime,

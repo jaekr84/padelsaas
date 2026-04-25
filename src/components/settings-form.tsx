@@ -42,7 +42,8 @@ import {
   LucideBriefcase,
   LucideDollarSign,
   LucideTrash2,
-  LucideZap
+  LucideZap,
+  LucideScanBarcode
 } from "lucide-react";
 import { capitalize } from "@/lib/formatters";
 import { toast } from "sonner";
@@ -50,6 +51,7 @@ import { cn } from "@/lib/utils";
 import { updatePricingConfigAction } from "@/lib/actions/pricing";
 import { PricingCanvas } from "./pricing-canvas";
 import { generateTimeSlots } from "./courts-list";
+import { POSSettings } from "./settings/pos-settings";
 
 const companySchema = z.object({
   id: z.string(),
@@ -88,10 +90,14 @@ type CompanyValues = z.infer<typeof companySchema>;
 
 export function SettingsForm({ 
   initialCenters, 
-  initialTenant 
+  initialTenant,
+  initialTerminals,
+  initialPaymentMethods
 }: { 
   initialCenters: any[], 
-  initialTenant: any 
+  initialTenant: any,
+  initialTerminals: any[],
+  initialPaymentMethods: any[]
 }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -294,6 +300,20 @@ export function SettingsForm({
           {selectedId === "empresa" ? watchedCompanyName : initialTenant?.name || "Empresa"}
         </button>
 
+        {/* TPV Tab */}
+        <button
+          onClick={() => setSelectedId("tpv")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all whitespace-nowrap",
+            selectedId === "tpv"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
+          )}
+        >
+          <LucideScanBarcode className="h-4 w-4" />
+          TPV / Cobros
+        </button>
+
         <div className="h-6 w-px bg-border mx-1" />
 
         {/* Center Tabs */}
@@ -370,6 +390,18 @@ export function SettingsForm({
             </Card>
           </form>
         </Form>
+      ) : selectedId === "tpv" ? (
+        /* TPV / POS SETTINGS */
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">TPV y Cobranzas</h1>
+            <p className="text-muted-foreground">Configura las cajas registradoras y los medios de pago aceptados.</p>
+          </div>
+          <POSSettings 
+            initialTerminals={initialTerminals} 
+            initialPaymentMethods={initialPaymentMethods} 
+          />
+        </div>
       ) : (
         /* CENTER FORM */
         <Form {...centerForm}>

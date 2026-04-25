@@ -18,10 +18,19 @@ export default async function SettingsPage(props: {
 
   const centers = await getCentersAction();
   const tenant = await getTenantAction();
+  
+  // Obtener configuraciones de POS
+  const { data: terminals = [] } = await import("@/lib/actions/settings").then(m => m.getTerminalsAction());
+  const { data: paymentMethods = [] } = await import("@/lib/actions/settings").then(m => m.getPaymentMethodsAction());
 
   return (
     <div className="flex-1 w-full max-w-5xl mx-auto py-6">
-      <SettingsForm initialCenters={centers} initialTenant={tenant} />
+      <SettingsForm 
+        initialCenters={centers} 
+        initialTenant={tenant} 
+        initialTerminals={terminals}
+        initialPaymentMethods={paymentMethods}
+      />
     </div>
   );
 }

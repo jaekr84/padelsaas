@@ -38,18 +38,22 @@ import { cn } from "@/lib/utils";
 import { createSaleAction } from "@/lib/actions/sales";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/formatters";
+import { CustomerSelect } from "../customers/customer-select";
 
 interface POSViewProps {
   products: any[];
   centers: any[];
   unpaidBookings: any[];
+  terminals?: any[];
+  paymentMethods?: any[];
 }
 
-export function POSView({ products, centers, unpaidBookings }: POSViewProps) {
+export function POSView({ products, centers, unpaidBookings, terminals = [], paymentMethods = [] }: POSViewProps) {
   const [cart, setCart] = useState<any[]>([]);
   const [customerName, setCustomerName] = useState("Consumidor Final");
-  const [paymentMethod, setPaymentMethod] = useState("Efectivo");
-  const [terminalId, setTerminalId] = useState("Caja 1");
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState(paymentMethods[0]?.name || "Efectivo");
+  const [terminalId, setTerminalId] = useState(terminals[0]?.name || "Caja 1");
   const [centerId, setCenterId] = useState(centers[0]?.id || "");
   const [discount, setDiscount] = useState(0);
   const [charge, setCharge] = useState(0);
@@ -147,6 +151,7 @@ export function POSView({ products, centers, unpaidBookings }: POSViewProps) {
     try {
       const result = await createSaleAction({
         customerName,
+        customerId,
         paymentMethod,
         terminalId,
         centerId,
@@ -169,6 +174,7 @@ export function POSView({ products, centers, unpaidBookings }: POSViewProps) {
         setCart([]);
         setDiscount(0);
         setCharge(0);
+        setCustomerId(null);
         setCustomerName("Consumidor Final");
       } else {
         // @ts-ignore
@@ -413,10 +419,14 @@ export function POSView({ products, centers, unpaidBookings }: POSViewProps) {
               </div>
               <div className="flex-1">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1 block">Cliente</label>
-                <Input 
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="bg-transparent border-none p-0 focus-visible:ring-0 font-black text-lg h-6 uppercase tracking-tight"
+                <CustomerSelect 
+                  defaultValue={customerId || ""}
+                  onSelect={(customer) => {
+                    setCustomerId(customer.id);
+                    setCustomerName(`${customer.firstName} ${customer.lastName}`);
+                  }}
+                  className="bg-transparent border-none p-0 focus-visible:ring-0 font-black text-lg h-8 uppercase tracking-tight shadow-none hover:bg-slate-50 transition-colors"
+                  placeholder={customerName}
                 />
               </div>
             </div>
@@ -425,16 +435,22 @@ export function POSView({ products, centers, unpaidBookings }: POSViewProps) {
               <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Terminal</label>
                 <Select value={terminalId} onValueChange={(val: string | null) => val && setTerminalId(val)}>
-                  <SelectTrigger className="bg-transparent border-none p-0 h-auto focus:ring-0 font-black text-slate-800 uppercase tracking-tighter">
-                    <div className="flex items-center gap-2">
-                      <LucideLaptop className="h-4 w-4 text-blue-500" />
-                      <SelectValue />
-                    </div>
+                  <SelectTrigger className="rounded-xl border-slate-200 font-bold uppercase text-[10px] tracking-widest h-10">
+                    <SelectValue placeholder="Terminal" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-2xl border-none shadow-2xl">
-                    <SelectItem value="Caja 1" className="rounded-xl font-bold uppercase text-[10px]">Caja 1</SelectItem>
-                    <SelectItem value="Caja 2" className="rounded-xl font-bold uppercase text-[10px]">Caja 2</SelectItem>
-                    <SelectItem value="Móvil 1" className="rounded-xl font-bold uppercase text-[10px]">Móvil 1</SelectItem>
+                  <SelectContent>
+                    {terminals.length > 0 ? (
+                      terminals.map(t => (
+                        <SelectItem key={t.id} value={t.name} className="font-bold uppercase text-[10px] tracking-widest">
+                          {t.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="Caja 1" className="font-bold uppercase text-[10px] tracking-widest">Caja 1</SelectItem>
+                        <SelectItem value="Móvil 1" className="font-bold uppercase text-[10px] tracking-widest">Móvil 1</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -442,17 +458,23 @@ export function POSView({ products, centers, unpaidBookings }: POSViewProps) {
               <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Medio de Pago</label>
                 <Select value={paymentMethod} onValueChange={(val: string | null) => val && setPaymentMethod(val)}>
-                  <SelectTrigger className="bg-transparent border-none p-0 h-auto focus:ring-0 font-black text-slate-800 uppercase tracking-tighter">
-                    <div className="flex items-center gap-2">
-                      {paymentMethod === "Efectivo" ? <LucideBanknote className="h-4 w-4 text-emerald-500" /> : <LucideCreditCard className="h-4 w-4 text-blue-500" />}
-                      <SelectValue />
-                    </div>
+                  <SelectTrigger className="rounded-xl border-slate-200 font-bold uppercase text-[10px] tracking-widest h-10">
+                    <SelectValue placeholder="Método" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-2xl border-none shadow-2xl">
-                    <SelectItem value="Efectivo" className="rounded-xl font-bold uppercase text-[10px]">Efectivo</SelectItem>
-                    <SelectItem value="Débito" className="rounded-xl font-bold uppercase text-[10px]">Débito</SelectItem>
-                    <SelectItem value="Crédito" className="rounded-xl font-bold uppercase text-[10px]">Crédito</SelectItem>
-                    <SelectItem value="Transferencia" className="rounded-xl font-bold uppercase text-[10px]">Transferencia</SelectItem>
+                  <SelectContent>
+                    {paymentMethods.length > 0 ? (
+                      paymentMethods.map(pm => (
+                        <SelectItem key={pm.id} value={pm.name} className="font-bold uppercase text-[10px] tracking-widest">
+                          {pm.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="Efectivo" className="font-bold uppercase text-[10px] tracking-widest">Efectivo</SelectItem>
+                        <SelectItem value="Tarjeta" className="font-bold uppercase text-[10px] tracking-widest">Tarjeta</SelectItem>
+                        <SelectItem value="Transferencia" className="font-bold uppercase text-[10px] tracking-widest">Transferencia</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

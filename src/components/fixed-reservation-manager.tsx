@@ -50,6 +50,7 @@ import { getCourtsAction } from "@/lib/actions/court";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { isSlotBooked } from "./manual-reservation-sheet";
+import { CustomerSelect } from "./customers/customer-select";
 
 interface FixedReservationManagerProps {
   centerId: string;
@@ -258,10 +259,13 @@ export function FixedReservationManager({
                       <FormItem>
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Cliente / Grupo</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Ej: Torneo Miércoles"
-                            className="h-14 bg-slate-50/50 border-slate-100 text-slate-900 font-bold rounded-xl px-6 focus:bg-white transition-all shadow-sm shadow-slate-100/50"
-                            {...field}
+                          <CustomerSelect 
+                            defaultValue={form.getValues("customerId")}
+                            onSelect={(customer) => {
+                              form.setValue("customerId", customer.id);
+                              form.setValue("guestName", `${customer.firstName} ${customer.lastName}`);
+                            }}
+                            placeholder={field.value || "Seleccionar cliente..."}
                           />
                         </FormControl>
                         <FormMessage className="text-[10px] ml-1" />

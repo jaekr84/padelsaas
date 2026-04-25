@@ -36,6 +36,14 @@ export default async function SalesPage() {
     }
   });
 
+  const allTerminals = await db.query.terminals.findMany({
+    where: (t, { eq }) => eq(t.isActive, true),
+  });
+
+  const allPaymentMethods = await db.query.paymentMethods.findMany({
+    where: (pm, { eq }) => eq(pm.isActive, true),
+  });
+
   return (
     <div className="flex-1 bg-slate-50/50 flex flex-col h-full">
       <header className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shrink-0">

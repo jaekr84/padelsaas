@@ -47,7 +47,7 @@ const navItems = [
   { title: "Reservas", icon: LucideCalendar, href: "/bookings" },
   { title: "Fijas", icon: LucideRepeat, href: "/fixed-reservations" },
   { title: "Canchas", icon: LucideDumbbell, href: "/courts" },
-  { title: "Jugadores", icon: LucideUsers, href: "/players" },
+  { title: "Clientes (CRM)", icon: LucideUsers, href: "/customers" },
   { title: "Kiosco / Stock", icon: LucidePackage, href: "/inventory" },
   { title: "Compras", icon: LucideShoppingCart, href: "/purchases" },
   { title: "Usuarios", icon: LucideUsers, href: "/users", adminOnly: true },
