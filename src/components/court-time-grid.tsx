@@ -5,7 +5,6 @@ export interface TimeGridCourt {
   id: string;
   centerId: string;
   name: string;
-  type: string;
   surface: string;
   bookings?: any[];
 }
@@ -57,12 +56,12 @@ export function CourtTimeGrid({
             onClick={() => onSlotClick?.(court, time, booked)}
             disabled={booked}
             className={cn(
-              "group relative flex flex-col items-center justify-center h-10 rounded-lg text-[10px] font-bold transition-all border",
+              "group relative flex flex-col items-center justify-center h-10 rounded-none text-[10px] font-black transition-all border uppercase tracking-tighter",
               booked
-                ? "bg-slate-200 border-slate-300 text-slate-500 cursor-not-allowed opacity-70"
+                ? "bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-50"
                 : isSelected 
-                  ? "bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/20 z-10 scale-[1.02]"
-                  : "bg-white border-slate-300 text-slate-800 hover:border-emerald-500 hover:text-emerald-900 hover:bg-emerald-50/50"
+                  ? "bg-blue-800 border-blue-900 text-white z-10 scale-[1.02] shadow-none"
+                  : "bg-white border-slate-200 text-slate-950 hover:border-blue-800 hover:text-blue-800 hover:bg-blue-50/30"
             )}
           >
             {time}
@@ -101,8 +100,8 @@ export function CourtTimeGrid({
             )}
             {!booked && isSelected && (
               <div className="absolute -top-1 -right-1">
-                <div className="h-2 w-2 rounded-full bg-white shadow-sm flex items-center justify-center">
-                   <div className="h-1 w-1 rounded-full bg-emerald-600" />
+                <div className="h-2 w-2 rounded-none bg-white shadow-sm flex items-center justify-center border border-slate-200">
+                   <div className="h-1 w-1 rounded-none bg-blue-800" />
                 </div>
               </div>
             )}

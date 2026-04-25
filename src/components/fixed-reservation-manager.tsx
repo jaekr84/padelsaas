@@ -303,7 +303,7 @@ export function FixedReservationManager({
                               <SelectItem value="auto" className="font-black text-blue-800 uppercase text-[10px]">Ocupación Automática (Heurística)</SelectItem>
                               {courts.map((court) => (
                                 <SelectItem key={court.id} value={court.id} className="font-bold uppercase text-[10px]">
-                                  {court.name} - {court.type}
+                                  {court.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>

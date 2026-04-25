@@ -13,15 +13,7 @@ export default async function CourtsPage(props: {
   const center = await getCenterAction();
   
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Canchas</h2>
-          <p className="text-muted-foreground">
-            Administra las canchas disponibles en tu centro.
-          </p>
-        </div>
-      </div>
+    <div className="p-6 md:p-10">
       
       <div className="pt-4">
         <CourtsList 
