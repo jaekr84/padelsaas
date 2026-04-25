@@ -138,8 +138,10 @@ export function CenterBookingView({ center }: CenterBookingViewProps) {
     setError("");
 
     const [h, m] = selectedSlot.time.split(':').map(Number);
-    const start = new Date(selectedDate);
-    start.setHours(h, m, 0, 0);
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    
+    // Crear objeto Date usando componentes locales para evitar desfases de zona horaria
+    const start = new Date(year, month - 1, day, h, m, 0, 0);
     const end = new Date(start.getTime() + duration * 60000);
 
     const res = await createPublicBookingAction({

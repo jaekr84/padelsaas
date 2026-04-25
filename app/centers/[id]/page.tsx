@@ -55,9 +55,15 @@ export default async function CenterPage({ params }: CenterPageProps) {
                 {center.name}
               </h1>
               <div className="flex flex-wrap gap-6 pt-2">
-                <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  <LucideMapPin className="h-3 w-3 text-blue-800" /> {center.city}, {center.state}
-                </div>
+                <a 
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${center.address || ""} ${center.city || ""} ${center.state || ""}`.trim())}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-blue-800 transition-colors group"
+                >
+                  <LucideMapPin className="h-3 w-3 text-blue-800 group-hover:scale-110 transition-transform" /> 
+                  {center.address ? `${center.address}, ` : ""}{center.city}, {center.state}
+                </a>
                 {center.phone && (
                   <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                     <LucidePhone className="h-3 w-3 text-blue-800" /> {center.phone}

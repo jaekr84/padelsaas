@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { PublicNavbar } from "@/components/layout/public-navbar";
+
 export const dynamic = "force-dynamic";
 
 export default async function ExplorePage() {
@@ -21,26 +23,7 @@ export default async function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-950 selection:bg-blue-800 selection:text-white overflow-x-hidden">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white border-b-2 border-slate-950 px-6 md:px-12 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/landing" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-slate-950 text-white shadow-[4px_4px_0px_rgba(0,51,153,1)]">
-              <LucideBox className="h-7 w-7" />
-            </div>
-            <span className="text-lg font-black uppercase tracking-tighter leading-none">Tu cancha Ya</span>
-          </Link>
-        </div>
-        <div className="hidden lg:flex items-center gap-10">
-          <Link href="/explore" className="text-[11px] font-bold uppercase tracking-widest text-blue-800 underline decoration-2 underline-offset-4">Explorar Sedes</Link>
-          <Link href="/register" className="text-[11px] font-black uppercase tracking-widest text-slate-950 border-b-2 border-slate-950 hover:bg-slate-50 px-2 py-1 transition-all">
-            Registrar Club
-          </Link>
-          <Link href="/login" className="px-6 py-3 bg-slate-950 text-white text-[11px] font-black uppercase tracking-widest hover:bg-blue-800 transition-colors shadow-[4px_4px_0px_#003399]">
-            Terminal Admin
-          </Link>
-        </div>
-      </nav>
+      <PublicNavbar />
 
       {/* Hero Section / Header */}
       <section className="bg-slate-950 text-white pt-24 pb-20 border-b-8 border-blue-800 relative overflow-hidden">
@@ -103,11 +86,11 @@ export default async function ExplorePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {(centers || []).map((center) => (
-            <Link 
+            <div 
               key={center.id} 
-              href={`/centers/${center.id}`}
               className="group relative flex flex-col bg-white border-4 border-slate-950 transition-all hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_#003399]"
             >
+              <Link href={`/centers/${center.id}`} className="absolute inset-0 z-0" aria-label={`Ver detalles de ${center.name}`} />
               {/* Card Image Header */}
               <div className="aspect-video bg-slate-100 relative overflow-hidden border-b-4 border-slate-950">
                 {center.logoUrl ? (
@@ -141,9 +124,16 @@ export default async function ExplorePage() {
                   <h3 className="text-3xl font-black uppercase tracking-tighter text-slate-950 leading-none">
                     {center.name}
                   </h3>
-                  <div className="flex items-center gap-2 text-slate-400">
+                  <div className="flex items-center gap-2 text-slate-400 relative z-10">
                     <LucideMapPin className="h-4 w-4 text-slate-300" />
-                    <span className="text-xs font-bold uppercase tracking-widest">{center.city}, {center.state}</span>
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${center.address || ""} ${center.city || ""} ${center.state || ""}`.trim())}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold uppercase tracking-widest hover:text-blue-800 transition-colors"
+                    >
+                      {center.address ? `${center.address}, ` : ""}{center.city}, {center.state}
+                    </a>
                   </div>
                 </div>
 
@@ -166,7 +156,7 @@ export default async function ExplorePage() {
                   </div>
                 </div>
 
-                <div className="pt-4">
+                <div className="pt-4 relative z-10 pointer-events-none">
                    <button className="w-full py-4 bg-slate-950 text-white font-black uppercase tracking-[0.2em] text-[10px] group-hover:bg-blue-800 transition-colors">
                       Acceder a Grilla
                    </button>
@@ -176,7 +166,7 @@ export default async function ExplorePage() {
               {/* Blueprint Accents */}
               <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-800 border border-slate-950"></div>
               <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-blue-800 border border-slate-950"></div>
-            </Link>
+            </div>
           ))}
         </div>
 

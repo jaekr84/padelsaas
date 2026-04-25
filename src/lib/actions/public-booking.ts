@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { centers, courts, bookings, customers } from "@/db/schema";
-import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { eq, and, gte, lte, desc, lt, gt } from "drizzle-orm";
 import { auth } from "@/auth";
 
 export async function getPublicCentersAction() {
@@ -60,18 +60,36 @@ export async function createPublicBookingAction(data: {
     if (!court) return { success: false, error: "La cancha no existe" };
 
     // 2. Validar disponibilidad (Overlap check)
+    console.log("Checking overlap for court:", data.courtId);
+    console.log("Start:", data.startTime.toISOString());
+    console.log("End:", data.endTime.toISOString());
+
     const existing = await db.query.bookings.findFirst({
       where: and(
         eq(bookings.courtId, data.courtId),
-        gte(bookings.endTime, data.startTime),
-        lte(bookings.startTime, data.endTime),
+        and(
+          // Correct overlap logic: (StartA < EndB) AND (EndA > StartB)
+          lt(bookings.startTime, data.endTime),
+          gt(bookings.endTime, data.startTime)
+        ),
         eq(bookings.status, "confirmed")
       ),
+      orderBy: [desc(bookings.startTime)],
     });
 
-    if (existing) return { success: false, error: "El horario ya está ocupado" };
+    if (existing) {
+      console.log("Overlap found with booking:", existing.id);
+      console.log("Existing Start:", existing.startTime.toISOString());
+      console.log("Existing End:", existing.endTime.toISOString());
+      return { success: false, error: "El horario ya está ocupado" };
+    }
 
-    // 3. Si el usuario está logueado, intentamos vincularlo o crear su ficha de customer en este tenant
+    // 4. Calcular precio
+    const durationMinutes = Math.ceil((data.endTime.getTime() - data.startTime.getTime()) / (1000 * 60));
+    const slots = Math.ceil(durationMinutes / 30);
+    const totalPrice = slots * (court.center?.defaultPrice30 || 0);
+
+    // 5. Crear la reserva
     if (userId && court.center?.tenantId) {
        let customerRecord = await db.query.customers.findFirst({
          where: and(
@@ -99,6 +117,7 @@ export async function createPublicBookingAction(data: {
          customerId: customerRecord.id,
          startTime: data.startTime,
          endTime: data.endTime,
+         price: totalPrice,
          status: "confirmed",
          paymentStatus: "pending",
        });
@@ -109,6 +128,7 @@ export async function createPublicBookingAction(data: {
         guestName: data.guestName,
         startTime: data.startTime,
         endTime: data.endTime,
+        price: totalPrice,
         status: "confirmed",
         paymentStatus: "pending",
       });

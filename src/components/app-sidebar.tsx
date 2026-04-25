@@ -118,7 +118,7 @@ export function AppSidebar() {
               <LucideBox className="h-6 w-6" />
             </div>
             <div className="grid flex-1 text-left">
-              <span className="text-sm font-black uppercase tracking-tighter text-slate-950 leading-none">Padel Industrial</span>
+              <span className="text-sm font-black uppercase tracking-tighter text-slate-950 leading-none">TU CANCHA YA</span>
               <div className="flex items-center gap-1.5 mt-1">
                 {isAdmin ? (
                   <LucideShieldAlert className="h-2.5 w-2.5 text-blue-800" />

@@ -4,22 +4,22 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerAction } from "@/lib/actions/auth-player";
 import { signIn } from "next-auth/react";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { 
-  LucideBox, 
-  LucideArrowRight, 
-  LucideUser, 
-  LucideLock, 
+import {
+  LucideBox,
+  LucideArrowRight,
+  LucideUser,
+  LucideLock,
   LucideMail,
   LucideTrophy,
   LucideStore
@@ -29,9 +29,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({ 
-    name: "", 
-    email: "", 
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
     password: "",
     isBusiness: false,
     businessName: ""
@@ -89,31 +89,31 @@ export default function RegisterPage() {
         <div className="h-10 w-10 bg-slate-950 flex items-center justify-center text-white">
           <LucideBox className="h-6 w-6" />
         </div>
-        <span className="text-[10px] font-black uppercase tracking-[0.4em]">Padel Industrial</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.4em]">TU CANCHA YA</span>
       </Link>
 
       <Card className="w-full max-w-lg rounded-none border-2 border-slate-950 shadow-[10px_10px_0px_rgba(0,0,0,1)] bg-white overflow-hidden">
         <div className="flex border-b-2 border-slate-950">
-           <button 
-             type="button"
-             onClick={() => setFormData({ ...formData, isBusiness: false })}
-             className={cn(
-               "flex-1 py-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all",
-               !formData.isBusiness ? "bg-blue-800 text-white" : "bg-white text-slate-400 hover:text-slate-950"
-             )}
-           >
-             <LucideUser className="h-4 w-4" /> Jugador
-           </button>
-           <button 
-             type="button"
-             onClick={() => setFormData({ ...formData, isBusiness: true })}
-             className={cn(
-               "flex-1 py-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all border-l-2 border-slate-950",
-               formData.isBusiness ? "bg-blue-800 text-white" : "bg-white text-slate-400 hover:text-slate-950"
-             )}
-           >
-             <LucideStore className="h-4 w-4" /> Centro Deportivo
-           </button>
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, isBusiness: false })}
+            className={cn(
+              "flex-1 py-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all",
+              !formData.isBusiness ? "bg-blue-800 text-white" : "bg-white text-slate-400 hover:text-slate-950"
+            )}
+          >
+            <LucideUser className="h-4 w-4" /> Jugador
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, isBusiness: true })}
+            className={cn(
+              "flex-1 py-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all border-l-2 border-slate-950",
+              formData.isBusiness ? "bg-blue-800 text-white" : "bg-white text-slate-400 hover:text-slate-950"
+            )}
+          >
+            <LucideStore className="h-4 w-4" /> Centro Deportivo
+          </button>
         </div>
 
         <CardHeader className="space-y-4 pb-8 pt-8">
@@ -124,8 +124,8 @@ export default function RegisterPage() {
             </CardTitle>
           </div>
           <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            {formData.isBusiness 
-              ? "Crea tu organización y comienza a automatizar tu centro deportivo hoy mismo." 
+            {formData.isBusiness
+              ? "Crea tu organización y comienza a automatizar tu centro deportivo hoy mismo."
               : "Únete a la red para gestionar tus reservas y acceder a beneficios exclusivos."
             }
           </CardDescription>
@@ -138,7 +138,7 @@ export default function RegisterPage() {
                 <Label className="text-[9px] font-black uppercase tracking-widest text-blue-800">Nombre del Club / Centro</Label>
                 <div className="relative">
                   <LucideTrophy className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-800" />
-                  <Input 
+                  <Input
                     required
                     placeholder="WOLFF PADEL CENTER"
                     value={formData.businessName}
@@ -150,40 +150,40 @@ export default function RegisterPage() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Nombre del Responsable</Label>
-                  <div className="relative">
-                    <LucideUser className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input 
-                      required
-                      placeholder="JUAN PÉREZ"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
-                      className="pl-10 h-12 rounded-none border-slate-200 font-bold uppercase text-[10px] focus-visible:ring-0 focus-visible:border-blue-800"
-                    />
-                  </div>
-               </div>
-               <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Correo Electrónico</Label>
-                  <div className="relative">
-                    <LucideMail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input 
-                      required
-                      type="email"
-                      placeholder="OPERADOR@SISTEMA.COM"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase() })}
-                      className="pl-10 h-12 rounded-none border-slate-200 font-bold lowercase text-[10px] focus-visible:ring-0 focus-visible:border-blue-800"
-                    />
-                  </div>
-               </div>
+              <div className="space-y-2">
+                <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Nombre del Responsable</Label>
+                <div className="relative">
+                  <LucideUser className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    required
+                    placeholder="JUAN PÉREZ"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
+                    className="pl-10 h-12 rounded-none border-slate-200 font-bold uppercase text-[10px] focus-visible:ring-0 focus-visible:border-blue-800"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Correo Electrónico</Label>
+                <div className="relative">
+                  <LucideMail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    required
+                    type="email"
+                    placeholder="OPERADOR@SISTEMA.COM"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase() })}
+                    className="pl-10 h-12 rounded-none border-slate-200 font-bold lowercase text-[10px] focus-visible:ring-0 focus-visible:border-blue-800"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Contraseña de Acceso</Label>
               <div className="relative">
                 <LucideLock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input 
+                <Input
                   required
                   type="password"
                   placeholder="••••••••"
@@ -200,7 +200,7 @@ export default function RegisterPage() {
               </div>
             )}
 
-            <Button 
+            <Button
               type="submit"
               className="w-full h-14 bg-slate-950 text-white rounded-none font-black uppercase tracking-widest hover:bg-blue-800 transition-all flex items-center justify-center gap-3"
               disabled={loading}
