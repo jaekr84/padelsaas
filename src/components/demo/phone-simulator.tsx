@@ -50,13 +50,17 @@ export function PhoneSimulator() {
 
   return (
     <div className="relative w-[320px] h-[650px] mx-auto lg:mx-0 group">
-      {/* Marco del Teléfono (Imagen proporcionada) */}
-      <div className="absolute inset-0 z-10 pointer-events-none">
-        <img 
-          src="/img/phone.png" 
-          alt="Phone Frame" 
-          className="w-full h-full object-contain drop-shadow-[20px_20px_40px_rgba(0,0,0,0.3)]" 
-        />
+      {/* Marco del Teléfono (CSS Industrial) */}
+      <div className="absolute inset-0 z-30 pointer-events-none border-[8px] border-slate-950 rounded-[54px] shadow-[20px_20px_0px_rgba(0,0,0,0.1)]">
+        {/* Sensores / Notch */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-950 rounded-b-3xl flex items-center justify-center gap-2 px-4">
+           <div className="h-1 flex-1 bg-white/10 rounded-full"></div>
+           <div className="size-1.5 rounded-full bg-white/20"></div>
+        </div>
+        {/* Botones laterales */}
+        <div className="absolute -left-[10px] top-24 w-[3px] h-12 bg-slate-950 rounded-l-md"></div>
+        <div className="absolute -left-[10px] top-40 w-[3px] h-20 bg-slate-950 rounded-l-md"></div>
+        <div className="absolute -right-[10px] top-32 w-[3px] h-24 bg-slate-950 rounded-r-md"></div>
       </div>
 
       {/* Pantalla del Teléfono */}
