@@ -159,36 +159,39 @@ export default async function ReportsPage({
   const avgTicket = periodSales.length > 0 ? totalSales / periodSales.length : 0;
 
   return (
-    <div className="p-8 space-y-8 bg-slate-50/50 min-h-screen">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-black tracking-tight text-slate-900 uppercase">Reportes Generales</h1>
-          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">Resumen de rendimiento • {periodLabel}</p>
+    <div className="p-4 space-y-4 bg-white min-h-screen animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-200 pb-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 uppercase">Reportes Generales</h1>
+          <p className="text-slate-500 font-mono text-[9px] uppercase tracking-wider">Análisis de Rendimiento • {periodLabel}</p>
         </div>
         <ReportFilters />
       </div>
 
-      {/* Row 1: KPIs */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "Ventas Totales", value: formatCurrency(totalSales), icon: LucideTrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-          { label: "Compras Stock", value: formatCurrency(totalPurchases), icon: LucideTrendingDown, color: "text-red-500", bg: "bg-red-500/10" },
-          { label: "Balance Neto", value: formatCurrency(netBalance), icon: LucideDollarSign, color: "text-blue-500", bg: "bg-blue-500/10" },
-          { label: "Ticket Promedio", value: formatCurrency(avgTicket), icon: LucideShoppingBag, color: "text-orange-500", bg: "bg-orange-500/10" },
-        ].map((kpi) => (
-          <Card key={kpi.label} className="border-none shadow-sm rounded-3xl overflow-hidden bg-white group hover:shadow-xl transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400">{kpi.label}</CardTitle>
-              <div className={`${kpi.bg} ${kpi.color} p-2 rounded-xl group-hover:scale-110 transition-transform`}>
-                <kpi.icon className="h-4 w-4" />
+      {/* Row 1: KPIs en Grilla Industrial */}
+      <div className="grid gap-px bg-slate-200 border border-slate-200">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-px">
+          {[
+            { label: "Ventas Totales", value: formatCurrency(totalSales), icon: LucideTrendingUp, color: "text-blue-800" },
+            { label: "Compras Stock", value: formatCurrency(totalPurchases), icon: LucideTrendingDown, color: "text-slate-900" },
+            { label: "Balance Neto", value: formatCurrency(netBalance), icon: LucideDollarSign, color: "text-blue-900" },
+            { label: "Ticket Promedio", value: formatCurrency(avgTicket), icon: LucideShoppingBag, color: "text-slate-950" },
+          ].map((kpi) => (
+            <div key={kpi.label} className="bg-white p-4 flex flex-col justify-between hover:bg-slate-50 transition-colors">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{kpi.label}</span>
+                <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-black tracking-tighter text-slate-900">{kpi.value}</div>
-              <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase">Actualizado hace instantes</p>
-            </CardContent>
-          </Card>
-        ))}
+              <div>
+                <div className="text-2xl font-bold tracking-tighter text-slate-950">{kpi.value}</div>
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="h-1 w-1 bg-blue-800" />
+                  <p className="text-[9px] font-bold text-slate-400 uppercase">Sincronizado</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Row 2 & 3: Charts (Client Component) */}

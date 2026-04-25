@@ -205,20 +205,20 @@ export function POSView({ products, centers, unpaidBookings, terminals = [], pay
   };
 
   return (
-    <div className="flex h-[calc(100vh-100px)] gap-6 p-6 animate-in fade-in duration-500">
+    <div className="flex h-[calc(100vh-80px)] gap-4 p-4 animate-in fade-in duration-500">
       {/* Columna Izquierda: Carrito y Búsqueda */}
-      <div className="flex-1 flex flex-col gap-6">
+      <div className="flex-1 flex flex-col gap-4">
         {/* Buscador Premium */}
         <div className="relative">
-          <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 flex items-center gap-4 group">
-            <div className="h-12 w-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-100">
+          <div className="bg-white border border-slate-200 flex items-center gap-0 group">
+            <div className="h-14 w-14 bg-slate-950 flex items-center justify-center text-white shrink-0">
               <LucideScanBarcode className="h-6 w-6" />
             </div>
             <div className="flex-1 relative">
               <Input 
                 ref={searchInputRef}
                 placeholder="ESCANEAR CÓDIGO O BUSCAR PRODUCTO..."
-                className="border-none bg-transparent focus-visible:ring-0 text-xl font-black uppercase tracking-tight placeholder:text-slate-300 h-12"
+                className="border-none bg-transparent focus-visible:ring-0 text-lg font-bold uppercase tracking-tight placeholder:text-slate-300 h-14 px-6"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
@@ -226,7 +226,7 @@ export function POSView({ products, centers, unpaidBookings, terminals = [], pay
               
               {/* Resultados de búsqueda rápidos */}
               {filteredProducts.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-4 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-50">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 shadow-2xl z-50">
                   {filteredProducts.map(p => (
                     <button
                       key={p.id}
@@ -246,47 +246,44 @@ export function POSView({ products, centers, unpaidBookings, terminals = [], pay
           </div>
         </div>
 
-        {/* Botones de Acceso Rápido / Reservas */}
         <div className="flex gap-4">
           <Dialog open={isReservationsOpen} onOpenChange={setIsReservationsOpen}>
             <DialogTrigger render={
-              <Button className="h-16 flex-1 bg-white border border-slate-100 shadow-sm rounded-3xl text-slate-900 hover:bg-slate-50 transition-all gap-4">
-                <div className="h-10 w-10 bg-orange-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-100">
-                  <LucideCalendarClock className="h-6 w-6" />
+              <Button className="h-14 flex-1 bg-white border border-slate-200 rounded-none text-slate-900 hover:bg-slate-50 transition-all gap-4">
+                <div className="h-10 w-10 bg-slate-100 flex items-center justify-center text-slate-900">
+                  <LucideCalendarClock className="h-5 w-5" />
                 </div>
                 <div className="text-left">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cobrar</p>
-                  <p className="text-sm font-black uppercase">Próximas Reservas</p>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Acceso</p>
+                  <p className="text-xs font-bold uppercase">Reservas Pendientes</p>
                 </div>
-                <div className="ml-auto bg-slate-100 px-3 py-1 rounded-full text-[10px] font-black text-slate-500">
-                  {unpaidBookings.length} PENDIENTES
+                <div className="ml-auto bg-slate-950 px-3 py-1 text-[9px] font-bold text-white">
+                  {unpaidBookings.length}
                 </div>
               </Button>
             } />
-            <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] border-none shadow-2xl p-8">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-black uppercase tracking-tight text-slate-900 flex items-center gap-3">
-                  <div className="h-10 w-10 bg-orange-500 rounded-xl flex items-center justify-center text-white">
-                    <LucideCalendarClock className="h-6 w-6" />
+            <DialogContent className="sm:max-w-[600px] rounded-none border-slate-200 shadow-2xl p-0 overflow-hidden">
+              <DialogHeader className="p-8 border-b border-slate-100 bg-slate-50/50">
+                <DialogTitle className="text-xl font-bold uppercase tracking-tight text-slate-950 flex items-center gap-3">
+                  <div className="h-10 w-10 bg-slate-950 flex items-center justify-center text-white">
+                    <LucideCalendarClock className="h-5 w-5" />
                   </div>
-                  Reservas Pendientes de Cobro
+                  Terminal de Reservas
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 mt-6 max-h-[400px] overflow-auto pr-2">
+              <div className="p-8 space-y-px bg-slate-100">
                 {unpaidBookings.map((booking) => (
                   <button
                     key={booking.id}
                     onClick={() => addBookingToCart(booking)}
-                    className="w-full p-4 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-100 flex items-center justify-between transition-all group text-left"
+                    className="w-full p-6 bg-white hover:bg-slate-50 border-none flex items-center justify-between transition-all group text-left"
                   >
                     <div className="flex flex-col gap-1">
-                      <span className="font-black text-slate-900 uppercase text-sm tracking-tight">
+                      <span className="font-bold text-slate-950 uppercase text-xs tracking-tight">
                         {booking.court?.name} - {booking.guestName || booking.user?.name || "Sin nombre"}
                       </span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} HS
-                        <span className="h-1 w-1 bg-slate-300 rounded-full" />
-                        ID: {booking.id.slice(0, 8)}
+                      <span className="text-[9px] font-mono text-slate-400 uppercase tracking-widest">
+                        {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} HS • ID: {booking.id.slice(0, 8)}
                       </span>
                     </div>
                     <div className="text-right">
@@ -308,26 +305,26 @@ export function POSView({ products, centers, unpaidBookings, terminals = [], pay
             </DialogContent>
           </Dialog>
 
-          <Button className="h-16 flex-1 bg-white border border-slate-100 shadow-sm rounded-3xl text-slate-900 hover:bg-slate-50 transition-all gap-4 opacity-50 cursor-not-allowed">
-            <div className="h-10 w-10 bg-blue-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
-              <LucideShoppingCart className="h-6 w-6" />
+          <Button className="h-14 flex-1 bg-white border border-slate-200 rounded-none text-slate-900 hover:bg-slate-50 transition-all gap-4 opacity-50 cursor-not-allowed">
+            <div className="h-10 w-10 bg-slate-100 flex items-center justify-center text-slate-400">
+              <LucideShoppingCart className="h-5 w-5" />
             </div>
             <div className="text-left">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Acceso</p>
-              <p className="text-sm font-black uppercase">Otros Servicios</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Acceso</p>
+              <p className="text-xs font-bold uppercase">Servicios Varios</p>
             </div>
           </Button>
         </div>
 
-        {/* Tabla de Items (Excel-Style) */}
-        <div className="flex-1 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-          <div className="bg-slate-50/50 px-8 py-4 border-b border-slate-100 flex justify-between items-center">
-            <h3 className="font-black uppercase tracking-widest text-[10px] text-slate-400 flex items-center gap-2">
+        {/* Tabla de Items (Industrial Style) */}
+        <div className="flex-1 bg-white border border-slate-200 rounded-none overflow-hidden flex flex-col">
+          <div className="bg-slate-50/50 px-6 py-3 border-b border-slate-200 flex justify-between items-center">
+            <h3 className="font-bold uppercase tracking-widest text-[10px] text-slate-500 flex items-center gap-2">
               <LucideShoppingCart className="h-4 w-4" />
-              Detalle de Venta
+              Detalle de Comprobante
             </h3>
-            <span className="bg-white px-3 py-1 rounded-full text-[10px] font-black text-slate-400 border border-slate-100">
-              {cart.length} ARTÍCULOS
+            <span className="font-mono text-[10px] font-bold text-slate-950 uppercase border-l border-slate-200 pl-4">
+              Items: {cart.length}
             </span>
           </div>
           
@@ -339,64 +336,64 @@ export function POSView({ products, centers, unpaidBookings, terminals = [], pay
               </div>
             ) : (
               <table className="w-full text-left border-collapse">
-                <thead className="sticky top-0 bg-white z-10">
-                  <tr className="border-b border-slate-50">
-                    <th className="px-8 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400">Producto</th>
-                    <th className="px-8 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Cantidad</th>
-                    <th className="px-8 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Unitario</th>
-                    <th className="px-8 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Subtotal</th>
-                    <th className="px-8 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center"></th>
+                <thead className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-3 text-[9px] font-bold uppercase tracking-widest text-slate-500 border-r border-slate-100">Producto</th>
+                    <th className="px-6 py-3 text-[9px] font-bold uppercase tracking-widest text-slate-500 text-center border-r border-slate-100">Cant.</th>
+                    <th className="px-6 py-3 text-[9px] font-bold uppercase tracking-widest text-slate-500 text-right border-r border-slate-100">P. Unit</th>
+                    <th className="px-6 py-3 text-[9px] font-bold uppercase tracking-widest text-slate-500 text-right">Subtotal</th>
+                    <th className="px-6 py-3 text-[9px] font-bold uppercase tracking-widest text-slate-500 text-center"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {cart.map((item) => (
-                    <tr key={item.cartId} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-8 py-4">
+                    <tr key={item.cartId} className="hover:bg-slate-50 transition-colors group">
+                      <td className="px-6 py-3 border-r border-slate-50">
                         <div className="flex flex-col">
                           <span className={cn(
-                            "font-black uppercase text-sm tracking-tight",
-                            item.isBooking ? "text-blue-600" : "text-slate-700"
+                            "font-bold uppercase text-xs tracking-tight",
+                            item.isBooking ? "text-blue-800" : "text-slate-950"
                           )}>{item.name}</span>
-                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{item.sku}</span>
+                          <span className="text-[9px] text-slate-400 font-mono uppercase tracking-widest">{item.sku}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-4">
-                        <div className="flex items-center justify-center gap-3">
+                      <td className="px-6 py-3 border-r border-slate-50">
+                        <div className="flex items-center justify-center gap-4">
                           <button 
                             onClick={() => updateQuantity(item.cartId, -1)}
                             disabled={item.isBooking}
                             className={cn(
-                              "h-8 w-8 rounded-lg border border-slate-100 flex items-center justify-center text-slate-400 transition-all",
-                              item.isBooking ? "opacity-30 cursor-not-allowed" : "hover:bg-white hover:text-red-500 hover:shadow-md"
+                              "h-7 w-7 border border-slate-200 flex items-center justify-center text-slate-400 transition-all",
+                              item.isBooking ? "opacity-30 cursor-not-allowed" : "hover:bg-slate-950 hover:text-white"
                             )}
                           >
                             <LucideMinus className="h-3 w-3" />
                           </button>
-                          <span className="font-black text-slate-900 text-lg w-8 text-center tracking-tighter">{item.quantity}</span>
+                          <span className="font-bold text-slate-950 text-sm w-6 text-center">{item.quantity}</span>
                           <button 
                             onClick={() => updateQuantity(item.cartId, 1)}
                             disabled={item.isBooking}
                             className={cn(
-                              "h-8 w-8 rounded-lg border border-slate-100 flex items-center justify-center text-slate-400 transition-all",
-                              item.isBooking ? "opacity-30 cursor-not-allowed" : "hover:bg-white hover:text-blue-600 hover:shadow-md"
+                              "h-7 w-7 border border-slate-200 flex items-center justify-center text-slate-400 transition-all",
+                              item.isBooking ? "opacity-30 cursor-not-allowed" : "hover:bg-slate-950 hover:text-white"
                             )}
                           >
                             <LucidePlus className="h-3 w-3" />
                           </button>
                         </div>
                       </td>
-                      <td className="px-8 py-4 text-right">
-                        <span className="font-bold text-slate-500 text-sm">{formatCurrency(item.price)}</span>
+                      <td className="px-6 py-3 text-right border-r border-slate-50">
+                        <span className="font-bold text-slate-400 text-xs">{formatCurrency(item.price)}</span>
                       </td>
-                      <td className="px-8 py-4 text-right">
-                        <span className="font-black text-slate-900 text-lg tracking-tighter">{formatCurrency(item.price * item.quantity)}</span>
+                      <td className="px-6 py-3 text-right">
+                        <span className="font-bold text-slate-950 text-base tracking-tight">{formatCurrency(item.price * item.quantity)}</span>
                       </td>
                       <td className="px-8 py-4 text-center">
                         <button 
                           onClick={() => removeFromCart(item.cartId)}
-                          className="h-10 w-10 rounded-xl text-slate-200 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center mx-auto"
+                          className="h-10 w-10 text-slate-200 hover:text-slate-950 transition-all flex items-center justify-center mx-auto"
                         >
-                          <LucideTrash2 className="h-5 w-5" />
+                          <LucideTrash2 className="h-4 w-4" />
                         </button>
                       </td>
                     </tr>
@@ -409,36 +406,36 @@ export function POSView({ products, centers, unpaidBookings, terminals = [], pay
       </div>
 
       {/* Columna Derecha: Panel de Control de Pago */}
-      <div className="w-[450px] flex flex-col gap-6">
+      <div className="w-[380px] flex flex-col">
         {/* Configuración de Venta */}
-        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm flex flex-col gap-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 text-slate-900">
-              <div className="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center">
-                <LucideUser className="h-5 w-5" />
+        <div className="bg-white p-6 border border-slate-200 flex flex-col flex-1">
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 text-slate-950">
+              <div className="h-12 w-12 bg-slate-950 flex items-center justify-center text-white">
+                <LucideUser className="h-6 w-6" />
               </div>
               <div className="flex-1">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1 block">Cliente</label>
+                <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1 block">Cliente / Titular</label>
                 <CustomerSelect 
                   defaultValue={customerId || ""}
                   onSelect={(customer) => {
                     setCustomerId(customer.id);
                     setCustomerName(`${customer.firstName} ${customer.lastName}`);
                   }}
-                  className="bg-transparent border-none p-0 focus-visible:ring-0 font-black text-lg h-8 uppercase tracking-tight shadow-none hover:bg-slate-50 transition-colors"
+                  className="bg-transparent border-none p-0 focus-visible:ring-0 font-bold text-lg h-8 uppercase tracking-tight shadow-none hover:bg-slate-50 transition-colors"
                   placeholder={customerName}
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Terminal</label>
+            <div className="grid grid-cols-2 gap-px bg-slate-200 border border-slate-200">
+              <div className="bg-white p-4">
+                <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">Terminal</label>
                 <Select value={terminalId} onValueChange={(val: string | null) => val && setTerminalId(val)}>
-                  <SelectTrigger className="rounded-xl border-slate-200 font-bold uppercase text-[10px] tracking-widest h-10">
+                  <SelectTrigger className="rounded-none border-slate-200 font-bold uppercase text-[10px] tracking-widest h-10">
                     <SelectValue placeholder="Terminal" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-none">
                     {terminals.length > 0 ? (
                       terminals.map(t => (
                         <SelectItem key={t.id} value={t.name} className="font-bold uppercase text-[10px] tracking-widest">
@@ -455,13 +452,13 @@ export function POSView({ products, centers, unpaidBookings, terminals = [], pay
                 </Select>
               </div>
 
-              <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Medio de Pago</label>
+              <div className="bg-white p-4">
+                <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">Medio de Pago</label>
                 <Select value={paymentMethod} onValueChange={(val: string | null) => val && setPaymentMethod(val)}>
-                  <SelectTrigger className="rounded-xl border-slate-200 font-bold uppercase text-[10px] tracking-widest h-10">
+                  <SelectTrigger className="rounded-none border-slate-200 font-bold uppercase text-[10px] tracking-widest h-10">
                     <SelectValue placeholder="Método" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-none">
                     {paymentMethods.length > 0 ? (
                       paymentMethods.map(pm => (
                         <SelectItem key={pm.id} value={pm.name} className="font-bold uppercase text-[10px] tracking-widest">
@@ -480,56 +477,49 @@ export function POSView({ products, centers, unpaidBookings, terminals = [], pay
               </div>
             </div>
           </div>
+          
+          {/* Spacer to push total to bottom */}
+          <div className="flex-1" />
 
           <hr className="border-slate-50" />
 
           {/* Recargos y Descuentos */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between group">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-red-50 rounded-xl flex items-center justify-center text-red-500">
-                  <LucideBadgePercent className="h-5 w-5" />
-                </div>
-                <span className="font-black uppercase tracking-widest text-[10px] text-slate-500">Descuento</span>
-              </div>
-              <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100 focus-within:border-red-200 transition-colors">
-                <span className="text-slate-400 font-black text-sm">$</span>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span className="font-bold uppercase tracking-widest text-[9px] text-slate-500">Descuento Global</span>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400 font-bold text-xs">$</span>
                 <input 
                   type="number"
                   value={discount}
                   onChange={(e) => setDiscount(Number(e.target.value))}
-                  className="bg-transparent border-none w-20 text-right focus:outline-none font-black text-slate-800 tracking-tighter"
+                  className="bg-transparent border-none w-20 text-right focus:outline-none font-bold text-slate-950 tracking-tight"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between group">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500">
-                  <LucidePlus className="h-5 w-5" />
-                </div>
-                <span className="font-black uppercase tracking-widest text-[10px] text-slate-500">Recargo</span>
-              </div>
-              <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100 focus-within:border-blue-200 transition-colors">
-                <span className="text-slate-400 font-black text-sm">$</span>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span className="font-bold uppercase tracking-widest text-[9px] text-slate-500">Recargos / Tax</span>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400 font-bold text-xs">$</span>
                 <input 
                   type="number"
                   value={charge}
                   onChange={(e) => setCharge(Number(e.target.value))}
-                  className="bg-transparent border-none w-20 text-right focus:outline-none font-black text-slate-800 tracking-tighter"
+                  className="bg-transparent border-none w-20 text-right focus:outline-none font-bold text-slate-950 tracking-tight"
                 />
               </div>
             </div>
           </div>
 
-          <div className="mt-4 p-6 bg-slate-900 rounded-[2rem] text-white relative overflow-hidden">
-            <LucideCircleDollarSign className="absolute -right-4 -bottom-4 h-24 w-24 opacity-10 rotate-12" />
-            <div className="relative z-10">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-1">Total a Cobrar</p>
-              <h2 className="text-5xl font-black tracking-tighter">{formatCurrency(total)}</h2>
-              <div className="mt-4 flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <p className="text-[9px] font-bold uppercase tracking-widest text-white/40">Listo para procesar</p>
+          <div className="mt-4 p-8 bg-slate-950 text-white relative border-t-4 border-blue-800">
+            <div className="relative z-10 flex items-center justify-between">
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/50 mb-1">Total Comprobante</p>
+                <h2 className="text-5xl font-bold tracking-tighter">{formatCurrency(total)}</h2>
+              </div>
+              <div className="text-right">
+                <div className="h-2 w-2 bg-blue-500 ml-auto animate-pulse" />
               </div>
             </div>
           </div>
@@ -537,15 +527,12 @@ export function POSView({ products, centers, unpaidBookings, terminals = [], pay
           <Button 
             onClick={handleCheckout}
             disabled={isProcessing || cart.length === 0}
-            className="w-full h-20 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-black uppercase tracking-[0.2em] text-sm rounded-[2rem] shadow-2xl shadow-blue-200 transition-all hover:scale-[1.02] active:scale-[0.98] flex flex-col gap-1"
+            className="w-full h-16 bg-blue-800 hover:bg-blue-900 disabled:bg-slate-100 disabled:text-slate-400 text-white font-bold uppercase tracking-[0.2em] text-xs rounded-none transition-all flex items-center justify-center gap-3"
           >
             {isProcessing ? "Procesando..." : (
               <>
-                <span className="flex items-center gap-2">
-                  <LucideCheck className="h-5 w-5" />
-                  Confirmar Venta
-                </span>
-                <span className="text-[9px] opacity-60 tracking-widest">PRESIONE ENTER O CLICK</span>
+                <LucideCheck className="h-4 w-4" />
+                Confirmar Operación
               </>
             )}
           </Button>

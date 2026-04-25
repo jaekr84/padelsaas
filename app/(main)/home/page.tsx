@@ -70,53 +70,52 @@ export default async function HomePage() {
     }
   });
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">¡Hola, {userName}! 👋</h1>
-        <p className="text-muted-foreground text-lg">
-          Bienvenido a tu centro de control de Padel SaaS.
+    <div className="space-y-4 animate-in fade-in duration-500">
+      <div className="flex flex-col gap-1 border-b border-slate-200 pb-4">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-950 uppercase">
+          Terminal: {userName}
+        </h1>
+        <p className="text-slate-500 font-mono text-[9px] uppercase tracking-wider">
+          Estado del Sistema • Centro de Alto Rendimiento • {new Date().toLocaleDateString('es-AR')}
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "Ventas Hoy", value: salesToday.count.toString(), icon: LucideShoppingCart, color: "text-blue-500", bg: "bg-blue-500/10" },
-          { label: "Ingresos Mes", value: formatCurrency(salesMonth?.total || 0), icon: LucideTrendingUp, color: "text-green-500", bg: "bg-green-500/10" },
-          { label: "Clientes Registrados", value: totalCustomers.count.toString(), icon: LucideUsers, color: "text-orange-500", bg: "bg-orange-500/10" },
-          { label: "Ocupación", value: "78%", icon: LucideTarget, color: "text-primary", bg: "bg-primary/10" },
-        ].map((stat) => (
-          <Card key={stat.label} className="border-none shadow-md bg-card/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
-              <div className={`${stat.bg} ${stat.color} p-2 rounded-lg`}>
-                <stat.icon className="h-4 w-4" />
+      <div className="grid gap-px bg-slate-200 border border-slate-200">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-px">
+          {[
+            { label: "Ventas Hoy", value: salesToday.count.toString(), icon: LucideShoppingCart, color: "text-blue-800" },
+            { label: "Ingresos Mes", value: formatCurrency(salesMonth?.total || 0), icon: LucideTrendingUp, color: "text-slate-950" },
+            { label: "Clientes Registrados", value: totalCustomers.count.toString(), icon: LucideUsers, color: "text-blue-900" },
+            { label: "Ocupación", value: "78%", icon: LucideTarget, color: "text-slate-800" },
+          ].map((stat) => (
+            <div key={stat.label} className="bg-white p-4 flex flex-col justify-between hover:bg-slate-50 transition-colors">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{stat.label}</span>
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                +12% desde la semana pasada
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+              <div>
+                <div className="text-2xl font-bold tracking-tighter text-slate-950">{stat.value}</div>
+                <div className="mt-2 h-1 w-full bg-slate-100 overflow-hidden">
+                  <div className="h-full bg-blue-800 w-2/3" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4 border-none shadow-lg">
-          <CardHeader>
-            <CardTitle>Actividad Reciente</CardTitle>
-            <CardDescription>
-              Las últimas reservas y registros de tu centro.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+        <div className="lg:col-span-4 bg-white border border-slate-200 rounded-none overflow-hidden">
+          <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-800">Monitor de Actividad</h3>
+          </div>
+          <div className="p-0">
+            <div className="space-y-px bg-slate-100">
               {recentSales.map((sale) => (
-                <div key={sale.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50/50 border border-slate-100/50">
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                      <LucideTrendingUp className="h-5 w-5 text-emerald-600" />
+                <div key={sale.id} className="flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="h-8 w-8 border border-slate-200 flex items-center justify-center">
+                      <LucideTrendingUp className="h-4 w-4 text-slate-900" />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">
@@ -143,44 +142,43 @@ export default async function HomePage() {
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
         
-        <Card className="lg:col-span-3 border-none shadow-lg">
-          <CardHeader>
-            <CardTitle>Próximos Partidos</CardTitle>
-            <CardDescription>
-              Partidos programados para las próximas 2 horas.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-none overflow-hidden">
+          <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-800">Próximos Partidos</h3>
+          </div>
+          <div className="p-0">
+            <div className="space-y-px bg-slate-100 border border-slate-100">
               {upcomingBookings.map((booking) => (
-                <div key={booking.id} className="flex items-center gap-4 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors border border-transparent hover:border-slate-100">
-                  <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center font-black text-blue-600 text-xs">
-                    {booking.court?.name?.split(" ").pop()}
+                <div key={booking.id} className="flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="h-8 w-8 bg-slate-950 flex items-center justify-center font-bold text-white text-[10px]">
+                      {booking.court?.name?.split(" ").pop()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">
+                        {booking.court?.name} - {booking.guestName || booking.user?.name || "Reserva"}
+                      </p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">
-                      {booking.court?.name} - {booking.guestName || booking.user?.name || "Reserva"}
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
-                    </p>
-                  </div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-green-500 bg-green-500/10 px-2 py-1 rounded-md">
-                    Programado
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-blue-800 border border-blue-800/20 px-2 py-1">
+                    CONFIRMADO
                   </div>
                 </div>
               ))}
               {upcomingBookings.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  No hay partidos programados próximamente.
+                <div className="bg-white p-8 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                  No hay partidos programados
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
