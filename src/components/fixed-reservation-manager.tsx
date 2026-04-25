@@ -213,471 +213,497 @@ export function FixedReservationManager({
   const selectedCount = validationResults?.filter((r: any) => r.selected).length || 0;
 
   return (
-    <div className="max-w-[1600px] mx-auto p-6 space-y-12 pb-40 animate-in fade-in duration-700">
-
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <LucideRepeat className="h-6 w-6 text-emerald-600" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600">Gestión de Abonos</span>
-          </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Reservas Fijas</h1>
-          <p className="text-slate-400 font-medium tracking-wide mt-2">Configuración masiva de horarios recurrentes para clientes fijos</p>
-        </div>
-
-        <Button
-          variant="ghost"
-          onClick={() => {
-            clearValidation();
-            form.reset();
-            form.setValue("reservationType", "recurring");
-          }}
-          className="h-12 rounded-xl text-slate-400 font-bold px-6 hover:bg-slate-50 hover:text-slate-900 transition-all"
-        >
-          <LucideRotateCcw className="h-4 w-4 mr-2" />
-          Limpiar Todo
-        </Button>
-      </div>
-
+    <div className="pb-40">
       <Form {...form}>
-        <form onSubmit={onSubmit} className="space-y-12">
+        <form onSubmit={onSubmit}>
+          {/* Main Content with Fade Animation */}
+          <div className="max-w-[1600px] mx-auto p-6 space-y-10 animate-in fade-in duration-500">
 
-          {/* 1. Configuration Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-
-            <div className="lg:col-span-4 space-y-8">
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 border-l-4 border-emerald-500 pl-4">
-                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">1. Identidad</h2>
+            {/* Page Header Industrial */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-8">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-6 bg-blue-800" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-800">Terminal de Abonos</span>
                 </div>
-                <div className="space-y-5">
-                  <FormField
-                    control={form.control}
-                    name="guestName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Cliente / Grupo</FormLabel>
-                        <FormControl>
-                          <CustomerSelect 
-                            defaultValue={form.getValues("customerId")}
-                            onSelect={(customer) => {
-                              form.setValue("customerId", customer.id);
-                              form.setValue("guestName", `${customer.firstName} ${customer.lastName}`);
-                            }}
-                            placeholder={field.value || "Seleccionar cliente..."}
-                          />
-                        </FormControl>
-                        <FormMessage className="text-[10px] ml-1" />
-                      </FormItem>
-                    )}
-                  />
+                <h1 className="text-3xl font-black text-slate-950 tracking-tighter uppercase">Gestión de Reservas Fijas</h1>
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-2">Configuración masiva de horarios recurrentes para clientes corporativos y fijos</p>
+              </div>
 
-                  <FormField
-                    control={form.control}
-                    name="courtId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Cancha de Preferencia</FormLabel>
-                        <Select onValueChange={(val) => field.onChange(val || "")} value={field.value || ""}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  clearValidation();
+                  form.reset();
+                  form.setValue("reservationType", "recurring");
+                }}
+                className="h-10 rounded-none border-slate-200 text-slate-500 font-black uppercase text-[10px] tracking-widest px-6 hover:bg-slate-50 hover:text-slate-950 transition-all gap-2"
+              >
+                <LucideRotateCcw className="h-3.5 w-3.5" />
+                Reiniciar Configuración
+              </Button>
+            </div>
+
+            {/* 1. Configuration Section - Industrial Grids */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+              <div className="lg:col-span-4 space-y-6">
+                <div className="bg-white border border-slate-200 p-6 space-y-6">
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <LucideUsers className="h-4 w-4 text-blue-800" />
+                    <h2 className="text-[10px] font-black text-slate-950 uppercase tracking-widest">01. Identificación del Cliente</h2>
+                  </div>
+                  <div className="space-y-5">
+                    <FormField
+                      control={form.control}
+                      name="guestName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Titular de la Cuenta</FormLabel>
                           <FormControl>
-                            <SelectTrigger className="w-full h-14 bg-slate-50/50 border-slate-100 text-slate-900 font-bold rounded-xl px-6 focus:bg-white transition-all shadow-sm shadow-slate-100/50">
-                              <SelectValue placeholder="Seleccionar cancha..." />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="rounded-xl">
-                            <SelectItem value="auto" className="font-bold text-emerald-600">Ocupación Automática (Mejor Libre)</SelectItem>
-                            {courts.map((court) => (
-                              <SelectItem key={court.id} value={court.id} className="font-medium">
-                                {court.name} - {court.type}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-8 space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 border-l-4 border-blue-500 pl-4">
-                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">2. Temporalidad</h2>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="dateStr"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Desde</FormLabel>
-                          <Input type="date" className="h-14 bg-slate-50/50 border-slate-100 font-bold rounded-xl px-6" {...field} />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="recurringEndDateStr"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Hasta</FormLabel>
-                          <Input type="date" className="h-14 bg-slate-50/50 border-slate-100 font-bold rounded-xl px-6" {...field} value={field.value || ""} />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="startTimeStr"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Hora Inicio</FormLabel>
-                          <Select onValueChange={(val) => field.onChange(val || "")} value={field.value || ""}>
-                            <FormControl>
-                              <SelectTrigger className="w-full h-14 bg-slate-50/50 border-slate-100 font-bold rounded-xl px-6">
-                                <SelectValue placeholder="Hora..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="max-h-[300px]">
-                              {timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="durationMins"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Duración</FormLabel>
-                          <Select onValueChange={(val) => field.onChange(parseInt(val || "0"))} value={field.value ? String(field.value) : ""}>
-                            <FormControl>
-                              <SelectTrigger className="w-full h-14 bg-slate-50/50 border-slate-100 font-bold rounded-xl px-6">
-                                <SelectValue placeholder="Mins..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {[60, 90, 120, 150, 180].map(m => <SelectItem key={m} value={m.toString()}>{m} min</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 border-l-4 border-amber-500 pl-4">
-                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">3. Recurrencia</h2>
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="recurringDays"
-                    render={({ field }) => (
-                      <div className="flex flex-wrap gap-2 py-2">
-                        {[
-                          { id: 1, label: "L" }, { id: 2, label: "M" }, { id: 3, label: "X" },
-                          { id: 4, label: "J" }, { id: 5, label: "V" }, { id: 6, label: "S" }, { id: 0, label: "D" }
-                        ].map(day => {
-                          const active = field.value?.includes(day.id);
-                          return (
-                            <button
-                              key={day.id}
-                              type="button"
-                              onClick={() => {
-                                const current = field.value || [];
-                                const next = active ? current.filter((d: number) => d !== day.id) : [...current, day.id];
-                                field.onChange(next);
+                            <CustomerSelect 
+                              defaultValue={form.getValues("customerId")}
+                              onSelect={(customer) => {
+                                form.setValue("customerId", customer.id);
+                                form.setValue("guestName", `${customer.firstName} ${customer.lastName}`);
                               }}
-                              className={cn(
-                                "h-12 w-12 rounded-xl flex items-center justify-center text-xs font-black transition-all border-2",
-                                active
-                                  ? "bg-slate-900 border-slate-900 text-white scale-105 shadow-lg shadow-slate-200"
-                                  : "bg-white border-slate-100 text-slate-400 hover:border-slate-200 hover:text-slate-600"
-                              )}
-                            >
-                              {day.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  />
-                  <Button
-                    type="button"
-                    onClick={onSimulateBatch}
-                    disabled={isValidating || !watchDateStr || !watchRecurringEndDateStr || watchRecurringDays.length === 0}
-                    className="w-full h-14 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-[0.2em] shadow-xl shadow-slate-200 transition-all active:scale-[0.98]"
-                  >
-                    {isValidating ? <LucideLoader2 className="h-5 w-5 animate-spin" /> : (
-                      <>
-                        <LucideSearch className="h-5 w-5 mr-2" />
-                        Buscar Disponibilidad
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 2. Validation Matrix - NEW Professional UI */}
-          {validationResults && (
-            <div className="pt-12 border-t border-slate-100 space-y-8 animate-in slide-in-from-bottom-8 duration-700">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center">
-                    <LucideShieldCheck className="h-6 w-6 text-emerald-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Matriz de Disponibilidad</h2>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Selecciona la cancha para cada turno. Si hay conflicto, usa el ojo para ver la grilla completa.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
-                    <LucideCheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
-                      {validationResults.filter(r => r.status === 'ok').length} OK
-                    </span>
-                  </div>
-                  {validationResults.filter(r => r.status === 'conflict').length > 0 && (
-                    <div className="flex items-center gap-2 bg-red-600 px-3 py-1.5 rounded-lg shadow-lg shadow-red-200 animate-bounce">
-                      <LucideAlertTriangle className="h-4 w-4 text-white" />
-                      <span className="text-[10px] font-black text-white uppercase tracking-widest">
-                        {validationResults.filter(r => r.status === 'conflict').length} Conflictos
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="overflow-x-auto border border-slate-100 rounded-2xl bg-white shadow-xl shadow-slate-100/50">
-                <table className="w-full border-collapse">
-                  <thead className="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                      <th className="p-4 text-[10px] font-black uppercase text-slate-400 tracking-widest border-r border-slate-100 w-16 text-center">#</th>
-                      <th className="p-4 text-[10px] font-black uppercase text-slate-400 tracking-widest border-r border-slate-100">Día / Fecha</th>
-                      <th className="p-4 text-[10px] font-black uppercase text-slate-400 tracking-widest border-r border-slate-100 text-center">Hora</th>
-                      {courts.map(court => (
-                        <th key={court.id} className="p-4 text-[10px] font-black uppercase text-slate-900 tracking-widest border-r border-slate-100 text-center min-w-[140px]">
-                          {court.name}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {validationResults.map((result, idx) => {
-                      const startTime = format(new Date(result.startTime), "HH:mm");
-                      const dateStr = format(new Date(result.startTime), "yyyy-MM-dd");
-
-                      return (
-                        <tr 
-                          key={idx} 
-                          className={cn(
-                            "hover:bg-slate-50/80 transition-all border-l-[6px]", 
-                            result.status === 'conflict' 
-                              ? "bg-red-50/60 border-l-red-500/80" 
-                              : "border-l-transparent"
-                          )}
-                        >
-                          <td className="p-4 text-center border-r border-slate-100">
-                            <Checkbox
-                              checked={result.selected}
-                              onCheckedChange={() => toggleResultSelection(idx)}
-                              className="h-5 w-5 rounded-md"
+                              className="bg-slate-50 border-slate-200 rounded-none h-12 font-bold uppercase text-xs"
+                              placeholder={field.value || "SELECCIONAR CLIENTE..."}
                             />
-                          </td>
-                          <td className="p-4 border-r border-slate-100">
-                            <div className="flex flex-col">
-                              <span className="text-[10px] font-black uppercase text-slate-600">{format(new Date(result.startTime), "EEEE", { locale: es })}</span>
-                              <span className="text-sm font-bold text-slate-900">{format(new Date(result.startTime), "dd MMMM", { locale: es })}</span>
-                            </div>
-                          </td>
-                          <td className="p-4 text-center border-r border-slate-100">
-                            <span className="text-xs font-mono font-black text-slate-700 bg-slate-100 px-2 py-1 rounded-md">
-                              {startTime}
-                            </span>
-                          </td>
-                          {courts.map(court => {
-                            const isBusy = isRangeBooked(court, startTime, watchDuration, dateStr);
-                            const isSelected = result.courtId === court.id;
+                          </FormControl>
+                          <FormMessage className="text-[9px] ml-1 font-bold uppercase" />
+                        </FormItem>
+                      )}
+                    />
 
-                            return (
-                              <td 
-                                key={court.id} 
-                                className={cn(
-                                    "p-3 border-r border-slate-100 text-center transition-all",
-                                    isSelected && !isBusy && "bg-emerald-500/15 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.2)]",
-                                    isSelected && isBusy && "bg-red-500/20 shadow-[inset_0_0_0_1px_rgba(239,68,68,0.2)]"
-                                )}
-                              >
-                                <div className="flex items-center justify-center gap-2">
-                                    {/* Occupancy Label - Left Side */}
-                                    <span className="text-[9px] font-mono font-black text-slate-800 bg-slate-100 px-2 py-1 rounded border border-slate-200 shrink-0">
-                                        {(result.courtUsages?.[court.id] || 0)}%
-                                    </span>
-
-                                    {isBusy ? (
-                                        <div className="flex items-center gap-1.5 h-8 px-2 rounded-lg bg-red-100 border border-red-200 min-w-[75px] justify-center shadow-sm">
-                                            <LucideX className="h-3 w-3 text-red-600 font-black" />
-                                            <span className="text-[8px] font-black text-red-700 uppercase tracking-tighter">Ocupado</span>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleUpdateInstanceCourt(idx, court.id);
-                                            }}
-                                            className={cn(
-                                                "h-8 px-3 rounded-lg flex items-center justify-center transition-all min-w-[75px]",
-                                                isSelected 
-                                                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20" 
-                                                    : "bg-slate-50 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"
-                                            )}
-                                        >
-                                            <span className="text-[9px] font-black uppercase tracking-widest">
-                                                {isSelected ? "Elegida" : "Libre"}
-                                            </span>
-                                        </button>
-                                    )}
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleOpenInspector(idx, court.id);
-                                        }}
-                                        className="h-8 w-8 rounded-lg bg-white border border-slate-100 text-slate-300 hover:text-emerald-600 hover:border-emerald-200 flex items-center justify-center transition-all shadow-sm shrink-0"
-                                    >
-                                        <LucideEye className="h-4 w-4" />
-                                    </button>
-                                </div>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Conflict Resolution Modal */}
-          <Dialog open={!!inspectingRow} onOpenChange={(open) => !open && setInspectingRow(null)}>
-            <DialogContent className="sm:w-[650px] sm:max-w-none rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
-              <div className="p-8 pb-4 bg-slate-50/50 border-b border-slate-100">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-3 text-slate-900">
-                    <LucideLayoutGrid className="h-6 w-6 text-emerald-600" />
-                    Inspección de Turno
-                  </DialogTitle>
-                  <DialogDescription className="font-medium text-slate-500 mt-2">
-                    {inspectingRow && (
-                      <span>
-                        Disponibilidad para el <strong className="text-slate-900">{format(new Date(validationResults![inspectingRow.index].startTime), "EEEE dd 'de' MMMM", { locale: es })}</strong> a las <strong className="text-slate-900">{format(new Date(validationResults![inspectingRow.index].startTime), "HH:mm")}</strong>
-                      </span>
-                    )}
-                  </DialogDescription>
-                </DialogHeader>
-              </div>
-
-              <div className="p-8 max-h-[60vh] overflow-y-auto bg-white">
-                {isModalLoading ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-4">
-                    <LucideLoader2 className="h-10 w-10 animate-spin text-emerald-600" />
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cargando disponibilidad...</p>
-                  </div>
-                ) : inspectingRow && (
-                  <div className="w-[500px] mx-auto animate-in fade-in zoom-in-95 duration-500">
-                    <CourtTimeGrid
-                      court={(inspectingRow.pendingCourtId && inspectingRow.pendingCourtId !== 'auto') ? (inspectingRow.courts.find(c => c.id === inspectingRow.pendingCourtId) || inspectingRow.courts[0]) : (watchCourtId === "auto" ? { id: 'auto', name: 'Global', bookings: inspectingRow.courts.flatMap(c => c.bookings) } as any : (inspectingRow.courts.find(c => c.id === watchCourtId) || inspectingRow.courts[0]))}
-                      isGlobalView={!inspectingRow.pendingCourtId || inspectingRow.pendingCourtId === 'auto'}
-                      allCourts={inspectingRow.courts}
-                      timeSlots={timeSlots}
-                      isSlotBooked={(c, t) => isRangeBooked(c, t, watchDuration, inspectingRow.dateStr)}
-                      onSlotClick={handleSlotClick}
-                      selectedTime={inspectingRow.pendingTime || format(new Date(validationResults![inspectingRow.index].startTime), "HH:mm")}
-                      selectedDurationMins={watchDuration}
+                    <FormField
+                      control={form.control}
+                      name="courtId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Cancha Preferencial</FormLabel>
+                          <Select 
+                            key={`court-select-${courts.length}`}
+                            onValueChange={(val) => field.onChange(val || "")} 
+                            value={field.value || ""}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full h-12 bg-slate-50 border-slate-200 text-slate-950 font-black uppercase text-[10px] rounded-none px-4 focus:ring-0 focus:border-blue-800 transition-all">
+                                <SelectValue placeholder="SELECCIONAR CANCHA...">
+                                  {field.value === "auto" ? (
+                                    <span className="font-black text-blue-800">OCUPACIÓN AUTOMÁTICA</span>
+                                  ) : (
+                                    courts.find(c => c.id === field.value)?.name || field.value
+                                  )}
+                                </SelectValue>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="rounded-none border-slate-200 shadow-2xl">
+                              <SelectItem value="auto" className="font-black text-blue-800 uppercase text-[10px]">Ocupación Automática (Heurística)</SelectItem>
+                              {courts.map((court) => (
+                                <SelectItem key={court.id} value={court.id} className="font-bold uppercase text-[10px]">
+                                  {court.name} - {court.type}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
                     />
                   </div>
-                )}
-              </div>
-
-              <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between gap-3">
-                <Button
-                  variant="ghost"
-                  onClick={() => setInspectingRow(null)}
-                  className="h-12 rounded-xl font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 px-8"
-                >
-                  Cancelar
-                </Button>
-
-                <Button
-                  onClick={handleApplyPendingChange}
-                  disabled={!inspectingRow?.pendingTime}
-                  className={cn(
-                    "h-12 rounded-xl font-black uppercase tracking-widest px-10 transition-all duration-300",
-                    inspectingRow?.pendingTime
-                      ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-600/20 active:scale-95"
-                      : "bg-slate-200 text-slate-400 cursor-not-allowed opacity-50"
-                  )}
-                >
-                  Confirmar Nuevo Horario
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Sticky Bottom Actions */}
-          <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-width,256px)] z-50 bg-white/90 backdrop-blur-md border-t border-slate-100 p-6 animate-in slide-in-from-bottom-full duration-700 transition-all shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
-            <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-
-              <div className="flex items-center gap-10 w-full md:w-auto">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg shadow-slate-900/10">
-                    <LucideDollarSign className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="font-black text-slate-900 uppercase tracking-widest text-[9px]">Abono Total</h2>
-                    <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{appliedRateInfo?.name || "Tarifa Fija"}</p>
-                  </div>
                 </div>
+              </div>
 
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-black text-lg">$</span>
-                      <Input
-                        type="number"
-                        readOnly
-                        className="h-12 bg-slate-50 border-slate-100 text-slate-500 text-xl font-black rounded-xl pl-8 w-36 shadow-none cursor-not-allowed select-none"
-                        {...field}
+              <div className="lg:col-span-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
+                  <div className="bg-white border border-slate-200 p-6 space-y-6">
+                    <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                      <LucideClock className="h-4 w-4 text-blue-800" />
+                      <h2 className="text-[10px] font-black text-slate-950 uppercase tracking-widest">02. Parámetros Temporales</h2>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="dateStr"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Desde</FormLabel>
+                            <Input type="date" className="h-12 bg-slate-50 border-slate-200 font-black rounded-none px-4 text-xs" {...field} />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="recurringEndDateStr"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Hasta</FormLabel>
+                            <Input type="date" className="h-12 bg-slate-50 border-slate-200 font-black rounded-none px-4 text-xs" {...field} value={field.value || ""} />
+                          </FormItem>
+                        )}
                       />
                     </div>
-                  )}
-                />
-              </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="startTimeStr"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Hora Inicio</FormLabel>
+                            <Select onValueChange={(val) => field.onChange(val || "")} value={field.value || ""}>
+                              <FormControl>
+                                <SelectTrigger className="w-full h-12 bg-slate-50 border-slate-200 font-black rounded-none px-4 text-[10px]">
+                                  <SelectValue placeholder="HORA..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="max-h-[300px] rounded-none shadow-2xl">
+                                {timeSlots.map(t => <SelectItem key={t} value={t} className="font-bold text-[10px]">{t} HS</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="durationMins"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Duración</FormLabel>
+                            <Select onValueChange={(val) => field.onChange(parseInt(val || "0"))} value={field.value ? String(field.value) : ""}>
+                              <FormControl>
+                                <SelectTrigger className="w-full h-12 bg-slate-50 border-slate-200 font-black rounded-none px-4 text-[10px]">
+                                  <SelectValue placeholder="MINS..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="rounded-none shadow-2xl">
+                                {[60, 90, 120, 150, 180].map(m => <SelectItem key={m} value={m.toString()} className="font-bold text-[10px] uppercase">{m} MINUTOS</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
 
-              <div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end">
-                <div className="text-right">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block mb-1">Total a Reservar</span>
-                  <span className="text-3xl font-black text-emerald-600 leading-none tabular-nums">{selectedCount} Turnos</span>
+                  <div className="bg-white border border-slate-200 p-6 space-y-6 flex flex-col">
+                    <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                      <LucideRepeat className="h-4 w-4 text-blue-800" />
+                      <h2 className="text-[10px] font-black text-slate-950 uppercase tracking-widest">03. Ciclo de Recurrencia</h2>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="recurringDays"
+                      render={({ field }) => (
+                        <div className="flex flex-wrap gap-2 py-2 flex-1 items-start content-start">
+                          {[
+                            { id: 1, label: "L" }, { id: 2, label: "M" }, { id: 3, label: "X" },
+                            { id: 4, label: "J" }, { id: 5, label: "V" }, { id: 6, label: "S" }, { id: 0, label: "D" }
+                          ].map(day => {
+                            const active = field.value?.includes(day.id);
+                            return (
+                              <button
+                                key={day.id}
+                                type="button"
+                                onClick={() => {
+                                  const current = field.value || [];
+                                  const next = active ? current.filter((d: number) => d !== day.id) : [...current, day.id];
+                                  field.onChange(next);
+                                }}
+                                className={cn(
+                                  "h-10 w-10 rounded-none flex items-center justify-center text-[10px] font-black transition-all border",
+                                  active
+                                    ? "bg-slate-950 border-slate-950 text-white"
+                                    : "bg-white border-slate-200 text-slate-400 hover:border-slate-400 hover:text-slate-600"
+                                )}
+                              >
+                                {day.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    />
+                    <Button
+                      type="button"
+                      onClick={onSimulateBatch}
+                      disabled={isValidating || !watchDateStr || !watchRecurringEndDateStr || watchRecurringDays.length === 0}
+                      className="w-full h-12 rounded-none bg-blue-800 hover:bg-blue-900 text-white font-black uppercase tracking-[0.2em] text-[10px] transition-all"
+                    >
+                      {isValidating ? <LucideLoader2 className="h-4 w-4 animate-spin" /> : (
+                        <>
+                          <LucideSearch className="h-4 w-4 mr-2" />
+                          Analizar Disponibilidad
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Validation Matrix - Accounting Industrial Style */}
+            {validationResults && (
+              <div className="pt-10 border-t border-slate-200 space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-slate-950 flex items-center justify-center text-white">
+                      <LucideShieldCheck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-black text-slate-950 uppercase tracking-tight">Matriz de Validación Operativa</h2>
+                      <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.1em] mt-0.5">Auditoría de conflictos y asignación de recursos por fecha</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 bg-slate-100 px-3 py-2 border border-slate-200">
+                      <LucideCheckCircle2 className="h-3.5 w-3.5 text-blue-800" />
+                      <span className="text-[10px] font-black text-slate-950 uppercase tracking-widest">
+                        {validationResults.filter(r => r.status === 'ok').length} VALIDADO
+                      </span>
+                    </div>
+                    {validationResults.filter(r => r.status === 'conflict').length > 0 && (
+                      <div className="flex items-center gap-2 bg-blue-800 px-3 py-2 border border-blue-900">
+                        <LucideAlertTriangle className="h-3.5 w-3.5 text-white" />
+                        <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                          {validationResults.filter(r => r.status === 'conflict').length} CONFLICTOS
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="text-right border-l border-slate-100 pl-8 hidden sm:block">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block mb-1">Monto Total</span>
-                  <span className="text-3xl font-black text-slate-900 leading-none tabular-nums">
+                <div className="border border-slate-200 bg-white overflow-hidden">
+                  <table className="w-full border-collapse">
+                    <thead className="bg-slate-100 border-b border-slate-200">
+                      <tr>
+                        <th className="p-3 text-[9px] font-black uppercase text-slate-950 tracking-widest border-r border-slate-200 w-12 text-center">SEL</th>
+                        <th className="p-3 text-[9px] font-black uppercase text-slate-950 tracking-widest border-r border-slate-200 text-left pl-6">Fecha / Registro</th>
+                        <th className="p-3 text-[9px] font-black uppercase text-slate-950 tracking-widest border-r border-slate-200 text-center w-24">Horario</th>
+                        {courts.map(court => (
+                          <th key={court.id} className="p-3 text-[9px] font-black uppercase text-slate-950 tracking-widest border-r border-slate-200 text-center min-w-[150px]">
+                            {court.name}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {validationResults.map((result, idx) => {
+                        const startTime = format(new Date(result.startTime), "HH:mm");
+                        const dateStr = format(new Date(result.startTime), "yyyy-MM-dd");
+
+                        return (
+                          <tr 
+                            key={idx} 
+                            className={cn(
+                              "hover:bg-slate-50 transition-colors h-14", 
+                              result.status === 'conflict' 
+                                ? "bg-slate-50/50" 
+                                : ""
+                            )}
+                          >
+                            <td className="p-3 text-center border-r border-slate-100">
+                              <Checkbox
+                                checked={result.selected}
+                                onCheckedChange={() => toggleResultSelection(idx)}
+                                className="h-4 w-4 rounded-none border-slate-300 data-[state=checked]:bg-blue-800 data-[state=checked]:border-blue-800"
+                              />
+                            </td>
+                            <td className="p-3 border-r border-slate-100 pl-6">
+                              <div className="flex items-center gap-3">
+                                <span className="text-[9px] font-black uppercase text-slate-400 w-16">{format(new Date(result.startTime), "EEE", { locale: es })}</span>
+                                <span className="text-xs font-black text-slate-950 uppercase tabular-nums">{format(new Date(result.startTime), "dd MMM yyyy", { locale: es })}</span>
+                              </div>
+                            </td>
+                            <td className="p-3 text-center border-r border-slate-100">
+                              <span className="text-[10px] font-black text-blue-800 bg-blue-50 px-2 py-1 border border-blue-100 tabular-nums">
+                                {startTime} HS
+                              </span>
+                            </td>
+                            {courts.map(court => {
+                              const isBusy = isRangeBooked(court, startTime, watchDuration, dateStr);
+                              const isSelected = result.courtId === court.id;
+
+                              return (
+                                <td 
+                                  key={court.id} 
+                                  className={cn(
+                                      "p-2 border-r border-slate-100 text-center transition-all",
+                                      isSelected && !isBusy && "bg-blue-800/5",
+                                      isSelected && isBusy && "bg-slate-900/5"
+                                  )}
+                                >
+                                  <div className="flex items-center justify-center gap-1.5">
+                                      <span className="text-[8px] font-black text-slate-400 tabular-nums">
+                                          {(result.courtUsages?.[court.id] || 0)}%
+                                      </span>
+
+                                      {isBusy ? (
+                                          <div className="flex items-center gap-1 h-7 px-2 bg-slate-100 border border-slate-200 min-w-[80px] justify-center">
+                                              <LucideX className="h-2.5 w-2.5 text-slate-400" />
+                                              <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">OCUPADO</span>
+                                          </div>
+                                      ) : (
+                                          <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleUpdateInstanceCourt(idx, court.id);
+                                              }}
+                                              className={cn(
+                                                  "h-7 px-3 rounded-none flex items-center justify-center transition-all min-w-[80px] border",
+                                                  isSelected 
+                                                      ? "bg-blue-800 border-blue-900 text-white font-black" 
+                                                      : "bg-white border-slate-200 text-slate-400 hover:border-slate-400 hover:text-slate-600 font-bold"
+                                              )}
+                                          >
+                                              <span className="text-[8px] uppercase tracking-widest">
+                                                  {isSelected ? "ASIGNADA" : "LIBRE"}
+                                              </span>
+                                          </button>
+                                      )}
+                                      <button
+                                          type="button"
+                                          onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleOpenInspector(idx, court.id);
+                                          }}
+                                          className="h-7 w-7 rounded-none bg-slate-50 border border-slate-200 text-slate-400 hover:text-blue-800 hover:border-blue-800 flex items-center justify-center transition-all"
+                                      >
+                                          <LucideEye className="h-3.5 w-3.5" />
+                                      </button>
+                                  </div>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Conflict Resolution Modal - Industrial */}
+            <Dialog open={!!inspectingRow} onOpenChange={(open) => !open && setInspectingRow(null)}>
+              <DialogContent className="sm:max-w-[700px] rounded-none p-0 overflow-hidden border border-slate-200 shadow-2xl bg-white">
+                <div className="p-6 bg-slate-950 text-white flex items-center justify-between">
+                  <DialogHeader className="space-y-1">
+                    <DialogTitle className="text-xl font-black uppercase tracking-tighter flex items-center gap-3">
+                      <LucideLayoutGrid className="h-5 w-5 text-blue-500" />
+                      Auditoría de Disponibilidad
+                    </DialogTitle>
+                    <DialogDescription className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                      {inspectingRow && (
+                        <span>
+                          Análisis para el <span className="text-white">{format(new Date(validationResults![inspectingRow.index].startTime), "dd MMMM yyyy", { locale: es })}</span> a las <span className="text-white">{format(new Date(validationResults![inspectingRow.index].startTime), "HH:mm")} HS</span>
+                        </span>
+                      )}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <button type="button" onClick={() => setInspectingRow(null)} className="h-10 w-10 flex items-center justify-center hover:bg-slate-800 transition-colors">
+                    <LucideX className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="p-8 bg-slate-50">
+                  {isModalLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                      <LucideLoader2 className="h-8 w-8 animate-spin text-blue-800" />
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Sincronizando grilla operativa...</p>
+                    </div>
+                  ) : inspectingRow && (
+                    <div className="w-full flex justify-center animate-in fade-in duration-300">
+                      <div className="bg-white border border-slate-200 p-6 shadow-sm w-full max-w-[500px]">
+                        <CourtTimeGrid
+                          court={(inspectingRow.pendingCourtId && inspectingRow.pendingCourtId !== 'auto') ? (inspectingRow.courts.find(c => c.id === inspectingRow.pendingCourtId) || inspectingRow.courts[0]) : (watchCourtId === "auto" ? { id: 'auto', name: 'Global', bookings: inspectingRow.courts.flatMap(c => c.bookings) } as any : (inspectingRow.courts.find(c => c.id === watchCourtId) || inspectingRow.courts[0]))}
+                          isGlobalView={!inspectingRow.pendingCourtId || inspectingRow.pendingCourtId === 'auto'}
+                          allCourts={inspectingRow.courts}
+                          timeSlots={timeSlots}
+                          isSlotBooked={(c, t) => isRangeBooked(c, t, watchDuration, inspectingRow.dateStr)}
+                          onSlotClick={handleSlotClick}
+                          selectedTime={inspectingRow.pendingTime || format(new Date(validationResults![inspectingRow.index].startTime), "HH:mm")}
+                          selectedDurationMins={watchDuration}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-6 bg-white border-t border-slate-200 flex items-center justify-between gap-4">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setInspectingRow(null)}
+                    className="h-11 rounded-none font-black uppercase tracking-widest text-[10px] text-slate-400 hover:text-slate-950 px-8"
+                  >
+                    Cancelar
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={handleApplyPendingChange}
+                    disabled={!inspectingRow?.pendingTime}
+                    className={cn(
+                      "h-11 rounded-none font-black uppercase tracking-widest text-[10px] px-10 transition-all",
+                      inspectingRow?.pendingTime
+                        ? "bg-blue-800 hover:bg-blue-900 text-white"
+                        : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    )}
+                  >
+                    Aplicar Corrección
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Sticky Bottom Actions - OUTSIDE the animated div to avoid containing block issues */}
+          <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-width,256px)] z-50 bg-white border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+            <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-0">
+
+              <div className="flex items-stretch gap-0 w-full md:w-auto">
+                <div className="flex items-center gap-4 px-8 py-4 border-r border-slate-100">
+                  <div className="h-10 w-10 bg-slate-950 flex items-center justify-center text-white">
+                    <LucideDollarSign className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="font-black text-slate-950 uppercase tracking-widest text-[9px]">Tarifa Aplicada</h2>
+                    <p className="text-[8px] text-blue-800 font-bold uppercase tracking-widest mt-0.5">{appliedRateInfo?.name || "LISTA GENERAL"}</p>
+                  </div>
+                </div>
+
+                <div className="px-8 py-4 flex items-center border-r border-slate-100 bg-slate-50/50">
+                  <div className="relative">
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-400 font-black text-sm">ARS</span>
+                    <FormField
+                      control={form.control}
+                      name="price"
+                      render={({ field }) => (
+                        <Input
+                          type="number"
+                          readOnly
+                          className="h-10 bg-transparent border-none text-slate-950 text-xl font-black rounded-none pl-10 w-32 shadow-none cursor-default focus-visible:ring-0"
+                          {...field}
+                        />
+                      )}
+                    />
+                  </div>
+                  <span className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-tighter">/ UNIDAD</span>
+                </div>
+              </div>
+
+              <div className="flex items-stretch gap-0 w-full md:w-auto">
+                <div className="px-8 py-4 text-right border-l border-slate-100 flex flex-col justify-center">
+                  <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400 block mb-0.5">Volumen</span>
+                  <span className="text-2xl font-black text-blue-800 leading-none tabular-nums">{selectedCount} <span className="text-[10px] font-normal">MÓDULOS</span></span>
+                </div>
+
+                <div className="px-10 py-4 text-right border-l border-slate-100 flex flex-col justify-center min-w-[200px] bg-slate-50/30">
+                  <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400 block mb-0.5">Total Contrato</span>
+                  <span className="text-2xl font-black text-slate-950 leading-none tabular-nums">
                     ${((form.watch("price") || 0) * selectedCount).toLocaleString('es-AR')}
                   </span>
                 </div>
@@ -685,9 +711,9 @@ export function FixedReservationManager({
                 <Button
                   type="submit"
                   disabled={loading || selectedCount === 0}
-                  className="h-14 px-12 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 transition-all active:scale-[0.98] w-full md:w-auto"
+                  className="h-auto px-12 rounded-none bg-blue-800 hover:bg-blue-900 text-white font-black uppercase tracking-[0.2em] text-[11px] transition-all w-full md:w-64 border-l border-blue-900 shadow-none"
                 >
-                  {loading ? <LucideLoader2 className="h-5 w-5 animate-spin" /> : "Confirmar Batch de Reservas"}
+                  {loading ? <LucideLoader2 className="h-5 w-5 animate-spin" /> : "Confirmar Abono"}
                 </Button>
               </div>
             </div>

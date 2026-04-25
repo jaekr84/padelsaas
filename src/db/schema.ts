@@ -111,7 +111,6 @@ export const courts = pgTable("court", {
     .notNull()
     .references(() => centers.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  type: text("type").notNull().default("indoor"), // indoor, outdoor, etc.
   surface: text("surface").notNull().default("Césped Sintético"),
   isPanoramic: boolean("is_panoramic").default(false).notNull(),
   hasLighting: boolean("has_lighting").default(true).notNull(),

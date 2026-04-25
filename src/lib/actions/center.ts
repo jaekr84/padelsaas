@@ -29,7 +29,7 @@ export async function getCenterAction(id?: string) {
   const centerIdToFetch = id || activeCenterId || session.user.centerId;
 
   const center = await db.query.centers.findFirst({
-    where: centerIdToFetch 
+    where: centerIdToFetch
       ? eq(centers.id, centerIdToFetch)
       : eq(centers.tenantId, userMember.tenantId),
     with: {
@@ -116,7 +116,6 @@ export async function updateCenterAction(data: any) {
         const newCourtsData = Array.from({ length: diff }).map((_, i) => ({
           centerId: updatedCenter.id,
           name: `Cancha ${currentCount + i + 1}`,
-          type: "indoor",
           surface: "Césped Sintético",
         }));
 
@@ -126,7 +125,7 @@ export async function updateCenterAction(data: any) {
         const courtsToDelete = existingCourts
           .sort((a, b) => b.name.localeCompare(a.name)) // Sort descending to get highest first
           .slice(0, currentCount - targetCount);
-        
+
         if (courtsToDelete.length > 0) {
           const { inArray } = require("drizzle-orm");
           const { courts } = require("@/db/schema");

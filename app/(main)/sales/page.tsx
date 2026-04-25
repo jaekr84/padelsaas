@@ -9,9 +9,14 @@ import { LucideHistory, LucideShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default async function SalesPage() {
+export default async function SalesPage(props: {
+  searchParams?: Promise<{ bookingId?: string }>;
+}) {
   const session = await auth();
   if (!session) redirect("/sign-in");
+
+  const searchParams = await props.searchParams;
+  const bookingId = searchParams?.bookingId;
 
   const allProducts = await db.query.products.findMany({
     where: (products, { eq }) => eq(products.isActive, true),
@@ -24,7 +29,8 @@ export default async function SalesPage() {
   const tomorrowStart = new Date(todayStart);
   tomorrowStart.setDate(tomorrowStart.getDate() + 1);
 
-  const unpaidBookings = await db.query.bookings.findMany({
+  // Fetch unpaid bookings for today
+  let unpaidBookings = await db.query.bookings.findMany({
     where: and(
       eq(bookings.paymentStatus, "pending"),
       gte(bookings.startTime, todayStart),
@@ -35,6 +41,22 @@ export default async function SalesPage() {
       user: true,
     }
   });
+
+  // If a specific bookingId is provided, fetch it specifically to ensure it's available
+  // even if it's not from today.
+  if (bookingId) {
+    const specificBooking = await db.query.bookings.findFirst({
+      where: eq(bookings.id, bookingId),
+      with: {
+        court: true,
+        user: true,
+      }
+    });
+
+    if (specificBooking && !unpaidBookings.find(b => b.id === bookingId)) {
+      unpaidBookings = [specificBooking, ...unpaidBookings];
+    }
+  }
 
   const allTerminals = await db.query.terminals.findMany({
     where: (t, { eq }) => eq(t.isActive, true),

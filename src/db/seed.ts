@@ -64,17 +64,14 @@ async function main() {
     {
       centerId: newCenter.id,
       name: "Cancha 1 - Panorámica",
-      type: "indoor",
     },
     {
       centerId: newCenter.id,
       name: "Cancha 2",
-      type: "indoor",
     },
     {
       centerId: newCenter.id,
       name: "Cancha 3 - Exterior",
-      type: "outdoor",
     },
   ]);
 

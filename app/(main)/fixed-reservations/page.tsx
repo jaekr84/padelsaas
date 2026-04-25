@@ -32,8 +32,8 @@ export default function FixedReservationsPage() {
   if (loading) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
-        <LucideLoader2 className="h-10 w-10 animate-spin text-emerald-600" />
-        <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Cargando entorno de reservas fijas...</p>
+        <LucideLoader2 className="h-10 w-10 animate-spin text-blue-800" />
+        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">Sincronizando entorno de abonos...</p>
       </div>
     );
   }
@@ -41,7 +41,9 @@ export default function FixedReservationsPage() {
   if (!center) {
     return (
       <div className="h-[80vh] flex items-center justify-center">
-        <p className="text-slate-500 font-medium">No se encontró información del centro. Por favor, selecciona un centro en el panel lateral.</p>
+        <p className="text-slate-500 font-black uppercase tracking-widest text-[10px] border border-slate-200 px-8 py-4 bg-slate-50">
+          Error Crítico: No se detectó configuración de centro operativa.
+        </p>
       </div>
     );
   }

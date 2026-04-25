@@ -1,19 +1,19 @@
 "use client";
 
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  LucideChevronLeft, 
-  LucideChevronRight, 
+import {
+  LucideChevronLeft,
+  LucideChevronRight,
   LucideCalendar,
   LucideSearch,
   LucideClock,
@@ -24,13 +24,12 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { getTodayArgentina } from "@/lib/date-utils";
 
 interface BookingsListProps {
   bookings: any[];
   globalDate?: string;
 }
-
-import { getTodayArgentina } from "@/lib/date-utils";
 
 export function BookingsList({ bookings, globalDate }: BookingsListProps) {
   const router = useRouter();
@@ -43,7 +42,7 @@ export function BookingsList({ bookings, globalDate }: BookingsListProps) {
     prev.setDate(prev.getDate() - 1);
     router.push(`/bookings?date=${prev.toISOString().split("T")[0]}`);
   };
-  
+
   const handleNextDay = () => {
     const next = new Date(activeDateObj);
     next.setDate(next.getDate() + 1);
@@ -72,119 +71,132 @@ export function BookingsList({ bookings, globalDate }: BookingsListProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "confirmed":
-        return <Badge className="bg-emerald-500 hover:bg-emerald-600 font-bold uppercase text-[10px]">Confirmada</Badge>;
+        return <Badge className="bg-blue-800 hover:bg-blue-900 rounded-none font-bold uppercase text-[9px] tracking-tighter">Confirmada</Badge>;
       case "cancelled":
-        return <Badge variant="destructive" className="font-bold uppercase text-[10px]">Cancelada</Badge>;
+        return <Badge variant="destructive" className="rounded-none font-bold uppercase text-[9px] tracking-tighter">Cancelada</Badge>;
       default:
-        return <Badge variant="secondary" className="font-bold uppercase text-[10px]">Pendiente</Badge>;
+        return <Badge variant="secondary" className="rounded-none font-bold uppercase text-[9px] tracking-tighter text-slate-700">Pendiente</Badge>;
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Date Navigator Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h3 className="text-xl font-bold tracking-tight">Listado de Reservas</h3>
-        
-        <div className="flex bg-card items-center border border-border shadow-sm rounded-lg p-1 mx-auto sm:mx-0">
-          <Button variant="ghost" size="icon" onClick={handlePrevDay} className="h-8 w-8 hover:bg-muted">
-            <LucideChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="px-2 border-x border-border/50 mx-1 flex items-center">
-             <Input 
-               type="date"
-               value={rawDateStr}
-               onChange={handleDateChange}
-               className="border-0 shadow-none h-8 bg-transparent text-sm font-bold tracking-tight cursor-pointer focus-visible:ring-0 focus-visible:ring-offset-0 px-2"
-             />
-          </div>
-          <Button variant="ghost" size="icon" onClick={handleNextDay} className="h-8 w-8 hover:bg-muted">
-            <LucideChevronRight className="h-4 w-4" />
-          </Button>
-          <div className="border-l border-border/50 h-4 mx-1" />
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleToday} 
-            className="h-8 px-2 text-[10px] font-black uppercase hover:bg-muted"
+    <div className="space-y-4">
+      {/* Date Navigator Header - Industrial Style */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-0 border border-slate-200 bg-white">
+        <div className="px-4 py-3 border-b sm:border-b-0 sm:border-r border-slate-200 flex items-center">
+          <h3 className="text-sm font-black uppercase tracking-widest text-slate-950">Historial Operativo</h3>
+        </div>
+
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handlePrevDay}
+            className="h-11 w-11 rounded-none border-l border-slate-200 hover:bg-slate-50"
           >
-            Hoy
+            <LucideChevronLeft className="h-4 w-4 text-slate-600" />
+          </Button>
+
+          <div className="relative flex items-center h-11 px-2 border-l border-slate-200">
+            <LucideCalendar className="absolute left-4 h-3.5 w-3.5 text-blue-800" />
+            <Input
+              type="date"
+              value={rawDateStr}
+              onChange={handleDateChange}
+              className="border-0 shadow-none h-full bg-transparent text-xs font-black uppercase tracking-tight cursor-pointer focus-visible:ring-0 pl-10 pr-4 w-40"
+            />
+          </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleNextDay}
+            className="h-11 w-11 rounded-none border-l border-slate-200 hover:bg-slate-50"
+          >
+            <LucideChevronRight className="h-4 w-4 text-slate-600" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleToday}
+            className="h-11 px-6 border-l border-slate-200 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 text-blue-800"
+          >
+            Actual
           </Button>
         </div>
       </div>
 
-      {/* Bookings Table */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden text-black">
+      {/* Bookings Table - Accounting Style */}
+      <div className="border border-slate-200 bg-white overflow-hidden">
         <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow className="hover:bg-transparent border-b border-border">
-              <TableHead className="w-[120px] font-black uppercase text-[10px] tracking-widest">Horario</TableHead>
-              <TableHead className="font-black uppercase text-[10px] tracking-widest">Cancha</TableHead>
-              <TableHead className="font-black uppercase text-[10px] tracking-widest">Cliente</TableHead>
-              <TableHead className="font-black uppercase text-[10px] tracking-widest">Monto</TableHead>
-              <TableHead className="font-black uppercase text-[10px] tracking-widest text-right">Estado</TableHead>
-              <TableHead className="font-black uppercase text-[10px] tracking-widest text-right">Acción</TableHead>
+          <TableHeader className="bg-slate-100 border-b border-slate-200">
+            <TableRow className="hover:bg-transparent h-10">
+              <TableHead className="w-[140px] font-black uppercase text-[10px] tracking-widest text-slate-950 pl-4 border-r border-slate-200">Horario</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-950 px-4 border-r border-slate-200">Cancha</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-950 px-4 border-r border-slate-200">Cliente / Usuario</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-950 px-4 border-r border-slate-200">Monto Bruto</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-950 px-4 text-center border-r border-slate-200">Estado</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-950 pr-4 text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {bookings.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground uppercase text-xs font-bold tracking-widest opacity-50">
-                  No hay reservas para este día
+                <TableCell colSpan={6} className="h-40 text-center text-slate-400 uppercase text-[10px] font-black tracking-[0.2em] bg-slate-50/50">
+                  Sin registros operativos para la fecha seleccionada
                 </TableCell>
               </TableRow>
             ) : (
               bookings.map((booking) => (
-                <TableRow key={booking.id} className="hover:bg-muted/30 transition-colors border-b border-border/50 last:border-0">
-                  <TableCell className="font-medium">
+                <TableRow key={booking.id} className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 last:border-0 h-12">
+                  <TableCell className="pl-4 border-r border-slate-50">
                     <div className="flex items-center gap-2">
-                      <LucideClock className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-sm font-black whitespace-nowrap">
+                      <LucideClock className="h-3 w-3 text-blue-800" />
+                      <span className="text-xs font-black tabular-nums">
                         {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-4 border-r border-slate-50">
                     <div className="flex items-center gap-2">
-                      <LucideLayoutGrid className="h-3 w-3 text-emerald-600/70" />
-                      <span className="text-sm font-bold text-emerald-950 uppercase tracking-tighter">
+                      <div className="w-1 h-3 bg-blue-800" />
+                      <span className="text-xs font-bold text-slate-900 uppercase tracking-tighter">
                         {booking.court?.name}
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-4 border-r border-slate-50">
                     <div className="flex items-center gap-2">
-                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                            <LucideUser className="h-3 w-3 text-primary" />
-                        </div>
-                      <span className="text-sm font-medium">
-                        {booking.guestName || booking.user?.name || "Sin Nombre"}
+                      <span className="text-xs font-medium text-slate-700">
+                        {booking.guestName || booking.user?.name || "N/A"}
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 font-black text-sm">
-                      <span className="text-emerald-700">$</span>
+                  <TableCell className="px-4 border-r border-slate-50">
+                    <div className="flex items-center gap-1 font-black text-xs tabular-nums text-slate-950">
+                      <span className="text-blue-800 font-normal">ARS</span>
                       {booking.price?.toLocaleString()}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="px-4 text-center border-r border-slate-50">
                     {getStatusBadge(booking.status)}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="pr-4 text-right">
                     {booking.paymentStatus === "pending" && booking.status !== "cancelled" ? (
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="default"
-                        className="h-8 bg-blue-600 hover:bg-blue-700 font-bold uppercase text-[10px] gap-2 rounded-lg"
+                        className="h-7 px-3 bg-blue-800 hover:bg-blue-900 text-white font-black uppercase text-[9px] tracking-widest rounded-none border-b-2 border-blue-950 shadow-none"
                         onClick={() => router.push(`/sales?bookingId=${booking.id}`)}
                       >
-                        <LucideCreditCard className="h-3 w-3" />
                         Cobrar
                       </Button>
                     ) : booking.paymentStatus === "paid" ? (
-                      <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">Pagado</span>
-                    ) : null}
+                      <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 border border-emerald-200">Procesado</span>
+                    ) : (
+                      <span className="text-[9px] font-black uppercase text-slate-400">---</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
@@ -193,20 +205,23 @@ export function BookingsList({ bookings, globalDate }: BookingsListProps) {
         </Table>
       </div>
 
-      {/* Summary Footer */}
+      {/* Summary Footer - Technical Report Style */}
       {bookings.length > 0 && (
-        <div className="flex items-center justify-end gap-6 p-4 bg-muted/20 rounded-lg border border-border">
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Recaudado</span>
-            <span className="text-xl font-black text-emerald-700">
-               $ {bookings.reduce((acc, curr) => acc + (curr.price || 0), 0).toLocaleString()}
+        <div className="flex items-stretch justify-end border border-slate-200 bg-slate-950 text-white">
+          <div className="px-6 py-4 border-r border-slate-800 flex flex-col items-end justify-center">
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-1">Volumen Total</span>
+            <span className="text-lg font-black tabular-nums">
+              {bookings.length} <span className="text-[10px] text-slate-500 font-normal ml-1">RESERVAS</span>
             </span>
           </div>
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cantidad</span>
-            <span className="text-xl font-black">
-               {bookings.length}
-            </span>
+          <div className="px-8 py-4 bg-blue-800 flex flex-col items-end justify-center min-w-[200px]">
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-blue-200/60 mb-1">Caja Bruta Proyectada</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-[10px] font-medium text-blue-200">ARS</span>
+              <span className="text-2xl font-black tabular-nums">
+                {bookings.reduce((acc, curr) => acc + (curr.price || 0), 0).toLocaleString()}
+              </span>
+            </div>
           </div>
         </div>
       )}
