@@ -10,10 +10,11 @@ import {
   LucideCalendar, 
   LucideTrendingUp, 
   LucideUsers, 
-  LucideTarget 
+  LucideTarget,
+  LucideShoppingCart
 } from "lucide-react";
 import { db } from "@/db";
-import { bookings, sales, users, courts } from "@/db/schema";
+import { bookings, sales, users, courts, customers } from "@/db/schema";
 import { count, sql, and, gte, lte, asc, desc } from "drizzle-orm";
 import { formatCurrency, formatTime } from "@/lib/formatters";
 
@@ -21,33 +22,33 @@ export default async function HomePage() {
   const session = await auth();
   const userName = session?.user?.name?.split(" ")[0] || "Administrador";
 
-  // 1. Reservas de Hoy
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const [bookingsToday] = await db
+  // 1. Ventas de Hoy
+  const [salesToday] = await db
     .select({ count: count() })
-    .from(bookings)
+    .from(sales)
     .where(
       and(
-        gte(bookings.startTime, today),
-        lte(bookings.startTime, tomorrow)
+        gte(sales.createdAt, today),
+        lte(sales.createdAt, tomorrow)
       )
     );
 
-  // 2. Ingresos Mes Corriente
+  // 2. Ingresos Mes Corriente (Suma de Ventas)
   const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   const [salesMonth] = await db
-    .select({ total: sql<number>`sum(cast(${sales.total} as numeric))` })
+    .select({ total: sql<number>`COALESCE(sum(cast(${sales.total} as numeric)), 0)` })
     .from(sales)
     .where(gte(sales.createdAt, firstDayOfMonth));
 
-  // 3. Jugadores Activos (Usuarios registrados)
-  const [totalPlayers] = await db
+  // 3. Clientes Registrados
+  const [totalCustomers] = await db
     .select({ count: count() })
-    .from(users);
+    .from(customers);
 
   // 4. Próximos Partidos (Reservas que aún no terminaron)
   const upcomingBookings = await db.query.bookings.findMany({
@@ -79,9 +80,9 @@ export default async function HomePage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Reservas Hoy", value: bookingsToday.count.toString(), icon: LucideCalendar, color: "text-blue-500", bg: "bg-blue-500/10" },
+          { label: "Ventas Hoy", value: salesToday.count.toString(), icon: LucideShoppingCart, color: "text-blue-500", bg: "bg-blue-500/10" },
           { label: "Ingresos Mes", value: formatCurrency(salesMonth?.total || 0), icon: LucideTrendingUp, color: "text-green-500", bg: "bg-green-500/10" },
-          { label: "Jugadores Activos", value: totalPlayers.count.toString(), icon: LucideUsers, color: "text-orange-500", bg: "bg-orange-500/10" },
+          { label: "Clientes Registrados", value: totalCustomers.count.toString(), icon: LucideUsers, color: "text-orange-500", bg: "bg-orange-500/10" },
           { label: "Ocupación", value: "78%", icon: LucideTarget, color: "text-primary", bg: "bg-primary/10" },
         ].map((stat) => (
           <Card key={stat.label} className="border-none shadow-md bg-card/50 backdrop-blur-sm">

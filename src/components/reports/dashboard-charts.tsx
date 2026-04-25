@@ -21,11 +21,12 @@ interface DashboardChartsProps {
   categoryData: { name: string, value: number }[];
   paymentData: { name: string, value: number }[];
   trendData: { date: string, amount: number }[];
+  yearData: { month: string, amount: number }[];
 }
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
-export function DashboardCharts({ categoryData, paymentData, trendData }: DashboardChartsProps) {
+export function DashboardCharts({ categoryData, paymentData, trendData, yearData }: DashboardChartsProps) {
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
       {/* Gráfico de Tendencia (Ancho) */}
@@ -156,6 +157,50 @@ export function DashboardCharts({ categoryData, paymentData, trendData }: Dashbo
               <Bar 
                 dataKey="value" 
                 fill="#3b82f6" 
+                radius={[8, 8, 0, 0]} 
+                barSize={40}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+      {/* Ventas Últimos 12 Meses */}
+      <Card className="lg:col-span-7 border-none shadow-sm rounded-3xl bg-white p-2">
+        <CardHeader>
+          <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-800">Ventas Últimos 12 Meses</CardTitle>
+          <CardDescription className="text-[10px] font-bold uppercase text-slate-400 tracking-tight">Comparativa de ingresos mensuales del último año</CardDescription>
+        </CardHeader>
+        <CardContent className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={yearData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis 
+                dataKey="month" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
+                dy={10}
+              />
+              <YAxis 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
+                tickFormatter={(val) => `$${val}`}
+              />
+              <Tooltip 
+                cursor={{ fill: '#f8fafc' }}
+                contentStyle={{ 
+                  borderRadius: '16px', 
+                  border: 'none', 
+                  boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase'
+                }} 
+              />
+              <Bar 
+                dataKey="amount" 
+                fill="#8b5cf6" 
                 radius={[8, 8, 0, 0]} 
                 barSize={40}
               />

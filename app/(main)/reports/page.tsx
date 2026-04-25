@@ -5,6 +5,8 @@ import { eq, sql, gte, and, desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { formatCurrency } from "@/lib/formatters";
 import { DashboardCharts } from "@/components/reports/dashboard-charts";
+import { ReportFilters } from "@/components/reports/report-filters";
+import { lte } from "drizzle-orm";
 import { 
   LucideTrendingUp, 
   LucideTrendingDown, 
@@ -15,16 +17,38 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 
 export const dynamic = "force-dynamic";
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
   const session = await auth();
   if (!session) redirect("/sign-in");
 
-  const now = new Date();
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  // Parámetros de búsqueda
+  const period = (searchParams?.period as string) || "month";
+  const selectedMonth = (searchParams?.month as string) || new Date().toISOString().slice(0, 7);
+  const selectedYear = (searchParams?.year as string) || new Date().getFullYear().toString();
 
-  // 1. Obtener ventas del mes
-  const monthlySales = await db.query.sales.findMany({
-    where: gte(sales.createdAt, firstDayOfMonth),
+  let startDate: Date;
+  let endDate: Date;
+  let periodLabel: string;
+
+  if (period === "month") {
+    const [year, month] = selectedMonth.split("-").map(Number);
+    startDate = new Date(year, month - 1, 1);
+    endDate = new Date(year, month, 0, 23, 59, 59);
+    periodLabel = startDate.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+  } else {
+    const year = Number(selectedYear);
+    startDate = new Date(year, 0, 1);
+    endDate = new Date(year, 11, 31, 23, 59, 59);
+    periodLabel = `Año ${selectedYear}`;
+  }
+
+  // 1. Obtener ventas del periodo
+  const periodSales = await db.query.sales.findMany({
+    where: and(gte(sales.createdAt, startDate), lte(sales.createdAt, endDate)),
     with: {
       items: {
         with: {
@@ -35,16 +59,16 @@ export default async function ReportsPage() {
     }
   });
 
-  // 2. Obtener compras del mes
-  const monthlyPurchases = await db.query.purchases.findMany({
-    where: gte(purchases.createdAt, firstDayOfMonth),
+  // 2. Obtener compras del periodo
+  const periodPurchases = await db.query.purchases.findMany({
+    where: and(gte(purchases.createdAt, startDate), lte(purchases.createdAt, endDate)),
   });
 
   // 3. Procesar datos para gráficos
   
   // A. Ventas por Categoría
   const salesByCategoryMap = new Map<string, number>();
-  monthlySales.forEach(sale => {
+  periodSales.forEach(sale => {
     sale.items.forEach(item => {
       const catName = item.category?.name || "Otros";
       const amount = Number(item.totalPrice) || 0;
@@ -59,7 +83,7 @@ export default async function ReportsPage() {
 
   // B. Ventas por Medio de Pago
   const salesByPaymentMap = new Map<string, number>();
-  monthlySales.forEach(sale => {
+  periodSales.forEach(sale => {
     const method = sale.paymentMethod || "Otro";
     const amount = Number(sale.total) || 0;
     salesByPaymentMap.set(method, (salesByPaymentMap.get(method) || 0) + amount);
@@ -70,28 +94,78 @@ export default async function ReportsPage() {
     value
   }));
 
-  // C. Ventas Diarias
-  const dailySalesMap = new Map<string, number>();
-  monthlySales.forEach(sale => {
-    const date = sale.createdAt.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
-    dailySalesMap.set(date, (dailySalesMap.get(date) || 0) + Number(sale.total));
+  // C. Tendencia de Ventas
+  const trendDataMap = new Map<string, number>();
+  
+  if (period === "month") {
+    periodSales.forEach(sale => {
+      const date = sale.createdAt.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+      trendDataMap.set(date, (trendDataMap.get(date) || 0) + Number(sale.total));
+    });
+  } else {
+    // Inicializar meses para reporte anual
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(startDate.getFullYear(), i, 1);
+      const label = d.toLocaleDateString('es-AR', { month: 'short' });
+      trendDataMap.set(label, 0);
+    }
+    periodSales.forEach(sale => {
+      const label = sale.createdAt.toLocaleDateString('es-AR', { month: 'short' });
+      trendDataMap.set(label, (trendDataMap.get(label) || 0) + Number(sale.total));
+    });
+  }
+
+  const trendData = Array.from(trendDataMap.entries())
+    .map(([date, amount]) => ({ date, amount }))
+    .sort((a, b) => {
+      if (period === "month") return a.date.localeCompare(b.date);
+      return 0; // El orden de inserción de meses ya es correcto
+    });
+
+  // D. Ventas de los últimos 12 meses
+  const twelveMonthsAgo = new Date();
+  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
+  twelveMonthsAgo.setDate(1);
+  twelveMonthsAgo.setHours(0, 0, 0, 0);
+
+  const yearSales = await db.query.sales.findMany({
+    where: gte(sales.createdAt, twelveMonthsAgo),
+    orderBy: [desc(sales.createdAt)]
   });
 
-  const trendData = Array.from(dailySalesMap.entries())
-    .map(([date, amount]) => ({ date, amount }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+  const monthlySummaryMap = new Map<string, number>();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const label = d.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' });
+    monthlySummaryMap.set(label, 0);
+  }
+
+  yearSales.forEach(sale => {
+    const label = sale.createdAt.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' });
+    if (monthlySummaryMap.has(label)) {
+      monthlySummaryMap.set(label, (monthlySummaryMap.get(label) || 0) + Number(sale.total));
+    }
+  });
+
+  const yearData = Array.from(monthlySummaryMap.entries())
+    .map(([month, amount]) => ({ month, amount }))
+    .reverse();
 
   // 4. KPIs
-  const totalSales = monthlySales.reduce((acc, s) => acc + Number(s.total), 0);
-  const totalPurchases = monthlyPurchases.reduce((acc, p) => acc + Number(p.total), 0);
+  const totalSales = periodSales.reduce((acc, s) => acc + Number(s.total), 0);
+  const totalPurchases = periodPurchases.reduce((acc, p) => acc + Number(p.total), 0);
   const netBalance = totalSales - totalPurchases;
-  const avgTicket = monthlySales.length > 0 ? totalSales / monthlySales.length : 0;
+  const avgTicket = periodSales.length > 0 ? totalSales / periodSales.length : 0;
 
   return (
     <div className="p-8 space-y-8 bg-slate-50/50 min-h-screen">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-black tracking-tight text-slate-900 uppercase">Reportes Generales</h1>
-        <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">Resumen de rendimiento • Mes Actual</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl font-black tracking-tight text-slate-900 uppercase">Reportes Generales</h1>
+          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">Resumen de rendimiento • {periodLabel}</p>
+        </div>
+        <ReportFilters />
       </div>
 
       {/* Row 1: KPIs */}
@@ -122,6 +196,7 @@ export default async function ReportsPage() {
         categoryData={categoryData} 
         paymentData={paymentData} 
         trendData={trendData} 
+        yearData={yearData}
       />
     </div>
   );
