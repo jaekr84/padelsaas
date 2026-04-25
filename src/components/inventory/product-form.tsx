@@ -20,8 +20,9 @@ import {
 } from "@/components/ui/select";
 import { addProductAction, updateProductAction, addProductCategoryAction } from "@/lib/actions/products";
 import { toast } from "sonner";
-import { LucidePackage, LucideTag, LucideDollarSign, LucideBarcode, LucideCheck, LucidePlus } from "lucide-react";
+import { LucidePackage, LucideTag, LucideDollarSign, LucideBarcode, LucideCheck, LucidePlus, LucideShieldCheck, LucideCoins, LucideBox } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface ProductFormProps {
   open: boolean;
@@ -48,12 +49,19 @@ export function ProductForm({ open, onOpenChange, product, categories, initialNa
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
-  // Sincronizar initialName cuando se abre el modal
   useEffect(() => {
-    if (open && initialName && !product) {
-      setFormData(prev => ({ ...prev, name: initialName }));
+    if (open) {
+      setFormData({
+        name: product?.name || initialName || "",
+        description: product?.description || "",
+        sku: product?.sku || "",
+        buyPrice: product?.buyPrice || 0,
+        sellPrice: product?.sellPrice || 0,
+        categoryId: product?.categoryId || "none",
+        minStock: product?.minStock || 0,
+      });
     }
-  }, [open, initialName, product]);
+  }, [open, product, initialName]);
 
   const filteredCategories = categories.filter((cat) =>
     cat.name.toLowerCase().includes(categorySearch.toLowerCase())
@@ -105,169 +113,191 @@ export function ProductForm({ open, onOpenChange, product, categories, initialNa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl font-black uppercase tracking-tight">
-            <LucidePackage className="h-5 w-5 text-emerald-600" />
-            {product ? "Editar Producto" : "Nuevo Producto"}
-          </DialogTitle>
+      <DialogContent className="sm:max-w-[550px] rounded-none border border-slate-200 shadow-2xl p-0 gap-0 overflow-hidden bg-white">
+        <DialogHeader className="bg-slate-950 p-8 flex flex-row items-center justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-4 bg-blue-500" />
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">Control de Existencias</span>
+            </div>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-white">
+                {product ? "Modificación de Activo" : "Alta de Artículo"}
+            </DialogTitle>
+          </div>
+          <div className="h-12 w-12 bg-white/5 border border-white/10 flex items-center justify-center text-blue-500">
+             <LucidePackage className="h-6 w-6" />
+          </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Nombre del Producto</Label>
-            <Input
-              id="name"
-              placeholder="Ej: Pelotas Head Pro S x3"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              className="font-bold"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="p-8 space-y-8">
+          <div className="grid gap-6">
+            {/* Nombre */}
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-[9px] font-black uppercase tracking-widest text-slate-500">Identificación del Producto</Label>
+              <div className="relative">
+                <LucideBox className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  id="name"
+                  placeholder="NOMBRE DEL ARTÍCULO"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  className="pl-12 h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-bold uppercase text-xs"
+                />
+              </div>
+            </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="category" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Categoría</Label>
-              <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
-                <PopoverTrigger render={
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={categoryOpen}
-                    className="w-full justify-between font-bold"
-                  >
-                    {formData.categoryId && formData.categoryId !== "none"
-                      ? categories.find((cat) => cat.id === formData.categoryId)?.name
-                      : "Sin Categoría"}
-                    <LucidePlus className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                } />
-                <PopoverContent className="w-[200px] p-0" align="start">
-                  <div className="flex flex-col">
-                    <div className="p-2 border-b">
-                      <div className="relative">
-                        <LucideTag className="absolute left-2 top-2 h-3.5 w-3.5 text-slate-400" />
-                        <Input
-                          placeholder="Buscar categoría..."
-                          className="h-8 pl-8 text-xs font-medium"
-                          value={categorySearch}
-                          onChange={(e) => setCategorySearch(e.target.value)}
-                        />
+            <div className="grid grid-cols-2 gap-6">
+              {/* Categoría */}
+              <div className="space-y-2">
+                <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Categorización</Label>
+                <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
+                  <PopoverTrigger render={
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={categoryOpen}
+                      className="w-full h-12 justify-between bg-slate-50 border-slate-200 rounded-none font-bold uppercase text-[10px] tracking-widest"
+                    >
+                      {formData.categoryId && formData.categoryId !== "none"
+                        ? categories.find((cat) => cat.id === formData.categoryId)?.name
+                        : "SIN CATEGORÍA"}
+                      <LucidePlus className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  } />
+                  <PopoverContent className="w-[250px] p-0 rounded-none border-slate-200 shadow-xl" align="start">
+                    <div className="flex flex-col">
+                      <div className="p-3 border-b bg-slate-50">
+                        <div className="relative">
+                          <LucideTag className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                          <Input
+                            placeholder="FILTRAR..."
+                            className="h-9 pl-9 text-[10px] font-black uppercase tracking-widest bg-white border-slate-200 rounded-none focus-visible:ring-0"
+                            value={categorySearch}
+                            onChange={(e) => setCategorySearch(e.target.value)}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="max-h-[200px] overflow-y-auto p-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormData({ ...formData, categoryId: "none" });
-                          setCategoryOpen(false);
-                        }}
-                        className="w-full text-left px-2 py-1.5 text-xs font-bold uppercase tracking-tight hover:bg-slate-100 rounded-md transition-colors"
-                      >
-                        Sin Categoría
-                      </button>
-                      {filteredCategories.map((cat) => (
+                      <div className="max-h-[200px] overflow-y-auto p-1 bg-white">
                         <button
-                          key={cat.id}
                           type="button"
                           onClick={() => {
-                            setFormData({ ...formData, categoryId: cat.id });
+                            setFormData({ ...formData, categoryId: "none" });
                             setCategoryOpen(false);
                           }}
-                          className="w-full text-left px-2 py-1.5 text-xs font-bold uppercase tracking-tight hover:bg-slate-100 rounded-md transition-colors flex items-center justify-between"
+                          className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-blue-800 hover:text-white transition-colors"
                         >
-                          {cat.name}
-                          {formData.categoryId === cat.id && <LucideCheck className="h-3 w-3 text-emerald-600" />}
+                          SIN CATEGORÍA
                         </button>
-                      ))}
-                      
-                      {categorySearch && !categories.some(c => c.name.toLowerCase() === categorySearch.toLowerCase()) && (
-                        <button
-                          type="button"
-                          onClick={handleCreateCategory}
-                          disabled={isCreatingCategory}
-                          className="w-full text-left px-2 py-2 text-xs font-black uppercase tracking-tight text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors border-t border-emerald-100 mt-1 flex items-center gap-2"
-                        >
-                          <LucidePlus className="h-3 w-3" />
-                          Crear "{categorySearch}"
-                        </button>
-                      )}
+                        {filteredCategories.map((cat) => (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, categoryId: cat.id });
+                              setCategoryOpen(false);
+                            }}
+                            className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-blue-800 hover:text-white transition-colors flex items-center justify-between"
+                          >
+                            {cat.name}
+                            {formData.categoryId === cat.id && <LucideCheck className="h-3 w-3" />}
+                          </button>
+                        ))}
+                        
+                        {categorySearch && !categories.some(c => c.name.toLowerCase() === categorySearch.toLowerCase()) && (
+                          <button
+                            type="button"
+                            onClick={handleCreateCategory}
+                            disabled={isCreatingCategory}
+                            className="w-full text-left px-3 py-3 text-[10px] font-black uppercase tracking-widest text-blue-800 hover:bg-blue-50 border-t border-slate-100 mt-1 flex items-center gap-2"
+                          >
+                            <LucidePlus className="h-3 w-3" />
+                            CREAR "{categorySearch}"
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="sku" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Código / SKU</Label>
-              <div className="relative">
-                <LucideBarcode className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <Input
-                  id="sku"
-                  placeholder="Código de barras"
-                  value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  className="pl-9 font-mono text-xs"
-                />
+                  </PopoverContent>
+                </Popover>
               </div>
+
+              {/* SKU */}
+              <div className="space-y-2">
+                <Label htmlFor="sku" className="text-[9px] font-black uppercase tracking-widest text-slate-500">Cód. Almacén / SKU</Label>
+                <div className="relative">
+                  <LucideBarcode className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    id="sku"
+                    placeholder="COD-BAR"
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    className="pl-12 h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-mono text-[10px] tracking-[0.2em]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              {/* Buy Price */}
+              <div className="space-y-2">
+                <Label htmlFor="buyPrice" className="text-[9px] font-black uppercase tracking-widest text-slate-500">Costo Unitario (Compra)</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">$</span>
+                  <Input
+                    id="buyPrice"
+                    type="number"
+                    value={formData.buyPrice}
+                    onChange={(e) => setFormData({ ...formData, buyPrice: Number(e.target.value) })}
+                    className="pl-10 h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-black tabular-nums text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Sell Price */}
+              <div className="space-y-2">
+                <Label htmlFor="sellPrice" className="text-[9px] font-black uppercase tracking-widest text-slate-500">Precio de Venta</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-blue-800">$</span>
+                  <Input
+                    id="sellPrice"
+                    type="number"
+                    value={formData.sellPrice}
+                    onChange={(e) => setFormData({ ...formData, sellPrice: Number(e.target.value) })}
+                    className="pl-10 h-12 bg-blue-50/30 border-blue-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-black text-blue-900 tabular-nums text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Min Stock */}
+            <div className="space-y-2">
+              <Label htmlFor="minStock" className="text-[9px] font-black uppercase tracking-widest text-slate-500">Umbral de Stock Mínimo</Label>
+              <Input
+                id="minStock"
+                type="number"
+                value={formData.minStock}
+                onChange={(e) => setFormData({ ...formData, minStock: Number(e.target.value) })}
+                className="h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-black tabular-nums text-xs"
+              />
+              <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter italic">Se activará una alerta visual cuando las existencias sean inferiores a este valor.</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="buyPrice" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Costo (Compra)</Label>
-              <div className="relative">
-                <LucideDollarSign className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <Input
-                  id="buyPrice"
-                  type="number"
-                  value={formData.buyPrice}
-                  onChange={(e) => setFormData({ ...formData, buyPrice: Number(e.target.value) })}
-                  className="pl-9 font-bold"
-                />
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="sellPrice" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Precio Venta</Label>
-              <div className="relative">
-                <LucideDollarSign className="absolute left-3 top-2.5 h-4 w-4 text-emerald-600" />
-                <Input
-                  id="sellPrice"
-                  type="number"
-                  value={formData.sellPrice}
-                  onChange={(e) => setFormData({ ...formData, sellPrice: Number(e.target.value) })}
-                  className="pl-9 font-bold text-emerald-700 bg-emerald-50/30"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="minStock" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stock Mínimo (Alerta)</Label>
-            <Input
-              id="minStock"
-              type="number"
-              value={formData.minStock}
-              onChange={(e) => setFormData({ ...formData, minStock: Number(e.target.value) })}
-              className="font-bold"
-            />
-          </div>
-
-          <DialogFooter className="pt-4">
+          <DialogFooter className="pt-6 border-t border-slate-100 flex items-center justify-end gap-3">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => onOpenChange(false)}
-              className="font-bold uppercase tracking-widest text-[10px]"
+              className="rounded-none font-black uppercase text-[10px] tracking-widest border-slate-200 h-12 px-8 hover:bg-slate-50 transition-colors"
             >
               Cancelar
             </Button>
             <Button 
               type="submit" 
               disabled={loading}
-              className="bg-emerald-600 hover:bg-emerald-700 font-bold uppercase tracking-widest text-[10px] min-w-[120px]"
+              className="bg-blue-800 hover:bg-blue-900 text-white rounded-none px-10 h-12 font-black uppercase text-[10px] tracking-[0.2em] shadow-none"
             >
-              {loading ? "Guardando..." : "Guardar Producto"}
+              {loading ? "Sincronizando..." : "Guardar Registro"}
             </Button>
           </DialogFooter>
         </form>

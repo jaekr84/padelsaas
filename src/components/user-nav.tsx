@@ -20,8 +20,9 @@ import {
   SidebarMenuItem, 
   SidebarMenuButton 
 } from "@/components/ui/sidebar";
-import { LucideLogOut, LucideUser, LucideChevronUp } from "lucide-react";
+import { LucideLogOut, LucideUser, LucideChevronUp, LucideUserCheck } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export function UserNav() {
   const { data: session } = useSession();
@@ -34,51 +35,62 @@ export function UserNav() {
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger render={
-            <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-              <Avatar className="h-8 w-8 rounded-lg">
+            <SidebarMenuButton 
+                size="lg" 
+                className="h-14 rounded-none border border-slate-200 bg-white hover:bg-slate-50 transition-all data-[state=open]:bg-slate-50 shadow-sm"
+            >
+              <Avatar className="h-9 w-9 rounded-none bg-slate-950 text-white shadow-md">
                 <AvatarImage src={user?.image || ""} alt={user?.name || ""} />
-                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+                <AvatarFallback className="rounded-none font-black text-xs">{initials.toUpperCase()}</AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate font-semibold">{user?.name}</span>
-                <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
+              <div className="grid flex-1 text-left group-data-[collapsible=icon]:hidden ml-2">
+                <span className="truncate text-[10px] font-black uppercase tracking-widest text-slate-950 leading-tight">{user?.name}</span>
+                <span className="truncate text-[9px] font-bold text-slate-400 uppercase tracking-widest tabular-nums">{user?.email}</span>
               </div>
-              <LucideChevronUp className="ml-auto h-4 w-4 group-data-[collapsible=icon]:hidden" />
+              <LucideChevronUp className="ml-auto h-3 w-3 text-slate-400 group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
           } />
           <DropdownMenuContent
-            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-64 rounded-none border-slate-200 p-0 shadow-2xl bg-white"
             side="top"
             align="end"
-            sideOffset={4}
+            sideOffset={8}
           >
-            <DropdownMenuGroup>
-              <DropdownMenuLabel className="p-0 font-normal">
-                <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={user?.image || ""} alt={user?.name || ""} />
-                    <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user?.name}</span>
-                    <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
-                  </div>
+            <div className="bg-slate-950 p-6 text-white overflow-hidden relative">
+                <div className="absolute top-0 right-0 p-4 opacity-5">
+                    <LucideUserCheck className="h-20 w-20" />
                 </div>
-              </DropdownMenuLabel>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer" render={<Link href="/account" />}>
-              <LucideUser className="mr-2 h-4 w-4" />
-              Cuenta
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              className="text-destructive cursor-pointer focus:bg-destructive/10 focus:text-destructive"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-            >
-              <LucideLogOut className="mr-2 h-4 w-4" />
-              Cerrar Sesión
-            </DropdownMenuItem>
+                <div className="flex items-center gap-4 relative z-10">
+                    <Avatar className="h-12 w-12 rounded-none border-2 border-blue-800 shadow-xl">
+                        <AvatarImage src={user?.image || ""} alt={user?.name || ""} />
+                        <AvatarFallback className="rounded-none bg-blue-800 font-black text-sm">{initials.toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left">
+                        <span className="truncate text-xs font-black uppercase tracking-[0.2em]">{user?.name}</span>
+                        <span className="truncate text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{user?.email}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div className="p-2 bg-white">
+                <DropdownMenuGroup>
+                    <DropdownMenuItem 
+                        className="rounded-none py-3 px-4 text-[10px] font-black uppercase tracking-widest cursor-pointer focus:bg-slate-50 focus:text-blue-800 transition-colors" 
+                        render={<Link href="/account" />}
+                    >
+                        <LucideUser className="mr-3 h-4 w-4" />
+                        Perfil del Operador
+                    </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator className="bg-slate-100 mx-2" />
+                <DropdownMenuItem 
+                    className="rounded-none py-3 px-4 text-[10px] font-black uppercase tracking-widest text-red-600 focus:text-white focus:bg-red-600 cursor-pointer transition-colors"
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                >
+                    <LucideLogOut className="mr-3 h-4 w-4" />
+                    Finalizar Sesión
+                </DropdownMenuItem>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

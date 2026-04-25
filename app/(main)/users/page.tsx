@@ -10,7 +10,6 @@ export default async function UsersPage(props: {
 }) {
   const session = await auth();
   
-  // Protect route
   if (!session?.user?.id || session.user.role !== "admin") {
     redirect("/home");
   }
@@ -18,18 +17,22 @@ export default async function UsersPage(props: {
   const members = await getTenantMembersAction();
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
+    <div className="p-6 md:p-10 space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-200 pb-8">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Personal</h2>
-          <p className="text-muted-foreground">
-            Gestiona los accesos y roles de los empleados de tu club.
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-6 bg-slate-950" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-950">Módulo de Capital Humano</span>
+          </div>
+          <h1 className="text-3xl font-black text-slate-950 tracking-tighter uppercase">Gestión de Personal</h1>
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-2 max-w-2xl">
+            Administración de accesos, roles operativos y asignación de sedes para el equipo de trabajo.
           </p>
         </div>
         <AddUserDialog />
       </div>
       
-      <div className="pt-4">
+      <div className="bg-white border border-slate-200 overflow-hidden">
         <UsersList members={members} currentUserId={session.user.id} />
       </div>
     </div>

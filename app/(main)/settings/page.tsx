@@ -24,7 +24,7 @@ export default async function SettingsPage(props: {
   const { data: paymentMethods = [] } = await import("@/lib/actions/settings").then(m => m.getPaymentMethodsAction());
 
   return (
-    <div className="flex-1 w-full max-w-5xl mx-auto py-6">
+    <div className="p-6 md:p-10">
       <SettingsForm 
         initialCenters={centers} 
         initialTenant={tenant} 

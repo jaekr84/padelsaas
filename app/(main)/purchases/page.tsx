@@ -21,7 +21,7 @@ export default async function PurchasesPage() {
   ]);
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="p-6 md:p-10">
       <PurchasesView 
         initialPurchases={purchases} 
         suppliers={suppliers} 

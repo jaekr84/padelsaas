@@ -13,7 +13,7 @@ export default async function InventoryPage() {
   ]);
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="p-6 md:p-10">
       <InventoryView products={products} categories={categories} />
     </div>
   );

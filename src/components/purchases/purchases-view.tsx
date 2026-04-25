@@ -11,14 +11,14 @@ import {
   LucideAlertTriangle,
   LucideClock,
   LucideInfo,
-  LucideCheck
+  LucideCheck,
+  LucideShieldCheck,
+  LucideChevronRight,
+  LucideArrowUpRight,
+  LucideBoxes
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Card, 
-  CardContent, 
-} from "@/components/ui/card";
 import { PurchaseForm } from "./PurchaseForm";
 import { ProductForm } from "../inventory/product-form";
 import { formatCurrency, formatDate } from "@/lib/formatters";
@@ -59,77 +59,71 @@ export function PurchasesView({ initialPurchases, suppliers, products, categorie
 
   const warningCount = expiringProducts.length - criticalCount;
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-    }).format(amount);
-  };
-
   return (
-    <div className="space-y-8 p-8 max-w-[1600px] mx-auto animate-in fade-in duration-700">
-      {/* Alertas Interactivas */}
+    <div className="space-y-10 animate-in fade-in duration-500">
+      {/* 1. Interactive Technical Alerts */}
       {expiringProducts.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <button 
             onClick={() => setIsExpiryModalOpen(true)}
-            className="group flex items-center gap-6 bg-red-50 border border-red-100 p-6 rounded-[2rem] hover:bg-red-100 transition-all text-left relative overflow-hidden"
+            className="group flex items-center gap-6 bg-white border border-red-200 p-6 rounded-none hover:border-red-400 transition-all text-left relative"
           >
-            <div className="h-16 w-16 bg-red-500 rounded-2xl flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform shadow-lg shadow-red-200">
-              <LucideAlertTriangle className="h-8 w-8" />
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-red-600" />
+            <div className="h-14 w-14 bg-red-600 flex items-center justify-center text-white shrink-0 group-hover:bg-red-700 transition-colors">
+              <LucideAlertTriangle className="h-7 w-7" />
             </div>
             <div className="flex-1">
-              <h3 className="text-red-900 font-black uppercase tracking-tighter text-xl">Alertas Críticas</h3>
-              <p className="text-red-700/70 font-bold uppercase tracking-widest text-[10px]">
-                {criticalCount} productos vencen en menos de 7 días
+              <h3 className="text-red-600 font-black uppercase tracking-widest text-sm leading-tight">Estado Crítico de Lotes</h3>
+              <p className="text-slate-500 font-bold uppercase tracking-widest text-[9px] mt-1.5">
+                {criticalCount} ARTÍCULOS CON VENCIMIENTO INFERIOR A 7 DÍAS
               </p>
             </div>
-            <LucideInfo className="h-5 w-5 text-red-300 group-hover:text-red-500" />
+            <LucideChevronRight className="h-5 w-5 text-slate-300 group-hover:text-red-600 transition-all" />
           </button>
 
           <button 
             onClick={() => setIsExpiryModalOpen(true)}
-            className="group flex items-center gap-6 bg-orange-50 border border-orange-100 p-6 rounded-[2rem] hover:bg-orange-100 transition-all text-left relative overflow-hidden"
+            className="group flex items-center gap-6 bg-white border border-blue-200 p-6 rounded-none hover:border-blue-400 transition-all text-left relative"
           >
-            <div className="h-16 w-16 bg-orange-500 rounded-2xl flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform shadow-lg shadow-orange-200">
-              <LucideClock className="h-8 w-8" />
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-800" />
+            <div className="h-14 w-14 bg-blue-800 flex items-center justify-center text-white shrink-0 group-hover:bg-blue-900 transition-colors">
+              <LucideClock className="h-7 w-7" />
             </div>
             <div className="flex-1">
-              <h3 className="text-orange-900 font-black uppercase tracking-tighter text-xl">Próximos Vencimientos</h3>
-              <p className="text-orange-700/70 font-bold uppercase tracking-widest text-[10px]">
-                {warningCount} productos vencen en 8-30 días
+              <h3 className="text-blue-800 font-black uppercase tracking-widest text-sm leading-tight">Monitoreo de Vencimientos</h3>
+              <p className="text-slate-500 font-bold uppercase tracking-widest text-[9px] mt-1.5">
+                {warningCount} ARTÍCULOS EN VENTANA DE 8 A 30 DÍAS
               </p>
             </div>
-            <LucideInfo className="h-5 w-5 text-orange-300 group-hover:text-orange-500" />
+            <LucideChevronRight className="h-5 w-5 text-slate-300 group-hover:text-blue-800 transition-all" />
           </button>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-100">
-              <LucideShoppingCart className="h-6 w-6" />
-            </div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Gestión de Compras</h1>
+      {/* 2. Technical Header */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-end justify-between gap-6 border-b border-slate-200 pb-8">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-6 bg-blue-800" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-800">Módulo de Abastecimiento</span>
           </div>
-          <p className="text-slate-500 font-medium text-sm ml-1">Historial de órdenes e ingreso de stock</p>
+          <h1 className="text-3xl font-black text-slate-950 tracking-tighter uppercase">Registro de Compras</h1>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-2">Ingreso de suministros, gestión de lotes y control de facturación</p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-2 min-w-[350px]">
-            <LucideSearch className="h-4 w-4 text-slate-400 ml-2" />
+        <div className="flex flex-col md:flex-row items-stretch gap-4">
+          <div className="relative flex-1 md:w-[400px]">
+            <LucideSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input 
-              placeholder="Buscar por factura o proveedor..." 
+              placeholder="FILTRAR POR FACTURA O PROVEEDOR..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="border-none bg-transparent focus-visible:ring-0 font-bold text-sm"
+              className="pl-12 h-12 bg-white border-slate-200 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-bold uppercase text-[10px] tracking-widest placeholder:text-slate-300"
             />
           </div>
           <Button 
             onClick={() => setIsFormOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest text-xs px-8 h-14 shadow-blue-100 shadow-2xl rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
+            className="h-12 bg-blue-800 hover:bg-blue-900 text-white rounded-none font-black uppercase tracking-[0.2em] text-[10px] px-8 transition-all gap-3 shadow-none"
           >
             <LucidePlus className="h-4 w-4" />
             Nueva Compra
@@ -137,66 +131,66 @@ export function PurchasesView({ initialPurchases, suppliers, products, categorie
         </div>
       </div>
 
-      {/* Purchases List Table */}
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+      {/* 3. Purchases Matrix - Accounting Style */}
+      <div className="border border-slate-200 bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Factura / ID</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Proveedor</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Fecha</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Artículos</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Total</th>
-                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Acciones</th>
+              <tr className="bg-slate-100 border-b border-slate-200">
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 border-r border-slate-200">Facturación / ID Sistema</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 border-r border-slate-200">Entidad Proveedora</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 border-r border-slate-200">Fecha Registro</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 border-r border-slate-200">Detalle</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 border-r border-slate-200 text-right">Total Neto</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100">
               {filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-8 py-20 text-center">
-                    <div className="flex flex-col items-center gap-4 opacity-20">
-                      <LucidePackage className="h-16 w-16 text-slate-400" />
-                      <p className="font-black uppercase tracking-widest text-xs">No se encontraron compras</p>
+                  <td colSpan={6} className="px-6 py-20 text-center bg-slate-50/30">
+                    <div className="flex flex-col items-center gap-6">
+                      <div className="h-16 w-16 bg-slate-100 flex items-center justify-center">
+                        <LucidePackage className="h-8 w-8 text-slate-200" />
+                      </div>
+                      <p className="font-black uppercase tracking-[0.3em] text-[10px] text-slate-300">No se registran movimientos de compra</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredPurchases.map((purchase) => (
-                  <tr key={purchase.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-8 py-6">
+                  <tr key={purchase.id} className="hover:bg-slate-50/50 transition-colors group h-16">
+                    <td className="px-6 py-4 border-r border-slate-50">
                       <div className="flex flex-col">
-                        <span className="font-black text-slate-900 tracking-tight text-lg">{purchase.invoiceNumber || "S/N"}</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {purchase.id.slice(0,8)}</span>
+                        <span className="font-black text-slate-950 tracking-tighter text-sm uppercase">{purchase.invoiceNumber || "SIN FACTURA"}</span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">ID: {purchase.id.slice(0,8)}</span>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
+                    <td className="px-6 py-4 border-r border-slate-50">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 font-black text-xs">
-                          {purchase.supplier?.name?.charAt(0) || "C"}
+                        <div className="h-8 w-8 bg-slate-950 flex items-center justify-center text-white font-black text-[10px] tracking-tighter uppercase transition-transform group-hover:scale-95">
+                          {purchase.supplier?.name?.charAt(0) || "P"}
                         </div>
-                        <span className="font-black text-slate-700 uppercase tracking-tight">{purchase.supplier?.name || "Consumidor Final"}</span>
+                        <span className="font-black text-slate-950 uppercase text-[11px] tracking-tight">{purchase.supplier?.name || "PROVEEDOR FINAL"}</span>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      <span className="font-bold text-slate-500 text-sm">
-                        {formatDate(purchase.createdAt)}
+                    <td className="px-6 py-4 border-r border-slate-50 text-[11px] font-bold text-slate-600 uppercase tabular-nums">
+                      {formatDate(purchase.createdAt)}
+                    </td>
+                    <td className="px-6 py-4 border-r border-slate-50">
+                      <div className="bg-slate-100 border border-slate-200 text-slate-950 text-[8px] font-black uppercase tracking-widest px-2 py-1 inline-block">
+                        {purchase.items?.length || 0} ÍTEMS REGISTRADOS
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right border-r border-slate-50">
+                      <span className="font-black text-slate-950 text-sm tracking-widest tabular-nums">
+                        {formatCurrency(purchase.totalAmount)}
                       </span>
                     </td>
-                    <td className="px-8 py-6">
-                      <div className="bg-blue-50 px-3 py-1 rounded-lg w-fit">
-                        <span className="font-black text-blue-600 text-[10px] uppercase tracking-tighter">{purchase.items?.length || 0} Ítems</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 text-right font-black text-slate-900 text-xl tracking-tighter">
-                      {formatCurrency(purchase.totalAmount)}
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex justify-center gap-2">
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50">
-                          <LucideInfo className="h-5 w-5" />
-                        </Button>
-                      </div>
+                    <td className="px-6 py-4 text-center">
+                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none hover:bg-slate-950 hover:text-white transition-all border border-transparent">
+                        <LucideArrowUpRight className="h-4 w-4" />
+                      </Button>
                     </td>
                   </tr>
                 ))
@@ -228,66 +222,68 @@ export function PurchasesView({ initialPurchases, suppliers, products, categorie
         initialName={initialProductName}
       />
 
-      {/* Modal de Detalle de Vencimientos */}
+      {/* Modal de Detalle de Vencimientos - Industrial Style */}
       <Dialog open={isExpiryModalOpen} onOpenChange={setIsExpiryModalOpen}>
-        <DialogContent className="!max-w-[90vw] !w-[90vw] !max-h-[85vh] !h-[85vh] p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl flex flex-col">
-          <div className="bg-orange-600 px-8 py-6 text-white relative shrink-0">
-            <LucideClock className="absolute -right-4 -bottom-4 h-32 w-32 opacity-10 rotate-12" />
-            <DialogHeader>
-              <DialogTitle className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3">
-                <LucideAlertTriangle className="h-8 w-8" />
-                Control de Vencimientos
-              </DialogTitle>
-            </DialogHeader>
-            <p className="text-orange-100 font-bold uppercase tracking-widest text-[10px] mt-1 opacity-80">
-              Productos con fecha de vencimiento próxima (30 días)
-            </p>
-          </div>
+        <DialogContent className="!max-w-[1000px] rounded-none border border-slate-200 shadow-2xl p-0 gap-0 overflow-hidden bg-white flex flex-col">
+          <DialogHeader className="bg-slate-950 p-8 flex flex-row items-center justify-between">
+            <div className="space-y-1">
+                <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-4 bg-red-600" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-500">Alerta de Seguridad Sanitaria</span>
+                </div>
+                <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-white flex items-center gap-3">
+                    Control de Vencimientos
+                </DialogTitle>
+            </div>
+            <div className="h-12 w-12 bg-white/5 border border-white/10 flex items-center justify-center text-red-500 animate-pulse">
+                <LucideAlertTriangle className="h-6 w-6" />
+            </div>
+          </DialogHeader>
 
-          <div className="flex-1 overflow-auto p-8 bg-slate-50">
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="p-8 bg-slate-50 flex-1 overflow-auto">
+            <div className="border border-slate-200 bg-white">
               <table className="w-full border-collapse">
-                <thead className="sticky top-0 z-10 bg-white border-b border-slate-100 shadow-sm">
-                  <tr>
-                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-left">Producto</th>
-                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Lote</th>
-                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Stock</th>
-                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Vencimiento</th>
-                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Días Restantes</th>
-                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-center">Estado</th>
+                <thead>
+                  <tr className="bg-slate-100 border-b border-slate-200">
+                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-left border-r border-slate-200">Especificación de Lote</th>
+                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center border-r border-slate-200">Código de Lote</th>
+                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center border-r border-slate-200">Existencia</th>
+                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center border-r border-slate-200">Fecha de Caducidad</th>
+                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center border-r border-slate-200">Días para Caducidad</th>
+                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center">Riesgo</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-[11px]">
+                <tbody className="divide-y divide-slate-100">
                   {expiringProducts.sort((a,b) => new Date(a.expiryDate!).getTime() - new Date(b.expiryDate!).getTime()).map((p) => {
                     const days = Math.ceil((new Date(p.expiryDate!).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
                     const isCritical = days <= 7;
                     return (
-                      <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4">
+                      <tr key={p.id} className="hover:bg-slate-50 transition-colors h-14">
+                        <td className="px-6 py-3 border-r border-slate-50">
                           <div className="flex flex-col">
-                            <span className="font-black text-slate-700 uppercase">{p.product?.name}</span>
-                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">SKU: {p.product?.sku || "---"}</span>
+                            <span className="font-black text-slate-950 uppercase text-[10px] tracking-tight">{p.product?.name}</span>
+                            <span className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">SKU: {p.product?.sku || "---"}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-center font-bold text-slate-500">{p.batchNumber || "S/L"}</td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="bg-slate-100 px-3 py-1 rounded-lg font-black text-slate-600">{p.quantity} UN</span>
+                        <td className="px-6 py-3 text-center border-r border-slate-50 text-[10px] font-black text-slate-600 tabular-nums">{p.batchNumber || "SIN LOTE"}</td>
+                        <td className="px-6 py-3 text-center border-r border-slate-50">
+                          <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 font-black text-slate-950 text-[9px] uppercase tracking-tighter tabular-nums">{p.quantity} U.</span>
                         </td>
-                        <td className="px-6 py-4 text-center font-black text-slate-700">
+                        <td className="px-6 py-3 text-center border-r border-slate-50 font-black text-slate-950 text-[10px] tabular-nums">
                           {formatDate(p.expiryDate)}
                         </td>
-                        <td className="px-6 py-4 text-center">
+                        <td className="px-6 py-3 text-center border-r border-slate-50">
                           <span className={cn(
-                            "font-black px-3 py-1 rounded-lg inline-block min-w-[80px]",
-                            isCritical ? "bg-red-100 text-red-600" : "bg-orange-100 text-orange-600"
+                            "font-black px-2 py-1 text-[9px] uppercase tracking-widest tabular-nums",
+                            isCritical ? "text-red-600 bg-red-50" : "text-blue-800 bg-blue-50"
                           )}>
-                            {days < 0 ? "VENCIDO" : `${days} DÍAS`}
+                            {days < 0 ? "CADUCADO" : `${days} DÍAS REST.`}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-center">
+                        <td className="px-6 py-3 text-center">
                           <div className={cn(
-                            "h-2 w-2 rounded-full mx-auto animate-pulse",
-                            isCritical ? "bg-red-500" : "bg-orange-500"
+                            "h-2 w-2 rounded-none mx-auto",
+                            isCritical ? "bg-red-600 animate-pulse" : "bg-blue-800"
                           )} />
                         </td>
                       </tr>
@@ -298,12 +294,12 @@ export function PurchasesView({ initialPurchases, suppliers, products, categorie
             </div>
           </div>
 
-          <DialogFooter className="p-6 bg-white border-t border-slate-50">
+          <DialogFooter className="p-6 bg-white border-t border-slate-100 flex justify-end">
             <Button 
               onClick={() => setIsExpiryModalOpen(false)}
-              className="bg-slate-900 hover:bg-black text-white font-black uppercase tracking-widest text-xs px-10 h-12 rounded-2xl shadow-xl transition-all"
+              className="bg-slate-950 hover:bg-black text-white font-black uppercase tracking-[0.2em] text-[10px] px-10 h-12 rounded-none shadow-none"
             >
-              Cerrar Reporte
+              Finalizar Reporte
             </Button>
           </DialogFooter>
         </DialogContent>

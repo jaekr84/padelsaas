@@ -10,7 +10,9 @@ import {
   LucidePencil,
   LucideTrash2,
   LucideTrophy,
-  LucideUsers
+  LucideUsers,
+  LucideArrowUpRight,
+  LucideUser
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,18 +23,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-
-interface Customer {
-  id: string;
-  firstName: string;
-  lastName: string;
-  dni: string | null;
-  phone: string | null;
-  email: string | null;
-  category: string | null;
-  padelLevel: string | null;
-  balance: string | null;
-}
+import { cn } from "@/lib/utils";
 
 interface CustomersListProps {
   initialCustomers: any[];
@@ -48,97 +39,111 @@ export function CustomersList({ initialCustomers }: CustomersListProps) {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Barra de Búsqueda */}
-      <div className="relative group max-w-md">
-        <LucideSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-        <Input 
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="BUSCAR POR NOMBRE, DNI O EMAIL..." 
-          className="pl-12 h-14 bg-white border-none rounded-2xl shadow-sm focus-visible:ring-2 focus-visible:ring-indigo-600 transition-all font-bold uppercase text-[10px] tracking-widest"
-        />
+    <div className="space-y-8">
+      {/* 1. Industrial Search Bar */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
+        <div className="relative flex-1">
+          <LucideSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="FILTRAR POR NOMBRE, DNI O CORREO ELECTRÓNICO..." 
+            className="pl-12 h-12 bg-white border-slate-200 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-bold uppercase text-[10px] tracking-widest placeholder:text-slate-300"
+          />
+        </div>
+        <div className="flex items-center px-6 bg-slate-50 border border-slate-200 h-12">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registros:</span>
+            <span className="ml-3 text-sm font-black text-slate-950 tabular-nums">{filteredCustomers.length}</span>
+        </div>
       </div>
 
-      {/* Tabla de Clientes */}
-      <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+      {/* 2. Customer Table - Accounting Industrial Style */}
+      <div className="border border-slate-200 bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-50">
-                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Cliente</th>
-                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">DNI / Documento</th>
-                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Contacto</th>
-                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Nivel / Cat.</th>
-                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Saldo</th>
-                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Acciones</th>
+              <tr className="bg-slate-100 border-b border-slate-200">
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 border-r border-slate-200">Identidad del Cliente</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 border-r border-slate-200">Documentación</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 border-r border-slate-200">Información de Contacto</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 border-r border-slate-200">Categorización</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 border-r border-slate-200 text-right">Crédito / Saldo</th>
+                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100">
               {filteredCustomers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 font-black text-xs group-hover:bg-indigo-600 group-hover:text-white transition-colors uppercase">
+                <tr key={customer.id} className="hover:bg-slate-50/50 transition-colors group h-16">
+                  <td className="px-6 py-4 border-r border-slate-50">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 bg-slate-950 flex items-center justify-center text-white font-black text-[10px] tracking-tighter uppercase transition-transform group-hover:scale-95">
                         {customer.firstName[0]}{customer.lastName[0]}
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900 uppercase text-sm tracking-tight">
+                        <p className="font-black text-slate-950 uppercase text-xs tracking-tight leading-none mb-1">
                           {customer.firstName} {customer.lastName}
                         </p>
-                        <p className="text-[10px] text-slate-400 font-medium">Cliente ID: {customer.id.slice(0, 8)}</p>
+                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">ID: {customer.id.slice(0, 8)}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-bold text-slate-600">{customer.dni || "---"}</span>
+                  <td className="px-6 py-4 border-r border-slate-50">
+                    <span className="text-[10px] font-black text-slate-950 tabular-nums tracking-widest uppercase">
+                        {customer.dni || "---"}
+                    </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 border-r border-slate-50">
                     <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
-                        <LucidePhone className="h-3 w-3 text-slate-400" />
-                        {customer.phone || "---"}
+                      <div className="flex items-center gap-2 text-[10px] font-black text-slate-600">
+                        <LucidePhone className="h-3 w-3 text-blue-800" />
+                        <span className="tabular-nums">{customer.phone || "---"}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                      <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 lowercase tracking-tight">
                         <LucideMail className="h-3 w-3" />
                         {customer.email || "---"}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-none rounded-lg text-[9px] font-black uppercase tracking-widest px-2 py-0.5">
-                        {customer.category || "Frecuente"}
-                      </Badge>
+                  <td className="px-6 py-4 border-r border-slate-50">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-slate-100 border border-slate-200 text-slate-950 text-[8px] font-black uppercase tracking-widest px-2 py-1">
+                        {customer.category || "FRECUENTE"}
+                      </div>
                       {customer.padelLevel && (
-                        <div className="flex items-center gap-1 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        <div className="flex items-center gap-1.5 text-[9px] font-black text-blue-800 uppercase tracking-widest">
                           <LucideTrophy className="h-3 w-3" />
-                          {customer.padelLevel}
+                          Nivel {customer.padelLevel}
                         </div>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className={`text-sm font-black tracking-tighter ${Number(customer.balance) < 0 ? 'text-red-500' : 'text-slate-900'}`}>
-                      ${customer.balance || '0.00'}
-                    </p>
+                  <td className="px-6 py-4 text-right border-r border-slate-50">
+                    <div className="flex flex-col items-end">
+                        <p className={cn(
+                            "text-xs font-black tracking-widest tabular-nums",
+                            Number(customer.balance) < 0 ? 'text-red-600' : 'text-slate-950'
+                        )}>
+                        $ {Number(customer.balance || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                        </p>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">Disponibilidad de Cuenta</span>
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger render={
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-100">
-                          <LucideMoreVertical className="h-4 w-4 text-slate-400" />
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none hover:bg-slate-950 hover:text-white transition-all border border-transparent">
+                          <LucideMoreVertical className="h-4 w-4" />
                         </Button>
                       } />
-                      <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl p-2 min-w-[160px]">
-                        <DropdownMenuItem className="rounded-xl font-bold uppercase text-[10px] tracking-widest gap-2 py-3 cursor-pointer">
-                          <LucideExternalLink className="h-4 w-4" /> Ver Ficha
+                      <DropdownMenuContent align="end" className="rounded-none border border-slate-200 shadow-2xl p-0 min-w-[180px]">
+                        <DropdownMenuItem className="rounded-none font-black uppercase text-[9px] tracking-widest gap-3 py-3 cursor-pointer focus:bg-blue-800 focus:text-white">
+                          <LucideArrowUpRight className="h-4 w-4" /> Ver Historial
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="rounded-xl font-bold uppercase text-[10px] tracking-widest gap-2 py-3 cursor-pointer">
-                          <LucidePencil className="h-4 w-4 text-blue-500" /> Editar
+                        <DropdownMenuItem className="rounded-none font-black uppercase text-[9px] tracking-widest gap-3 py-3 cursor-pointer focus:bg-blue-800 focus:text-white border-y border-slate-100">
+                          <LucidePencil className="h-4 w-4" /> Editar Registro
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="rounded-xl font-bold uppercase text-[10px] tracking-widest gap-2 py-3 cursor-pointer text-red-500">
-                          <LucideTrash2 className="h-4 w-4" /> Eliminar
+                        <DropdownMenuItem className="rounded-none font-black uppercase text-[9px] tracking-widest gap-3 py-3 cursor-pointer text-red-600 focus:bg-red-600 focus:text-white">
+                          <LucideTrash2 className="h-4 w-4" /> Baja del Sistema
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -150,9 +155,11 @@ export function CustomersList({ initialCustomers }: CustomersListProps) {
         </div>
 
         {filteredCustomers.length === 0 && (
-          <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-4">
-            <LucideUsers className="h-12 w-12 opacity-20" />
-            <p className="font-black uppercase text-[10px] tracking-[0.2em]">No se encontraron clientes</p>
+          <div className="h-96 flex flex-col items-center justify-center text-slate-400 gap-6 bg-slate-50/30">
+            <div className="h-16 w-16 bg-slate-100 flex items-center justify-center">
+              <LucideUser className="h-8 w-8 text-slate-200" />
+            </div>
+            <p className="font-black uppercase text-[10px] tracking-[0.3em] text-slate-300">Entidad no detectada en la base de datos</p>
           </div>
         )}
       </div>
