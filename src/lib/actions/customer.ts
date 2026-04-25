@@ -15,6 +15,10 @@ export async function getCustomersAction() {
     // Por ahora traemos todos los del sistema para simplificar el MVP
     const result = await db.query.customers.findMany({
       orderBy: [desc(customers.createdAt)],
+      with: {
+        bookings: true,
+        sales: true,
+      }
     });
 
     return { success: true, data: result };

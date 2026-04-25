@@ -376,6 +376,7 @@ export const courtsRelations = relations(courts, ({ one, many }) => ({
 export const bookingsRelations = relations(bookings, ({ one }) => ({
   court: one(courts, { fields: [bookings.courtId], references: [courts.id] }),
   user: one(users, { fields: [bookings.userId], references: [users.id] }),
+  customer: one(customers, { fields: [bookings.customerId], references: [customers.id] }),
 }));
 
 export const pricingSchedulesRelations = relations(pricingSchedules, ({ one }) => ({
@@ -447,6 +448,8 @@ export const productBatchesRelations = relations(productBatches, ({ one }) => ({
   center: one(centers, { fields: [productBatches.centerId], references: [centers.id] }),
 }));
 
-export const customersRelations = relations(customers, ({ one }) => ({
+export const customersRelations = relations(customers, ({ one, many }) => ({
   tenant: one(tenants, { fields: [customers.tenantId], references: [tenants.id] }),
+  bookings: many(bookings),
+  sales: many(sales),
 }));

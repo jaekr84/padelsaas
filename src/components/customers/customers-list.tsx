@@ -32,6 +32,37 @@ interface CustomersListProps {
 export function CustomersList({ initialCustomers }: CustomersListProps) {
   const [search, setSearch] = useState("");
 
+  const getAutoCategory = (customer: any) => {
+    const bookingCount = customer.bookings?.length || 0;
+    const salesCount = customer.sales?.length || 0;
+    
+    // Si el usuario ya tiene una categoría personalizada (que no sea la default), la respetamos
+    if (customer.category && customer.category !== "Frecuente" && customer.category !== "FRECUENTE") {
+      return { label: customer.category.toUpperCase(), color: "bg-slate-100 text-slate-950 border-slate-200" };
+    }
+
+    if (bookingCount >= 15 || salesCount >= 30) {
+      return { label: "VIP / CORPORATIVO", color: "bg-blue-800 text-white border-blue-900" };
+    }
+    if (bookingCount >= 6) {
+      return { label: "FRECUENTE", color: "bg-green-100 text-green-800 border-green-200" };
+    }
+    if (bookingCount >= 2) {
+      return { label: "OCASIONAL", color: "bg-slate-100 text-slate-600 border-slate-200" };
+    }
+    
+    // Verificar si es nuevo (registrado hace menos de 7 días)
+    const createdAt = new Date(customer.createdAt);
+    const now = new Date();
+    const diffDays = Math.ceil(Math.abs(now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 7) {
+      return { label: "NUEVO INGRESO", color: "bg-blue-50 text-blue-800 border-blue-200" };
+    }
+
+    return { label: "INACTIVO / LEAD", color: "bg-red-50 text-red-600 border-red-100" };
+  };
+
   const filteredCustomers = initialCustomers.filter(customer => 
     `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
     customer.dni?.includes(search) ||
@@ -106,9 +137,17 @@ export function CustomersList({ initialCustomers }: CustomersListProps) {
                   </td>
                   <td className="px-6 py-4 border-r border-slate-50">
                     <div className="flex items-center gap-3">
-                      <div className="bg-slate-100 border border-slate-200 text-slate-950 text-[8px] font-black uppercase tracking-widest px-2 py-1">
-                        {customer.category || "FRECUENTE"}
-                      </div>
+                      {(() => {
+                        const cat = getAutoCategory(customer);
+                        return (
+                          <div className={cn(
+                            "border text-[8px] font-black uppercase tracking-widest px-2 py-1 transition-all",
+                            cat.color
+                          )}>
+                            {cat.label}
+                          </div>
+                        );
+                      })()}
                       {customer.padelLevel && (
                         <div className="flex items-center gap-1.5 text-[9px] font-black text-blue-800 uppercase tracking-widest">
                           <LucideTrophy className="h-3 w-3" />
