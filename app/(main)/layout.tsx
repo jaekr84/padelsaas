@@ -1,5 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -10,8 +10,9 @@ export default function MainLayout({
 }) {
   return (
     <Providers>
-      <AppSidebar />
-      <SidebarInset>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-8">
           {children}
         </div>
@@ -28,6 +29,7 @@ export default function MainLayout({
         </footer>
       </SidebarInset>
       <Toaster />
+      </SidebarProvider>
     </Providers>
   );
 }

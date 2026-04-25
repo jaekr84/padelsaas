@@ -14,7 +14,7 @@ import {
   LucideLock,
   LucidePlay
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { PhoneSimulator } from "@/components/demo/phone-simulator";
 
 export default function LandingPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -33,77 +33,83 @@ export default function LandingPage() {
       setIsLoggingIn(false);
     }
   };
+
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-950 selection:bg-blue-800 selection:text-white">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-950 selection:bg-blue-800 selection:text-white overflow-x-hidden">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white border-b-2 border-slate-950 px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-slate-950 text-white shadow-[4px_4px_0px_rgba(0,51,153,1)]">
-            <LucideBox className="h-6 w-6" />
+      <nav className="sticky top-0 z-50 bg-white border-b-2 border-slate-950 px-6 md:px-12 h-20 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-slate-950 text-white shadow-[4px_4px_0px_rgba(0,51,153,1)]">
+            <LucideBox className="h-7 w-7" />
           </div>
-          <span className="text-sm font-black uppercase tracking-tighter leading-none">Padel Industrial</span>
+          <span className="text-lg font-black uppercase tracking-tighter leading-none">Tu cancha Ya</span>
         </div>
-        <div className="hidden md:flex items-center gap-8">
-          <Link href="#features" className="text-[10px] font-bold uppercase tracking-widest hover:text-blue-800">Sistemas</Link>
+        <div className="hidden lg:flex items-center gap-10">
+          <Link href="/explore" className="text-[11px] font-bold uppercase tracking-widest text-blue-800 hover:underline">Explorar Sedes</Link>
+          <Link href="/register" className="text-[11px] font-black uppercase tracking-widest text-slate-950 border-b-2 border-slate-950 hover:bg-slate-50 px-2 py-1 transition-all">
+            Registrar Club
+          </Link>
           <button 
             onClick={handleDemoLogin}
             disabled={isLoggingIn}
-            className="text-[10px] font-black uppercase tracking-widest text-blue-800 hover:bg-blue-50 px-3 py-2 border border-blue-200 transition-all"
+            className="text-[11px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-950 px-3 py-2 transition-all"
           >
-            {isLoggingIn ? "Cargando..." : "Explorar Demo"}
+            {isLoggingIn ? "Cargando..." : "Acceso Demo"}
           </button>
-          <Link href="/login" className="px-4 py-2 bg-slate-950 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-blue-800 transition-colors">
-            Acceso Terminal
+          <Link href="/login" className="px-6 py-3 bg-slate-950 text-white text-[11px] font-black uppercase tracking-widest hover:bg-blue-800 transition-colors shadow-[4px_4px_0px_#003399]">
+            Terminal Admin
           </Link>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative py-20 px-6 border-b-2 border-slate-950 overflow-hidden bg-white">
-        <div className="max-w-7xl mx-auto">
+      <section className="relative py-24 px-6 md:px-12 border-b-2 border-slate-950 bg-white overflow-hidden">
+        <div className="max-w-[1400px] mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-            <div className="lg:col-span-7 space-y-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 text-blue-800 rounded-none">
-                <LucideActivity className="h-3 w-3" />
-                <span className="text-[10px] font-black uppercase tracking-widest">v2.0 Terminal Operativa</span>
+            <div className="lg:col-span-7 space-y-10">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 border border-blue-200 text-blue-800">
+                <LucideActivity className="h-4 w-4" />
+                <span className="text-[11px] font-black uppercase tracking-widest">v2.4 Estación Operativa</span>
               </div>
-              <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-[0.95] text-slate-950">
-                Automatización <br />
-                <span className="text-blue-800 underline decoration-4 underline-offset-8">Total</span> de Canchas.
+              <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-[0.85] text-slate-950">
+                Control <br />
+                <span className="text-blue-800 underline decoration-8 underline-offset-8">Mecanizado</span> <br />
+                de Canchas.
               </h1>
-              <p className="max-w-md text-lg font-medium text-slate-600 leading-relaxed">
-                Software de grado industrial para centros deportivos. Gestión de turnos, POS integrado y control de acceso en una sola terminal de misión crítica.
+              <p className="max-w-xl text-xl font-medium text-slate-600 leading-relaxed">
+                Gestión automatizada para centros deportivos. Reserva pública, terminal de punto de venta y analítica técnica en una sola infraestructura.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button 
-                  onClick={handleDemoLogin}
-                  disabled={isLoggingIn}
-                  className="flex items-center justify-center gap-3 px-8 py-4 bg-blue-800 text-white font-black uppercase tracking-widest shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all disabled:opacity-50"
-                >
-                  {isLoggingIn ? "Iniciando..." : "Acceder a Demo"} <LucidePlay className="h-4 w-4" />
-                </button>
-                <Link href="/login" className="flex items-center justify-center gap-3 px-8 py-4 bg-slate-950 text-white font-black uppercase tracking-widest hover:bg-blue-900 transition-all">
-                  Login Manual
+              <div className="flex flex-col sm:flex-row gap-5">
+                <Link href="/explore" className="flex items-center justify-center gap-4 px-10 py-5 bg-blue-800 text-white font-black uppercase tracking-widest shadow-[8px_8px_0px_black] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                  Reservar Turno <LucideArrowRight className="h-5 w-5" />
+                </Link>
+                <Link href="/register" className="flex items-center justify-center gap-4 px-10 py-5 bg-white border-4 border-slate-950 text-slate-950 font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
+                  Registrarse
                 </Link>
               </div>
             </div>
+            
             <div className="lg:col-span-5 relative">
-              <div className="aspect-square bg-slate-100 border-2 border-slate-950 relative group overflow-hidden">
+              <div className="aspect-square bg-slate-100 border-4 border-slate-950 relative group overflow-hidden shadow-[12px_12px_0px_#003399]">
                 <img 
                   src="/img/main.jpg" 
-                  alt="Padel Center Automation" 
-                  className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                  alt="Padel Center" 
+                  className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 transition-all duration-700"
                 />
-                <div className="absolute inset-0 bg-blue-800/10 mix-blend-multiply group-hover:bg-transparent transition-all"></div>
-                <div className="absolute top-4 left-4 p-4 bg-white border border-slate-950 shadow-[4px_4px_0px_rgba(0,0,0,1)] z-10">
-                   <div className="flex items-center gap-2 mb-2">
-                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                     <span className="text-[8px] font-bold uppercase tracking-widest">Sistema Online</span>
+                <div className="absolute inset-0 bg-blue-900/10 mix-blend-overlay group-hover:bg-transparent transition-all"></div>
+                
+                {/* Floating Stats UI */}
+                <div className="absolute top-8 left-8 p-6 bg-white border-2 border-slate-950 shadow-[6px_6px_0px_black] z-10">
+                   <div className="flex items-center gap-3 mb-2">
+                     <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sistema Online</span>
                    </div>
-                   <div className="text-2xl font-black tabular-nums">12:45:00</div>
+                   <div className="text-4xl font-black tabular-nums">0.2ms</div>
+                   <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Latencia de Red</span>
                 </div>
-                <div className="absolute bottom-10 right-10 w-48 h-48 bg-blue-800 flex items-center justify-center border-4 border-white shadow-2xl z-10">
-                   <LucideCalendar className="h-20 w-20 text-white" />
+                
+                <div className="absolute bottom-10 right-10 w-40 h-40 bg-blue-800 flex items-center justify-center border-4 border-white shadow-2xl z-10 animate-in fade-in zoom-in duration-1000">
+                   <LucideCalendar className="h-16 w-16 text-white" />
                 </div>
               </div>
             </div>
@@ -111,71 +117,94 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Stats/Industrial Tape */}
-      <div className="bg-slate-950 py-4 overflow-hidden border-b-2 border-slate-950">
+      {/* Industrial Tape / Marquee */}
+      <div className="bg-slate-950 py-5 overflow-hidden border-b-2 border-slate-950">
         <div className="flex whitespace-nowrap animate-marquee">
-          {[1,2,3,4,5,6].map((i) => (
-            <div key={i} className="flex items-center gap-10 mx-10 text-white text-[10px] font-black uppercase tracking-[0.4em]">
+          {[1,2,3,4].map((i) => (
+            <div key={i} className="flex items-center gap-16 mx-12 text-white text-[11px] font-black uppercase tracking-[0.5em]">
               <span>Misión Crítica</span>
               <span className="text-blue-500">•</span>
+              <span>Hardware Ready</span>
+              <span className="text-blue-500">•</span>
+              <span>Automatización IoT</span>
+              <span className="text-blue-500">•</span>
+              <span>Facturación Real</span>
+              <span className="text-blue-500">•</span>
               <span>99.9% Uptime</span>
-              <span className="text-blue-500">•</span>
-              <span>Zero Latency</span>
-              <span className="text-blue-500">•</span>
-              <span>Encriptación AES-256</span>
               <span className="text-blue-500">•</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Features Grid */}
-      <section id="features" className="py-24 px-6 bg-slate-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-20 text-center space-y-4">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-800">Infraestructura</h2>
-            <p className="text-4xl font-black uppercase tracking-tighter text-slate-950">Módulos de Control Operativo</p>
+      {/* NEW: Customer Experience / Phone Simulator Section */}
+      <section className="py-24 px-6 md:px-12 bg-white border-b-2 border-slate-950 relative overflow-hidden">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <div className="space-y-8 order-2 lg:order-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-950 text-white text-[9px] font-black uppercase tracking-widest">
+                Módulo de Comunicación
+              </div>
+              <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none">
+                Sincronización <br />
+                <span className="text-blue-800">Total</span>.
+              </h2>
+              <p className="text-xl font-medium text-slate-500 leading-relaxed max-w-lg">
+                Tu cliente recibe notificaciones automáticas de sus reservas, cambios de estado y recordatorios tácticos directamente en su terminal móvil. Sin intervención manual.
+              </p>
+              <div className="space-y-4">
+                 {[
+                   "Confirmación instantánea vía Push",
+                   "Recordatorios 1h antes del turno",
+                   "Gestión de lista de espera automática"
+                 ].map((item, i) => (
+                   <div key={i} className="flex items-center gap-4">
+                      <div className="h-6 w-6 bg-blue-800 text-white flex items-center justify-center">
+                         <LucideCheckCircle2 className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-950">{item}</span>
+                   </div>
+                 ))}
+              </div>
+            </div>
+            
+            <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
+               <PhoneSimulator />
+            </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-2 border-slate-950">
+        </div>
+        
+        {/* Background Decorative Grid */}
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-slate-50/50 -z-10 border-l border-slate-100"></div>
+      </section>
+
+      {/* Features */}
+      <section id="features" className="py-32 px-6 md:px-12 bg-slate-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-4 border-slate-950">
             {[
               { 
-                title: "Gestor de Canchas", 
-                desc: "Grid dinámico con soporte para drag & drop y múltiples sedes en tiempo real.",
+                title: "Gestor Técnico", 
+                desc: "Grilla de alta densidad con control de conflictos y bloqueos manuales.",
                 icon: LucideLayoutDashboard
               },
               { 
-                title: "POS Inteligente", 
-                desc: "Venta de productos, control de inventario y facturación automatizada.",
+                title: "POS Mecanizado", 
+                desc: "Venta de productos, alquiler de palas y gestión de inventario en tiempo real.",
                 icon: LucideZap
               },
               { 
-                title: "Booking Engine", 
-                desc: "Motor de reservas externo para clientes con pasarela de pagos integrada.",
-                icon: LucideCalendar
-              },
-              { 
-                title: "Analítica Pro", 
-                desc: "Reportes técnicos de ocupación, ingresos y comportamiento de clientes.",
-                icon: LucideActivity
-              },
-              { 
-                title: "Control de Acceso", 
-                desc: "Gestión de puertas y luces automatizada mediante protocolos IoT.",
+                title: "Seguridad AES", 
+                desc: "Protocolos de encriptación de grado militar para transacciones y datos.",
                 icon: LucideLock
-              },
-              { 
-                title: "Base de Datos", 
-                desc: "Arquitectura escalable en la nube con redundancia geográfica.",
-                icon: LucideBox
               }
             ].map((f, i) => (
-              <div key={i} className="p-10 border border-slate-950 bg-white hover:bg-slate-50 transition-colors group">
-                <div className="w-12 h-12 bg-slate-100 flex items-center justify-center mb-6 group-hover:bg-blue-800 group-hover:text-white transition-colors border border-slate-950">
-                  <f.icon className="h-6 w-6" />
+              <div key={i} className="p-16 border-2 border-slate-950 bg-white hover:bg-slate-50 transition-all group">
+                <div className="w-16 h-16 bg-slate-100 border-2 border-slate-950 flex items-center justify-center mb-10 group-hover:bg-blue-800 group-hover:text-white transition-all group-hover:-translate-y-2 group-hover:shadow-[8px_8px_0px_black]">
+                  <f.icon className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-black uppercase tracking-tight mb-4">{f.title}</h3>
-                <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                <h3 className="text-2xl font-black uppercase tracking-tight mb-6">{f.title}</h3>
+                <p className="text-base text-slate-500 font-bold uppercase tracking-tight leading-relaxed">
                   {f.desc}
                 </p>
               </div>
@@ -184,52 +213,41 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 px-6 bg-blue-800 border-t-2 border-slate-950 text-white overflow-hidden relative">
-        <div className="absolute top-0 right-0 p-10 opacity-10">
-          <LucideBox className="h-64 w-64" />
-        </div>
-        <div className="max-w-4xl mx-auto text-center space-y-10 relative z-10">
-          <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none">
-            ¿Listo para industrializar <br /> tu centro?
-          </h2>
-          <div className="flex flex-col sm:flex-row justify-center gap-6">
-            <Link href="/login" className="px-10 py-5 bg-slate-950 text-white font-black uppercase tracking-[0.2em] shadow-[8px_8px_0px_white] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
-              Agendar Demo Técnica
-            </Link>
-            <div className="flex items-center justify-center gap-2">
-              <LucideCheckCircle2 className="h-5 w-5 text-blue-300" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200">Sin tarjeta de crédito requerida</span>
+      {/* CTA */}
+      <section className="py-32 px-6 md:px-12 bg-blue-800 border-t-2 border-slate-950 text-white text-center relative overflow-hidden">
+         <div className="max-w-4xl mx-auto space-y-12 relative z-10">
+            <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-none">
+               Industrializa <br /> tu centro.
+            </h2>
+            <div className="flex flex-col sm:flex-row justify-center gap-8">
+               <Link href="/register" className="px-12 py-6 bg-white text-slate-950 font-black uppercase tracking-[0.2em] shadow-[10px_10px_0px_black] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
+                  Registrar Ahora
+               </Link>
+               <Link href="/login" className="px-12 py-6 bg-slate-950 text-white font-black uppercase tracking-[0.2em] shadow-[10px_10px_0px_white] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
+                  Acceso Terminal
+               </Link>
             </div>
-          </div>
-        </div>
+         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-6 border-t-2 border-slate-950 bg-white">
-        <div className="max-w-6xl mx-auto flex flex-col md:row justify-between items-center gap-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-slate-950 text-white">
-              <LucideBox className="h-4 w-4" />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-widest">Padel Industrial © 2026</span>
+      <footer className="py-12 px-6 border-t-2 border-slate-950 bg-white text-center">
+        <div className="max-w-6xl mx-auto flex flex-col items-center gap-6">
+          <div className="flex h-10 w-10 items-center justify-center bg-slate-950 text-white shadow-[4px_4px_0px_rgba(0,51,153,1)]">
+            <LucideBox className="h-6 w-6" />
           </div>
-          <div className="flex gap-8">
-            <Link href="#" className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-950">Legal</Link>
-            <Link href="#" className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-950">Privacidad</Link>
-            <Link href="#" className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-950">Soporte Técnico</Link>
-          </div>
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 italic">Tu cancha Ya © 2026</span>
         </div>
       </footer>
 
-      <style jsx>{`
+      <style jsx global>{`
         @keyframes marquee {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
         .animate-marquee {
           display: flex;
-          animation: marquee 30s linear infinite;
+          animation: marquee 40s linear infinite;
         }
       `}</style>
     </div>

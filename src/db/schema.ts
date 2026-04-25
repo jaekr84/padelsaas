@@ -261,6 +261,7 @@ export const customers = pgTable("customer", {
   tenantId: uuid("tenant_id")
     .notNull()
     .references(() => tenants.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }), // Link to auth user
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   dni: text("dni").unique(),
@@ -450,6 +451,7 @@ export const productBatchesRelations = relations(productBatches, ({ one }) => ({
 
 export const customersRelations = relations(customers, ({ one, many }) => ({
   tenant: one(tenants, { fields: [customers.tenantId], references: [tenants.id] }),
+  user: one(users, { fields: [customers.userId], references: [users.id] }),
   bookings: many(bookings),
   sales: many(sales),
 }));

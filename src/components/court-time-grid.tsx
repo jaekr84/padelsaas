@@ -56,15 +56,24 @@ export function CourtTimeGrid({
             onClick={() => onSlotClick?.(court, time, booked)}
             disabled={booked}
             className={cn(
-              "group relative flex flex-col items-center justify-center h-10 rounded-none text-[10px] font-black transition-all border uppercase tracking-tighter",
+              "group relative flex flex-col items-center justify-center h-14 rounded-none text-[10px] font-black transition-all border-2 uppercase tracking-tighter overflow-hidden",
               booked
-                ? "bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-50"
+                ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
                 : isSelected 
-                  ? "bg-blue-800 border-blue-900 text-white z-10 scale-[1.02] shadow-none"
-                  : "bg-white border-slate-200 text-slate-950 hover:border-blue-800 hover:text-blue-800 hover:bg-blue-50/30"
+                   ? "bg-blue-800 border-blue-900 text-white z-10 scale-[1.02] shadow-[4px_4px_0px_black]"
+                   : "bg-white border-slate-200 text-slate-950 hover:border-blue-800 hover:text-blue-800 hover:bg-blue-50/30"
             )}
           >
-            {time}
+            <span className={cn("relative z-10", booked && "opacity-40")}>{time}</span>
+            
+            {booked && (
+              <>
+                <div className="absolute inset-0 opacity-[0.07] bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#000_10px,#000_20px)]" />
+                <span className="absolute bottom-1 text-[7px] font-black text-slate-500 tracking-[0.2em] pointer-events-none z-10">
+                  OCUPADO
+                </span>
+              </>
+            )}
             
             {/* Ocupación Visual (Solo en modo Global) */}
             {isGlobalView && !booked && allCourts.length > 0 && (

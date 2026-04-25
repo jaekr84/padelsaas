@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { getLandingPageAction } from "@/lib/actions/auth-player";
 import { 
   Card, 
   CardContent, 
@@ -30,7 +31,7 @@ export default function LoginPage() {
 
     try {
       const res = await signIn("credentials", {
-        email,
+        email: email.toLowerCase(),
         password,
         redirect: false,
       });
@@ -38,7 +39,8 @@ export default function LoginPage() {
       if (res?.error) {
         setError("Credenciales inválidas");
       } else {
-        router.push("/home");
+        const landingPage = await getLandingPageAction();
+        router.push(landingPage);
       }
     } catch (err) {
       setError("Ocurrió un error al iniciar sesión");
