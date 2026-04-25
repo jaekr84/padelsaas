@@ -73,6 +73,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return session;
     },
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isOnPublicPage = 
+        nextUrl.pathname === "/" || 
+        nextUrl.pathname === "/landing" || 
+        nextUrl.pathname === "/explore" || 
+        nextUrl.pathname.startsWith("/centers") ||
+        nextUrl.pathname === "/login" ||
+        nextUrl.pathname === "/register";
+
+      if (isOnPublicPage) return true;
+      return isLoggedIn;
+    },
   },
   session: {
     strategy: "jwt",

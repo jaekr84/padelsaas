@@ -69,7 +69,7 @@ export async function getLandingPageAction() {
   const { auth } = await import("@/auth");
   const session = await auth();
   
-  if (!session) return "/login";
+  if (!session) return "/landing";
 
   // Si tiene un tenantId o centerId en la sesión (via JWT callback), es staff/owner
   if (session.user?.tenantId || session.user?.role === "admin" || session.user?.role === "owner") {
