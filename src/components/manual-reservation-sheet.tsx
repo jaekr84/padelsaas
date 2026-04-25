@@ -225,7 +225,6 @@ export function ManualReservationSheet({
       name: "Ocupación Global",
       centerId: centerId,
       surface: "Todas",
-      type: "Múltiple",
       bookings: activeCourts.flatMap(c => c.bookings)
     };
   } else {
