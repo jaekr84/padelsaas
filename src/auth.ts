@@ -80,6 +80,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         nextUrl.pathname === "/landing" || 
         nextUrl.pathname === "/explore" || 
         nextUrl.pathname.startsWith("/centers") ||
+        nextUrl.pathname.startsWith("/bookings/success") ||
+        nextUrl.pathname.startsWith("/bookings/failure") ||
+        nextUrl.pathname.startsWith("/bookings/pending") ||
         nextUrl.pathname === "/login" ||
         nextUrl.pathname === "/register";
 

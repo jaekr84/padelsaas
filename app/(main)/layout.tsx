@@ -1,7 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
-import { Providers } from "@/components/providers";
-import { Toaster } from "@/components/ui/sonner";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
 export default function MainLayout({
   children,
@@ -9,10 +7,9 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Providers>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
         <div className="flex flex-1 flex-col gap-4 p-4 md:p-8">
           {children}
         </div>
@@ -28,8 +25,6 @@ export default function MainLayout({
           </a>
         </footer>
       </SidebarInset>
-      <Toaster />
-      </SidebarProvider>
-    </Providers>
+    </SidebarProvider>
   );
 }

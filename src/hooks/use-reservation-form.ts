@@ -18,6 +18,8 @@ export const reservationFormSchema = z.object({
   price: z.coerce.number().min(0).default(0),
   recurringEndDateStr: z.string().optional(),
   recurringDays: z.array(z.number()).optional(),
+  paymentStatus: z.enum(["pending", "paid", "partially_paid"]).default("pending"),
+  amountPaid: z.coerce.number().min(0).default(0),
 }).refine(data => {
   if (data.reservationType !== "block" && (!data.guestName || data.guestName.trim().length < 2)) {
     return false;
@@ -65,6 +67,8 @@ export function useReservationForm({
       price: 0,
       recurringEndDateStr: "",
       recurringDays: [date.getDay()],
+      paymentStatus: "pending",
+      amountPaid: 0,
     },
   });
 
@@ -281,6 +285,8 @@ export function useReservationForm({
           startTime: finalStart,
           endTime: finalEnd,
           centerId: centerId,
+          paymentStatus: values.paymentStatus,
+          amountPaid: values.amountPaid,
         });
 
         if (response.success) {

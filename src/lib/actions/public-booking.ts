@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { centers, courts, bookings, customers } from "@/db/schema";
-import { eq, and, gte, lte, desc, lt, gt } from "drizzle-orm";
+import { eq, and, or, gte, lte, desc, lt, gt } from "drizzle-orm";
 import { auth } from "@/auth";
 
 export async function getPublicCentersAction() {
@@ -29,6 +29,7 @@ export async function getCenterDetailsAction(centerId: string) {
             bookings: true,
           }
         },
+        tenant: true,
       }
     });
     return { success: true, data: center };
@@ -64,24 +65,27 @@ export async function createPublicBookingAction(data: {
     console.log("Start:", data.startTime.toISOString());
     console.log("End:", data.endTime.toISOString());
 
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
     const existing = await db.query.bookings.findFirst({
       where: and(
         eq(bookings.courtId, data.courtId),
         and(
-          // Correct overlap logic: (StartA < EndB) AND (EndA > StartB)
           lt(bookings.startTime, data.endTime),
           gt(bookings.endTime, data.startTime)
         ),
-        eq(bookings.status, "confirmed")
+        or(
+          eq(bookings.status, "confirmed"),
+          and(
+            eq(bookings.status, "pending"),
+            gt(bookings.createdAt, fifteenMinutesAgo)
+          )
+        )
       ),
       orderBy: [desc(bookings.startTime)],
     });
 
     if (existing) {
-      console.log("Overlap found with booking:", existing.id);
-      console.log("Existing Start:", existing.startTime.toISOString());
-      console.log("Existing End:", existing.endTime.toISOString());
-      return { success: false, error: "El horario ya está ocupado" };
+      return { success: false, error: "El horario ya está ocupado o en proceso de pago" };
     }
 
     // 4. Calcular precio
@@ -111,30 +115,32 @@ export async function createPublicBookingAction(data: {
          customerRecord = newCustomer;
        }
        
-       await db.insert(bookings).values({
+       const [newBooking] = await db.insert(bookings).values({
          courtId: data.courtId,
          userId: userId,
          customerId: customerRecord.id,
          startTime: data.startTime,
          endTime: data.endTime,
          price: totalPrice,
-         status: "confirmed",
+         status: "pending",
          paymentStatus: "pending",
-       });
+       }).returning();
+       
+       return { success: true, bookingId: newBooking.id };
     } else {
       // Guest booking
-      await db.insert(bookings).values({
+      const [newBooking] = await db.insert(bookings).values({
         courtId: data.courtId,
         guestName: data.guestName,
         startTime: data.startTime,
         endTime: data.endTime,
         price: totalPrice,
-        status: "confirmed",
+        status: "pending",
         paymentStatus: "pending",
-      });
-    }
+      }).returning();
 
-    return { success: true };
+      return { success: true, bookingId: newBooking.id };
+    }
   } catch (error) {
     console.error("Error creating public booking:", error);
     return { success: false, error: "Ocurrió un error al procesar la reserva" };

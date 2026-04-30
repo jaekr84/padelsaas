@@ -80,7 +80,11 @@ export async function createSaleAction(data: {
         // 3.1 Si es una reserva, marcar como pagada
         if (item.bookingId) {
           await tx.update(bookings)
-            .set({ paymentStatus: 'paid' })
+            .set({ 
+              status: 'confirmed',
+              paymentStatus: 'paid',
+              amountPaid: item.totalPrice
+            })
             .where(eq(bookings.id, item.bookingId));
         }
 
@@ -129,6 +133,8 @@ export async function createSaleAction(data: {
 
       revalidatePath("/inventory");
       revalidatePath("/purchases");
+      revalidatePath("/bookings");
+      revalidatePath("/sales");
       
       return { success: true, saleId: newSale.id, saleNumber };
     });

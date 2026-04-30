@@ -77,5 +77,5 @@ export async function getLandingPageAction() {
   }
 
   // De lo contrario, es un jugador
-  return "/profile";
+  return "/explore";
 }

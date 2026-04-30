@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import { parseISO, startOfDay, addMinutes, isWithinInterval, isEqual, format } from "date-fns";
+import { initMercadoPago, Wallet } from '@mercadopago/sdk-react';
+import { createBookingPreferenceAction } from "@/lib/actions/payments";
 
 interface CenterBookingViewProps {
   center: any;
@@ -37,7 +39,17 @@ export function CenterBookingView({ center }: CenterBookingViewProps) {
   const [step, setStep] = useState(1); // 1: Selection, 2: Form, 3: Success
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [preferenceId, setPreferenceId] = useState<string | null>(null);
+  const [bookingId, setBookingId] = useState<string | null>(null);
   const router = useRouter();
+
+  // Inicializar Mercado Pago con la Key del Tenant
+  React.useEffect(() => {
+    if (center?.tenant?.mpPublicKey) {
+      console.log("Initializing MP with Key:", center.tenant.mpPublicKey);
+      initMercadoPago(center.tenant.mpPublicKey);
+    }
+  }, [center?.tenant?.mpPublicKey]);
 
   // Sincronizar datos de sesión con el formulario
   React.useEffect(() => {
@@ -153,8 +165,16 @@ export function CenterBookingView({ center }: CenterBookingViewProps) {
       guestEmail: formData.email,
     });
 
-    if (res.success) {
-      setStep(3);
+    if (res.success && res.bookingId) {
+      setBookingId(res.bookingId);
+      // Crear preferencia de pago
+      const prefRes = await createBookingPreferenceAction(res.bookingId);
+      if (prefRes.success && prefRes.preferenceId) {
+        setPreferenceId(prefRes.preferenceId);
+        setStep(3); // Mostrar resumen y botón de pago
+      } else {
+        setError("Reserva creada pero error al generar pago: " + prefRes.error);
+      }
     } else {
       setError(res.error || "Error al procesar la reserva");
     }
@@ -162,19 +182,27 @@ export function CenterBookingView({ center }: CenterBookingViewProps) {
   };
 
   if (step === 3) {
+    const totalEst = ((duration / 30) * (center.defaultPrice30 || 0));
+    const minPayment = Math.ceil(totalEst * 0.5);
+
     return (
       <div className="bg-white border-2 border-slate-950 p-12 text-center space-y-8 animate-in zoom-in duration-300">
         <div className="h-20 w-20 bg-blue-800 text-white flex items-center justify-center mx-auto shadow-[6px_6px_0px_black]">
           <LucideCheckCircle2 className="h-10 w-10" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-3xl font-black uppercase tracking-tighter">Reserva Confirmada</h2>
-          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Protocolo de acceso generado correctamente</p>
+          <h2 className="text-3xl font-black uppercase tracking-tighter">Reserva Pendiente de Pago</h2>
+          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Tu lugar está bloqueado por 15 minutos mientras completas el pago</p>
         </div>
+        
         <div className="bg-slate-50 border border-slate-200 p-6 text-left space-y-4">
            <div className="flex justify-between border-b border-slate-200 pb-2">
-              <span className="text-[9px] font-black uppercase text-slate-400">Referencia</span>
-              <span className="text-[10px] font-black uppercase tabular-nums">#{Math.random().toString(36).substring(7).toUpperCase()}</span>
+              <span className="text-[9px] font-black uppercase text-slate-400">Total de la Reserva</span>
+              <span className="text-[12px] font-black uppercase tabular-nums">$ {totalEst.toLocaleString()}</span>
+           </div>
+           <div className="flex justify-between border-b border-slate-200 pb-2">
+              <span className="text-[9px] font-black uppercase text-blue-800">Mínimo para Confirmar (50%)</span>
+              <span className="text-[14px] font-black uppercase text-blue-800 tabular-nums">$ {minPayment.toLocaleString()}</span>
            </div>
            <div className="flex justify-between border-b border-slate-200 pb-2">
               <span className="text-[9px] font-black uppercase text-slate-400">Horario</span>
@@ -185,12 +213,29 @@ export function CenterBookingView({ center }: CenterBookingViewProps) {
               <span className="text-[10px] font-black uppercase">{selectedSlot?.court.name}</span>
            </div>
         </div>
-        <Button 
-          onClick={() => router.push('/explore')}
-          className="w-full h-14 bg-slate-950 text-white rounded-none font-black uppercase tracking-widest hover:bg-blue-800"
-        >
-          Volver al Directorio
-        </Button>
+
+        <div className="space-y-4">
+          {preferenceId ? (
+            <div className="border-2 border-slate-950 p-2">
+               <Wallet 
+                initialization={{ preferenceId }} 
+                customization={{ valueProp: 'convenience' }}
+               />
+            </div>
+          ) : (
+            <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold uppercase">
+              Generando botón de pago...
+            </div>
+          )}
+          
+          <Button 
+            variant="ghost"
+            onClick={() => router.push('/explore')}
+            className="w-full h-12 text-slate-400 font-black uppercase tracking-widest hover:text-slate-950"
+          >
+            Pagar en el Complejo (Sujeto a Disponibilidad)
+          </Button>
+        </div>
       </div>
     );
   }

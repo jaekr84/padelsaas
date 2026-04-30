@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { products, centers, bookings } from "@/db/schema";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte, sql, ne } from "drizzle-orm";
 import { POSView } from "@/components/sales/pos-view";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
@@ -8,15 +8,17 @@ import { Suspense } from "react";
 import { LucideHistory, LucideShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { getTodayArgentina, parseArgentineDate } from "@/lib/date-utils";
 
 export default async function SalesPage(props: {
-  searchParams?: Promise<{ bookingId?: string }>;
+  searchParams?: Promise<{ bookingId?: string; agendaDate?: string }>;
 }) {
   const session = await auth();
   if (!session) redirect("/sign-in");
 
   const searchParams = await props.searchParams;
   const bookingId = searchParams?.bookingId;
+  const agendaDate = searchParams?.agendaDate;
 
   const allProducts = await db.query.products.findMany({
     where: (products, { eq }) => eq(products.isActive, true),
@@ -24,22 +26,25 @@ export default async function SalesPage(props: {
 
   const allCenters = await db.query.centers.findMany();
 
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const tomorrowStart = new Date(todayStart);
-  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+  const now = new Date();
+  const todayStr = agendaDate || getTodayArgentina();
+  
+  const todayStart = parseArgentineDate(todayStr, "00:00");
+  const todayEnd = parseArgentineDate(todayStr, "23:59");
 
-  // Fetch unpaid bookings for today
-  let unpaidBookings = await db.query.bookings.findMany({
+  // Fetch all active bookings for the current day
+  let dayBookings = await db.query.bookings.findMany({
     where: and(
-      eq(bookings.paymentStatus, "pending"),
+      ne(bookings.status, 'cancelled'),
       gte(bookings.startTime, todayStart),
-      lte(bookings.startTime, tomorrowStart)
+      lte(bookings.endTime, todayEnd)
     ),
     with: {
       court: true,
       user: true,
-    }
+    },
+    orderBy: (bookings, { asc }) => [asc(bookings.startTime)],
+    limit: 50
   });
 
   // If a specific bookingId is provided, fetch it specifically to ensure it's available
@@ -53,8 +58,8 @@ export default async function SalesPage(props: {
       }
     });
 
-    if (specificBooking && !unpaidBookings.find(b => b.id === bookingId)) {
-      unpaidBookings = [specificBooking, ...unpaidBookings];
+    if (specificBooking && !dayBookings.find(b => b.id === bookingId)) {
+      dayBookings = [specificBooking, ...dayBookings];
     }
   }
 
@@ -92,7 +97,8 @@ export default async function SalesPage(props: {
           <POSView
             products={allProducts}
             centers={allCenters}
-            unpaidBookings={unpaidBookings}
+            dayBookings={dayBookings}
+            agendaDate={agendaDate || new Date().toISOString().split('T')[0]}
           />
         </Suspense>
       </div>

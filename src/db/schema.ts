@@ -79,6 +79,9 @@ export const tenants = pgTable("tenant", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(), // URL-friendly identifier
+  mpAccessToken: text("mp_access_token"),
+  mpPublicKey: text("mp_public_key"),
+  mpWebhookUrl: text("mp_webhook_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -138,6 +141,8 @@ export const bookings = pgTable("booking", {
   endTime: timestamp("end_time").notNull(),
   status: text("status").notNull().default("pending"), // pending, confirmed, cancelled
   paymentStatus: text("payment_status").notNull().default("pending"), // pending, paid, partially_paid
+  paymentPreferenceId: text("payment_preference_id"),
+  amountPaid: integer("amount_paid").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -379,10 +384,11 @@ export const courtsRelations = relations(courts, ({ one, many }) => ({
   bookings: many(bookings),
 }));
 
-export const bookingsRelations = relations(bookings, ({ one }) => ({
+export const bookingsRelations = relations(bookings, ({ one, many }) => ({
   court: one(courts, { fields: [bookings.courtId], references: [courts.id] }),
   user: one(users, { fields: [bookings.userId], references: [users.id] }),
   customer: one(customers, { fields: [bookings.customerId], references: [customers.id] }),
+  saleItems: many(saleItems),
 }));
 
 export const pricingSchedulesRelations = relations(pricingSchedules, ({ one }) => ({
@@ -436,6 +442,7 @@ export const saleItemsRelations = relations(saleItems, ({ one }) => ({
   sale: one(sales, { fields: [saleItems.saleId], references: [sales.id] }),
   product: one(products, { fields: [saleItems.productId], references: [products.id] }),
   category: one(productCategories, { fields: [saleItems.categoryId], references: [productCategories.id] }),
+  booking: one(bookings, { fields: [saleItems.bookingId], references: [bookings.id] }),
 }));
 
 export const purchasesRelations = relations(purchases, ({ one, many }) => ({

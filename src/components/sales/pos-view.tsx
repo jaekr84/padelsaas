@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { 
   LucideScanBarcode, 
   LucideUser, 
@@ -16,17 +16,19 @@ import {
   LucidePercent,
   LucideBadgePercent,
   LucideCheck,
-  LucideCalendarClock
+  LucideCalendarClock,
+  LucideChevronLeft,
+  LucideChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { 
   Select, 
   SelectContent, 
@@ -43,12 +45,20 @@ import { CustomerSelect } from "../customers/customer-select";
 interface POSViewProps {
   products: any[];
   centers: any[];
-  unpaidBookings: any[];
+  dayBookings: any[];
+  agendaDate?: string;
   terminals?: any[];
   paymentMethods?: any[];
 }
 
-export function POSView({ products, centers, unpaidBookings, terminals = [], paymentMethods = [] }: POSViewProps) {
+export function POSView({ 
+  products, 
+  centers, 
+  dayBookings, 
+  agendaDate,
+  terminals = [], 
+  paymentMethods = [] 
+}: POSViewProps) {
   const [cart, setCart] = useState<any[]>([]);
   const [customerName, setCustomerName] = useState("Consumidor Final");
   const [customerId, setCustomerId] = useState<string | null>(null);
@@ -61,6 +71,7 @@ export function POSView({ products, centers, unpaidBookings, terminals = [], pay
   const [isProcessing, setIsProcessing] = useState(false);
   const [isReservationsOpen, setIsReservationsOpen] = useState(false);
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -72,13 +83,24 @@ export function POSView({ products, centers, unpaidBookings, terminals = [], pay
   // Manejar bookingId desde la URL
   useEffect(() => {
     const bookingId = searchParams.get("bookingId");
-    if (bookingId && unpaidBookings.length > 0) {
-      const booking = unpaidBookings.find(b => b.id === bookingId);
+    if (bookingId && dayBookings.length > 0) {
+      const booking = dayBookings.find(b => b.id === bookingId);
       if (booking) {
         addBookingToCart(booking);
       }
     }
-  }, [searchParams, unpaidBookings]);
+  }, [searchParams, dayBookings]);
+
+  const navigateAgenda = (days: number) => {
+    if (!agendaDate) return;
+    const current = new Date(agendaDate + "T12:00:00");
+    current.setDate(current.getDate() + days);
+    const newDate = current.toISOString().split('T')[0];
+    
+    const params = new URLSearchParams(window.location.search);
+    params.set('agendaDate', newDate);
+    router.push(`?${params.toString()}`);
+  };
 
   const addBookingToCart = (booking: any) => {
     const bookingId = `BOOKING-${booking.id}`;
@@ -176,6 +198,7 @@ export function POSView({ products, centers, unpaidBookings, terminals = [], pay
         setCharge(0);
         setCustomerId(null);
         setCustomerName("Consumidor Final");
+        router.replace("/sales");
       } else {
         // @ts-ignore
         toast.error(result.error);
@@ -247,63 +270,140 @@ export function POSView({ products, centers, unpaidBookings, terminals = [], pay
         </div>
 
         <div className="flex gap-4">
-          <Dialog open={isReservationsOpen} onOpenChange={setIsReservationsOpen}>
-            <DialogTrigger render={
+          <Sheet open={isReservationsOpen} onOpenChange={setIsReservationsOpen}>
+            <SheetTrigger render={
               <Button className="h-14 flex-1 bg-white border border-slate-200 rounded-none text-slate-900 hover:bg-slate-50 transition-all gap-4">
                 <div className="h-10 w-10 bg-slate-100 flex items-center justify-center text-slate-900">
                   <LucideCalendarClock className="h-5 w-5" />
                 </div>
                 <div className="text-left">
                   <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Acceso</p>
-                  <p className="text-xs font-bold uppercase">Reservas Pendientes</p>
+                  <p className="text-xs font-bold uppercase">Agenda del Día</p>
                 </div>
                 <div className="ml-auto bg-slate-950 px-3 py-1 text-[9px] font-bold text-white">
-                  {unpaidBookings.length}
+                  {dayBookings.filter(b => b.paymentStatus === 'pending').length}
                 </div>
               </Button>
             } />
-            <DialogContent className="sm:max-w-[600px] rounded-none border-slate-200 shadow-2xl p-0 overflow-hidden">
-              <DialogHeader className="p-8 border-b border-slate-100 bg-slate-50/50">
-                <DialogTitle className="text-xl font-bold uppercase tracking-tight text-slate-950 flex items-center gap-3">
-                  <div className="h-10 w-10 bg-slate-950 flex items-center justify-center text-white">
-                    <LucideCalendarClock className="h-5 w-5" />
+            <SheetContent side="right" className="w-[450px] sm:w-[540px] p-0 rounded-none border-l border-slate-200 shadow-2xl flex flex-col">
+              <SheetHeader className="p-6 border-b border-slate-100 bg-white shrink-0">
+                <div className="flex items-center justify-between">
+                  <SheetTitle className="text-xl font-bold uppercase tracking-tight text-slate-950 flex items-center gap-3">
+                    <div className="h-10 w-10 bg-slate-950 flex items-center justify-center text-white">
+                      <LucideCalendarClock className="h-5 w-5" />
+                    </div>
+                    Agenda Operativa
+                  </SheetTitle>
+                  
+                  <div className="flex items-center gap-2 bg-slate-100 p-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon-sm" 
+                      onClick={() => navigateAgenda(-1)}
+                      className="h-8 w-8 hover:bg-white transition-all"
+                    >
+                      <LucideChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="px-3 py-1 bg-white shadow-sm">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-950">
+                        {agendaDate ? new Date(agendaDate + "T12:00:00").toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }) : "HOY"}
+                      </span>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon-sm" 
+                      onClick={() => navigateAgenda(1)}
+                      className="h-8 w-8 hover:bg-white transition-all"
+                    >
+                      <LucideChevronRight className="h-4 w-4" />
+                    </Button>
                   </div>
-                  Terminal de Reservas
-                </DialogTitle>
-              </DialogHeader>
-              <div className="p-8 space-y-px bg-slate-100">
-                {unpaidBookings.map((booking) => (
-                  <button
-                    key={booking.id}
-                    onClick={() => addBookingToCart(booking)}
-                    className="w-full p-6 bg-white hover:bg-slate-50 border-none flex items-center justify-between transition-all group text-left"
-                  >
-                    <div className="flex flex-col gap-1">
-                      <span className="font-bold text-slate-950 uppercase text-xs tracking-tight">
-                        {booking.court?.name} - {booking.guestName || booking.user?.name || "Sin nombre"}
-                      </span>
-                      <span className="text-[9px] font-mono text-slate-400 uppercase tracking-widest">
-                        {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} HS • ID: {booking.id.slice(0, 8)}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-black text-blue-600 tracking-tighter">
-                        {formatCurrency(booking.price)}
-                      </p>
-                      <span className="text-[9px] font-black text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-md uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                        Añadir
-                      </span>
-                    </div>
-                  </button>
-                ))}
-                {unpaidBookings.length === 0 && (
-                  <div className="text-center py-12 text-slate-400 font-bold uppercase tracking-widest text-xs">
-                    No hay reservas pendientes de pago para hoy
+                </div>
+              </SheetHeader>
+              
+              <div className="flex-1 overflow-auto bg-slate-50">
+                <table className="w-full border-collapse">
+                  <thead className="sticky top-0 bg-slate-100 shadow-sm z-10">
+                    <tr>
+                      <th className="text-[9px] font-black uppercase tracking-widest text-slate-500 p-3 text-left border-b border-slate-200">Hora</th>
+                      <th className="text-[9px] font-black uppercase tracking-widest text-slate-500 p-3 text-left border-b border-slate-200">Cancha / Cliente</th>
+                      <th className="text-[9px] font-black uppercase tracking-widest text-slate-500 p-3 text-right border-b border-slate-200">Monto</th>
+                      <th className="text-[9px] font-black uppercase tracking-widest text-slate-500 p-3 text-center border-b border-slate-200">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const pending = dayBookings.filter(b => b.paymentStatus === 'pending');
+                      const paid = dayBookings.filter(b => b.paymentStatus === 'paid');
+                      const last3Paid = paid.slice(-3).reverse();
+                      const items = [...last3Paid, ...pending];
+                      
+                      return items.map((booking) => {
+                        const isPaid = booking.paymentStatus === 'paid';
+                      return (
+                        <tr 
+                          key={booking.id}
+                          className={cn(
+                            "group border-b border-slate-100 transition-colors",
+                            isPaid ? "bg-white opacity-60" : "bg-white hover:bg-blue-50/50 cursor-pointer"
+                          )}
+                          onClick={() => !isPaid && addBookingToCart(booking)}
+                        >
+                          <td className="p-3 text-[10px] font-mono font-bold text-slate-400">
+                            {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td className="p-3">
+                            <div className="flex flex-col">
+                              <span className={cn(
+                                "text-[11px] font-bold uppercase tracking-tight",
+                                isPaid ? "text-slate-400 line-through" : "text-slate-950"
+                              )}>
+                                {booking.court?.name}
+                              </span>
+                              <span className="text-[10px] text-slate-500">
+                                {booking.guestName || booking.user?.name || "Sin nombre"}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="p-3 text-right">
+                            <span className={cn(
+                              "text-xs font-black tabular-nums",
+                              isPaid ? "text-slate-400" : "text-blue-600"
+                            )}>
+                              {formatCurrency(booking.price)}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center">
+                            {isPaid ? (
+                              <div className="bg-slate-100 text-slate-400 text-[8px] font-black px-2 py-0.5 uppercase tracking-widest inline-block">
+                                Saldado
+                              </div>
+                            ) : (
+                              <div className="bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 uppercase tracking-widest inline-block group-hover:bg-blue-700">
+                                Cobrar
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    });
+                    })()}
+                  </tbody>
+                </table>
+                {dayBookings.length === 0 && (
+                  <div className="text-center py-20">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Sin actividad registrada para hoy</p>
                   </div>
                 )}
               </div>
-            </DialogContent>
-          </Dialog>
+              
+              <div className="p-4 bg-white border-t border-slate-200 shrink-0">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                  Total de operaciones: {dayBookings.length} • Pendientes: {dayBookings.filter(b => b.paymentStatus === 'pending').length}
+                </p>
+              </div>
+            </SheetContent>
+          </Sheet>
 
           <Button className="h-14 flex-1 bg-white border border-slate-200 rounded-none text-slate-900 hover:bg-slate-50 transition-all gap-4 opacity-50 cursor-not-allowed">
             <div className="h-10 w-10 bg-slate-100 flex items-center justify-center text-slate-400">

@@ -37,3 +37,25 @@ export async function updateTenantAction(data: { id: string; name: string }) {
   revalidatePath("/home");
   return { success: true };
 }
+
+export async function updateMercadoPagoSettingsAction(data: { id: string; mpAccessToken: string; mpPublicKey: string; mpWebhookUrl?: string }) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const { id, mpAccessToken, mpPublicKey, mpWebhookUrl } = data;
+
+  if (!id) throw new Error("Tenant ID is required");
+
+  await db
+    .update(tenants)
+    .set({
+      mpAccessToken,
+      mpPublicKey,
+      mpWebhookUrl,
+      updatedAt: new Date(),
+    })
+    .where(eq(tenants.id, id));
+
+  revalidatePath("/settings");
+  return { success: true };
+}

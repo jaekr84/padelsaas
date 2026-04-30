@@ -108,16 +108,32 @@ export default async function ProfilePage() {
                            </div>
                         </div>
 
-                        <div className="flex items-center gap-8 border-t md:border-t-0 pt-4 md:pt-0">
+                        <div className="flex items-center gap-4 border-t md:border-t-0 pt-4 md:pt-0">
                            <div className="text-right">
                               <span className="block text-[8px] font-black uppercase tracking-widest text-slate-300">Fecha / Inicio</span>
                               <p className="text-[10px] font-black text-slate-950 uppercase tabular-nums">
                                  {new Date(booking.startTime).toLocaleDateString()} - {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </p>
                            </div>
-                           <div className="px-3 py-1 bg-slate-950 text-white text-[8px] font-black uppercase tracking-widest">
-                              {booking.status}
+                           <div className={cn(
+                              "px-3 py-1 text-[8px] font-black uppercase tracking-widest border",
+                              booking.status === "confirmed" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : 
+                              booking.status === "pending" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                              "bg-slate-100 text-slate-400 border-slate-200"
+                           )}>
+                              {booking.status === "confirmed" ? "Confirmada" : 
+                               booking.status === "pending" ? "Pendiente" : 
+                               booking.status === "cancelled" ? "Cancelada" : booking.status}
                            </div>
+                           
+                           {booking.status === "pending" && (
+                              <Link 
+                                 href={`/bookings/${booking.id}/pay`}
+                                 className="px-4 py-2 bg-blue-800 text-white text-[9px] font-black uppercase tracking-widest hover:bg-blue-900 transition-colors shadow-[4px_4px_0px_black] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                              >
+                                 Pagar Ahora
+                              </Link>
+                           )}
                            <LucideChevronRight className="h-5 w-5 text-slate-300 group-hover:text-slate-950 transition-colors hidden md:block" />
                         </div>
                      </div>

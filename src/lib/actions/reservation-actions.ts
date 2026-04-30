@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { bookings, courts } from "@/db/schema";
-import { and, eq, lt, gt, inArray } from "drizzle-orm";
+import { bookings, courts, sales, saleItems, productCategories } from "@/db/schema";
+import { and, eq, lt, gt, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { auth } from "@/auth";
@@ -16,7 +16,12 @@ export async function createReservationAction(data: {
   endTime: string | Date;
   centerId: string;
   customerId?: string | null;
+  paymentStatus?: "pending" | "paid" | "partially_paid";
+  amountPaid?: number;
 }) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("No autorizado");
+
   const start = new Date(data.startTime);
   const end = new Date(data.endTime);
 
@@ -117,7 +122,7 @@ export async function createReservationAction(data: {
       }
 
       // Create booking
-      await tx.insert(bookings).values({
+      const [newBooking] = await tx.insert(bookings).values({
         courtId: finalCourtId,
         guestName: data.guestName,
         customerId: data.customerId,
@@ -125,9 +130,43 @@ export async function createReservationAction(data: {
         startTime: start,
         endTime: end,
         status: "confirmed",
-      });
+        paymentStatus: data.paymentStatus || "pending",
+        amountPaid: data.amountPaid || 0,
+      }).returning();
+
+      // --- NEW: Process immediate sale if paid ---
+      if (data.paymentStatus === "paid" || data.paymentStatus === "partially_paid") {
+        const CANCHAS_CATEGORY_ID = "2346a106-97d9-4ca8-b6eb-ea880ad8df0b";
+        const date = new Date();
+        const dateStr = date.toISOString().slice(0, 10).replace(/-/g, "");
+        const countResult = await tx.select({ count: sql<number>`count(*)` }).from(sales);
+        const saleNumber = `V-${dateStr}-${(countResult[0].count + 1).toString().padStart(4, "0")}`;
+
+        const [newSale] = await tx.insert(sales).values({
+          saleNumber,
+          customerName: data.guestName || "Cliente Reserva",
+          customerId: data.customerId,
+          paymentMethod: "EFECTIVO (MANUAL)",
+          terminalId: "ADMINISTRACIÓN",
+          centerId: data.centerId, 
+          subtotal: (data.amountPaid || data.price || 0).toString(),
+          total: (data.amountPaid || data.price || 0).toString(),
+          userId: session.user.id,
+        }).returning();
+
+        await tx.insert(saleItems).values({
+          saleId: newSale.id,
+          bookingId: newBooking.id,
+          categoryId: CANCHAS_CATEGORY_ID,
+          quantity: 1,
+          unitPrice: (data.amountPaid || data.price || 0).toString(),
+          totalPrice: (data.amountPaid || data.price || 0).toString(),
+        });
+      }
 
       revalidatePath("/courts");
+      revalidatePath("/bookings");
+      revalidatePath("/sales");
       return { success: true };
     });
   } catch (error: any) {
@@ -479,19 +518,9 @@ export async function getBookingsListAction(dateStr?: string) {
 
   if (!activeCenterId) return [];
 
-  let targetDate = new Date();
-  if (dateStr) {
-    const [year, month, day] = dateStr.split("-").map(Number);
-    targetDate = new Date(year, month - 1, day);
-  }
-
-  const startOfDay = new Date(targetDate);
-  startOfDay.setHours(0, 0, 0, 0);
-  const fetchStart = new Date(startOfDay.getTime() - 12 * 60 * 60 * 1000);
-  
-  const endOfDay = new Date(targetDate);
-  endOfDay.setHours(23, 59, 59, 999);
-  const fetchEnd = new Date(endOfDay.getTime() + 12 * 60 * 60 * 1000);
+  const todayStr = dateStr || getTodayArgentina();
+  const startOfDay = parseArgentineDate(todayStr, "00:00");
+  const endOfDay = parseArgentineDate(todayStr, "23:59");
 
   const centerCourts = await db.query.courts.findMany({
     where: eq(courts.centerId, activeCenterId),
@@ -503,15 +532,105 @@ export async function getBookingsListAction(dateStr?: string) {
   const results = await db.query.bookings.findMany({
     where: and(
       inArray(bookings.courtId, courtIds),
-      lt(bookings.startTime, fetchEnd),
-      gt(bookings.endTime, fetchStart)
+      lt(bookings.startTime, endOfDay),
+      gt(bookings.endTime, startOfDay)
     ),
     with: {
       court: true,
       user: true,
+      customer: true,
+      saleItems: {
+        with: {
+          sale: true
+        }
+      }
     },
     orderBy: (bookings, { asc }) => [asc(bookings.startTime)],
   });
 
   return results;
 }
+
+export async function updateBookingStatusAction(
+  id: string,
+  data: { 
+    status?: "pending" | "confirmed" | "cancelled";
+    paymentStatus?: "pending" | "paid" | "partially_paid";
+    amountPaid?: number;
+    paymentMethod?: string;
+    terminalId?: string;
+  }
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const CANCHAS_CATEGORY_ID = "2346a106-97d9-4ca8-b6eb-ea880ad8df0b";
+
+  return await db.transaction(async (tx) => {
+    // 1. Obtener datos actuales de la reserva
+    const booking = await tx.query.bookings.findFirst({
+      where: eq(bookings.id, id),
+      with: {
+        court: true,
+        saleItems: {
+          with: {
+            sale: true
+          }
+        }
+      }
+    });
+
+    if (!booking) throw new Error("Reserva no encontrada");
+
+    // 2. Actualizar la reserva
+    await tx
+      .update(bookings)
+      .set({
+        status: data.status,
+        paymentStatus: data.paymentStatus,
+        amountPaid: data.amountPaid,
+      })
+      .where(eq(bookings.id, id));
+
+    // 3. Si se está marcando como pago (total o parcial) y NO tiene una venta vinculada
+    if (
+      (data.paymentStatus === "paid" || data.paymentStatus === "partially_paid") && 
+      (!booking.saleItems || booking.saleItems.length === 0)
+    ) {
+      // Generar número de venta (Formato: V-YYYYMMDD-XXXX)
+      const date = new Date();
+      const dateStr = date.toISOString().slice(0, 10).replace(/-/g, "");
+      const countResult = await tx.select({ count: sql<number>`count(*)` }).from(sales);
+      const saleNumber = `V-${dateStr}-${(countResult[0].count + 1).toString().padStart(4, "0")}`;
+
+      // Crear la venta manual
+      const [newSale] = await tx.insert(sales).values({
+        saleNumber,
+        customerName: booking.guestName || "Cliente Reserva",
+        customerId: booking.customerId,
+        paymentMethod: data.paymentMethod || "EFECTIVO (MANUAL)",
+        terminalId: data.terminalId || "ADMINISTRACIÓN",
+        centerId: session.user.centerId || booking.court?.centerId || "", 
+        subtotal: (data.amountPaid || booking.price || 0).toString(),
+        total: (data.amountPaid || booking.price || 0).toString(),
+        userId: session.user.id,
+      }).returning();
+
+      // Vincular con la reserva a través de saleItems
+      await tx.insert(saleItems).values({
+        saleId: newSale.id,
+        bookingId: id,
+        categoryId: CANCHAS_CATEGORY_ID,
+        quantity: 1,
+        unitPrice: (data.amountPaid || booking.price || 0).toString(),
+        totalPrice: (data.amountPaid || booking.price || 0).toString(),
+      });
+    }
+
+    revalidatePath("/bookings");
+    revalidatePath("/sales");
+    
+    return { success: true };
+  });
+}
+

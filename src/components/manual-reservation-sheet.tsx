@@ -494,6 +494,85 @@ export function ManualReservationSheet({
                     </div>
                   </div>
 
+                  {/* Sección de Pago Inmediato */}
+                  {watchReservationType === "single" && (
+                    <div className="pt-4 border-t border-slate-100 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Pago y Facturación</label>
+                        {form.watch("paymentStatus") === "paid" && (
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 animate-in fade-in zoom-in-95">
+                            <LucideCheck className="size-2.5" />
+                            <span className="text-[8px] font-black uppercase tracking-tight">Venta Automática</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="paymentStatus" render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <Select 
+                              onValueChange={(val) => {
+                                field.onChange(val);
+                                if (val === "paid") {
+                                  form.setValue("amountPaid", form.getValues("price"));
+                                } else if (val === "pending") {
+                                  form.setValue("amountPaid", 0);
+                                }
+                              }} 
+                              value={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger className={cn(
+                                  "h-14 text-sm font-bold rounded-2xl transition-all px-4 group",
+                                  field.value === "paid" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-white/50 border-slate-200"
+                                )}>
+                                  <div className="flex items-center gap-3">
+                                    <div className={cn(
+                                      "size-8 rounded-xl flex items-center justify-center transition-colors",
+                                      field.value === "paid" ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-400"
+                                    )}>
+                                      <LucideDollarSign className="size-4" />
+                                    </div>
+                                    <SelectValue placeholder="Estado de Pago" />
+                                  </div>
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="rounded-[24px] border-slate-100 shadow-2xl p-2">
+                                <SelectItem value="pending" className="rounded-xl py-2.5 px-3 text-sm font-bold focus:bg-slate-50 mb-1">Pendiente de Pago</SelectItem>
+                                <SelectItem value="paid" className="rounded-xl py-2.5 px-3 text-sm font-bold focus:bg-emerald-50 focus:text-emerald-700 mb-1">Pagado Total (100%)</SelectItem>
+                                <SelectItem value="partially_paid" className="rounded-xl py-2.5 px-3 text-sm font-bold focus:bg-amber-50 focus:text-amber-700">Señado (Parcial)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )} />
+
+                        <FormField control={form.control} name="amountPaid" render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <FormControl>
+                              <div className="relative group">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 size-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-200 transition-colors">
+                                  <span className="text-xs font-black">ARS</span>
+                                </div>
+                                <Input 
+                                  type="number" 
+                                  {...field} 
+                                  className="h-14 pl-14 font-bold rounded-2xl border-slate-200 bg-white/50 focus:bg-white transition-all shadow-none"
+                                  placeholder="0"
+                                />
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )} />
+                      </div>
+                      
+                      {form.watch("paymentStatus") === "paid" && (
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed text-center px-4">
+                          Al confirmar, se generará un registro de venta automático para los reportes de recaudación.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <div className="pt-4 border-t border-slate-100">
                       {/* 
                         Para reservas recurrentes mantenemos el flujo de simulación.
