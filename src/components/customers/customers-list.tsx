@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   LucideSearch, 
   LucidePhone, 
@@ -12,7 +12,10 @@ import {
   LucideTrophy,
   LucideUsers,
   LucideArrowUpRight,
-  LucideUser
+  LucideUser,
+  LucideGlobe,
+  LucideArrowRight,
+  LucideLoader2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,6 +27,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { searchGlobalUserAction, linkGlobalUserToTenantAction } from "@/lib/actions/customer";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface CustomersListProps {
   initialCustomers: any[];
@@ -31,12 +37,52 @@ interface CustomersListProps {
 
 export function CustomersList({ initialCustomers }: CustomersListProps) {
   const [search, setSearch] = useState("");
+  const [globalResults, setGlobalResults] = useState<any[]>([]);
+  const [isSearchingGlobal, setIsSearchingGlobal] = useState(false);
+  const [isLinking, setIsLinking] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (search.length < 3) {
+      setGlobalResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearchingGlobal(true);
+      const res = await searchGlobalUserAction(search);
+      if (res.success) {
+        // Filtrar los que ya están en la lista local para no duplicar visualmente
+        const localDnis = new Set(initialCustomers.map(c => c.dni).filter(Boolean));
+        const localPhones = new Set(initialCustomers.map(c => c.phone).filter(Boolean));
+        const filtered = (res.data || []).filter((u: any) => 
+          !localDnis.has(u.dni) && !localPhones.has(u.phone)
+        );
+        setGlobalResults(filtered);
+      }
+      setIsSearchingGlobal(false);
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [search, initialCustomers]);
+
+  const handleLink = async (userId: string) => {
+    setIsLinking(true);
+    const res = await linkGlobalUserToTenantAction(userId);
+    if (res.success) {
+      toast.success("Cliente vinculado correctamente");
+      setSearch("");
+      router.refresh();
+    } else {
+      toast.error(res.error || "Error al vincular");
+    }
+    setIsLinking(false);
+  };
 
   const getAutoCategory = (customer: any) => {
     const bookingCount = customer.bookings?.length || 0;
     const salesCount = customer.sales?.length || 0;
     
-    // Si el usuario ya tiene una categoría personalizada (que no sea la default), la respetamos
     if (customer.category && customer.category !== "Frecuente" && customer.category !== "FRECUENTE") {
       return { label: customer.category.toUpperCase(), color: "bg-slate-100 text-slate-950 border-slate-200" };
     }
@@ -51,7 +97,6 @@ export function CustomersList({ initialCustomers }: CustomersListProps) {
       return { label: "OCASIONAL", color: "bg-slate-100 text-slate-600 border-slate-200" };
     }
     
-    // Verificar si es nuevo (registrado hace menos de 7 días)
     const createdAt = new Date(customer.createdAt);
     const now = new Date();
     const diffDays = Math.ceil(Math.abs(now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
@@ -66,7 +111,8 @@ export function CustomersList({ initialCustomers }: CustomersListProps) {
   const filteredCustomers = initialCustomers.filter(customer => 
     `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
     customer.dni?.includes(search) ||
-    customer.email?.toLowerCase().includes(search.toLowerCase())
+    customer.email?.toLowerCase().includes(search.toLowerCase()) ||
+    customer.phone?.includes(search)
   );
 
   return (
@@ -78,9 +124,14 @@ export function CustomersList({ initialCustomers }: CustomersListProps) {
           <Input 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="FILTRAR POR NOMBRE, DNI O CORREO ELECTRÓNICO..." 
+            placeholder="FILTRAR POR NOMBRE, DNI O TELÉFONO..." 
             className="pl-12 h-12 bg-white border-slate-200 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-bold uppercase text-[10px] tracking-widest placeholder:text-slate-300"
           />
+          {isSearchingGlobal && (
+             <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                <LucideLoader2 className="h-4 w-4 animate-spin text-blue-800" />
+             </div>
+          )}
         </div>
         <div className="flex items-center px-6 bg-slate-50 border border-slate-200 h-12">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registros:</span>
@@ -88,7 +139,46 @@ export function CustomersList({ initialCustomers }: CustomersListProps) {
         </div>
       </div>
 
-      {/* 2. Customer Table - Accounting Industrial Style */}
+      {/* 2. Global Results Suggestion */}
+      {globalResults.length > 0 && (
+        <div className="bg-blue-50 border border-blue-100 p-6 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-8 w-8 bg-blue-800 flex items-center justify-center text-white">
+              <LucideGlobe className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-800">Plataforma Global</p>
+              <p className="text-xs font-bold text-blue-900/60">Se encontraron coincidencias fuera de tu lista de clientes</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {globalResults.map((user) => (
+              <div key={user.id} className="bg-white border border-blue-100 p-4 flex items-center justify-between group hover:border-blue-300 transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-slate-100 flex items-center justify-center font-black text-slate-400 text-xs">
+                    {user.name?.[0]}
+                  </div>
+                  <div>
+                    <p className="font-black text-slate-900 uppercase text-[10px] tracking-tight">{user.name}</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">DNI: {user.dni || '---'}</p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => handleLink(user.id)}
+                  disabled={isLinking}
+                  variant="ghost" 
+                  className="h-10 w-10 rounded-none hover:bg-blue-800 hover:text-white group-hover:bg-blue-800 group-hover:text-white transition-all border border-blue-50"
+                >
+                  <LucideArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 3. Customer Table - Accounting Industrial Style */}
       <div className="border border-slate-200 bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -108,7 +198,7 @@ export function CustomersList({ initialCustomers }: CustomersListProps) {
                   <td className="px-6 py-4 border-r border-slate-50">
                     <div className="flex items-center gap-4">
                       <div className="h-10 w-10 bg-slate-950 flex items-center justify-center text-white font-black text-[10px] tracking-tighter uppercase transition-transform group-hover:scale-95">
-                        {customer.firstName[0]}{customer.lastName[0]}
+                        {customer.firstName?.[0]}{customer.lastName?.[0]}
                       </div>
                       <div>
                         <p className="font-black text-slate-950 uppercase text-xs tracking-tight leading-none mb-1">
@@ -193,7 +283,7 @@ export function CustomersList({ initialCustomers }: CustomersListProps) {
           </table>
         </div>
 
-        {filteredCustomers.length === 0 && (
+        {filteredCustomers.length === 0 && !isSearchingGlobal && globalResults.length === 0 && (
           <div className="h-96 flex flex-col items-center justify-center text-slate-400 gap-6 bg-slate-50/30">
             <div className="h-16 w-16 bg-slate-100 flex items-center justify-center">
               <LucideUser className="h-8 w-8 text-slate-200" />

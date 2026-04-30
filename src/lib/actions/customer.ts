@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { customers } from "@/db/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { customers, users, tenants } from "@/db/schema";
+import { eq, desc, and, or, sql, ilike } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { cookies } from "next/headers";
@@ -11,19 +11,23 @@ import { bookings, sales as salesTable, courts } from "@/db/schema";
 export async function getCustomersAction() {
   try {
     const session = await auth();
-    if (!session) return { success: false, error: "No autorizado" };
+    if (!session?.user?.id) return { success: false, error: "No autorizado" };
+
+    const tenantId = session.user.tenantId;
+    if (!tenantId) return { success: false, error: "No se encontró organización asociada" };
 
     const cookieStore = await cookies();
     const activeCenterId = cookieStore.get("active_center_id")?.value || session.user.centerId;
 
     const result = await db.query.customers.findMany({
+      where: eq(customers.tenantId, tenantId),
       orderBy: [desc(customers.createdAt)],
       with: {
         bookings: activeCenterId ? {
-          where: sql`${bookings.courtId} IN (SELECT id FROM ${courts} WHERE ${courts.centerId} = ${activeCenterId})`
+          where: (bookings, { sql }) => sql`${bookings.courtId} IN (SELECT id FROM court WHERE center_id = ${activeCenterId})`
         } : true,
         sales: activeCenterId ? {
-          where: eq(salesTable.centerId, activeCenterId)
+          where: (sales, { eq }) => eq(sales.centerId, activeCenterId)
         } : true,
       }
     });
@@ -32,6 +36,81 @@ export async function getCustomersAction() {
   } catch (error) {
     console.error("Error al obtener clientes:", error);
     return { success: false, error: "No se pudieron obtener los clientes" };
+  }
+}
+
+/**
+ * Busca usuarios en la plataforma global por DNI o Teléfono exacto.
+ * Solo devuelve información básica para permitir la vinculación.
+ */
+export async function searchGlobalUserAction(query: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false, error: "No autorizado" };
+
+    if (!query || query.length < 3) return { success: true, data: [] };
+
+    // Buscamos coincidencias exactas por DNI o Teléfono para evitar "scraping" masivo
+    const foundUsers = await db.query.users.findMany({
+      where: or(
+        eq(users.dni, query),
+        eq(users.phone, query),
+        ilike(users.email, `%${query}%`)
+      ),
+      limit: 5
+    });
+
+    return { success: true, data: foundUsers };
+  } catch (error) {
+    console.error("Error en búsqueda global:", error);
+    return { success: false, error: "Error al buscar en la plataforma" };
+  }
+}
+
+/**
+ * Vincula un usuario global a la base de clientes local del club.
+ */
+export async function linkGlobalUserToTenantAction(userId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.tenantId) return { success: false, error: "No autorizado" };
+
+    const tenantId = session.user.tenantId;
+
+    // 1. Verificar si ya existe en este club
+    const existing = await db.query.customers.findFirst({
+      where: and(
+        eq(customers.userId, userId),
+        eq(customers.tenantId, tenantId)
+      )
+    });
+
+    if (existing) return { success: true, data: existing, message: "Ya es cliente de este club" };
+
+    // 2. Obtener datos globales
+    const globalUser = await db.query.users.findFirst({
+      where: eq(users.id, userId)
+    });
+
+    if (!globalUser) return { success: false, error: "Usuario no encontrado" };
+
+    // 3. Crear ficha local
+    const [newCustomer] = await db.insert(customers).values({
+      tenantId: tenantId,
+      userId: userId,
+      firstName: globalUser.name?.split(' ')[0] || "Usuario",
+      lastName: globalUser.name?.split(' ').slice(1).join(' ') || "Global",
+      dni: globalUser.dni,
+      phone: globalUser.phone,
+      email: globalUser.email,
+      category: "Frecuente",
+    }).returning();
+
+    revalidatePath("/customers");
+    return { success: true, data: newCustomer };
+  } catch (error) {
+    console.error("Error al vincular usuario:", error);
+    return { success: false, error: "No se pudo vincular el usuario" };
   }
 }
 
@@ -48,23 +127,27 @@ export async function createCustomerAction(data: {
 }) {
   try {
     const session = await auth();
-    if (!session) return { success: false, error: "No autorizado" };
+    if (!session?.user?.id || !session.user.tenantId) return { success: false, error: "No autorizado" };
 
-    // Validar duplicados
+    const tenantId = session.user.tenantId;
+
+    // Validar duplicados LOCALES
     if (data.dni) {
-      const existing = await db.query.customers.findFirst({ where: eq(customers.dni, data.dni) });
-      if (existing) return { success: false, error: "Ya existe un cliente con este DNI" };
+      const existing = await db.query.customers.findFirst({ 
+        where: and(eq(customers.dni, data.dni), eq(customers.tenantId, tenantId)) 
+      });
+      if (existing) return { success: false, error: "Ya tenés un cliente registrado con este DNI" };
     }
+    
     if (data.phone) {
-      const existing = await db.query.customers.findFirst({ where: eq(customers.phone, data.phone) });
-      if (existing) return { success: false, error: "Ya existe un cliente con este teléfono" };
+      const existing = await db.query.customers.findFirst({ 
+        where: and(eq(customers.phone, data.phone), eq(customers.tenantId, tenantId)) 
+      });
+      if (existing) return { success: false, error: "Ya tenés un cliente registrado con este teléfono" };
     }
-
-    const tenant = await db.query.tenants.findFirst();
-    if (!tenant) return { success: false, error: "No se encontró un tenant activo" };
 
     await db.insert(customers).values({
-      tenantId: tenant.id,
+      tenantId: tenantId,
       firstName: data.firstName,
       lastName: data.lastName,
       dni: data.dni,
@@ -87,19 +170,19 @@ export async function createCustomerAction(data: {
 export async function createQuickCustomerAction(data: { firstName: string; phone?: string }) {
   try {
     const session = await auth();
-    if (!session) return { success: false, error: "No autorizado" };
+    if (!session?.user?.id || !session.user.tenantId) return { success: false, error: "No autorizado" };
 
-    // Validar duplicados en registro rápido
+    const tenantId = session.user.tenantId;
+
     if (data.phone) {
-      const existing = await db.query.customers.findFirst({ where: eq(customers.phone, data.phone) });
-      if (existing) return { success: false, error: "Este teléfono ya está registrado con otro cliente" };
+      const existing = await db.query.customers.findFirst({ 
+        where: and(eq(customers.phone, data.phone), eq(customers.tenantId, tenantId)) 
+      });
+      if (existing) return { success: false, error: "Este teléfono ya está en tu lista de clientes" };
     }
 
-    const tenant = await db.query.tenants.findFirst();
-    if (!tenant) return { success: false, error: "No se encontró un tenant activo" };
-
     const [newCustomer] = await db.insert(customers).values({
-      tenantId: tenant.id,
+      tenantId: tenantId,
       firstName: data.firstName,
       lastName: "",
       phone: data.phone,

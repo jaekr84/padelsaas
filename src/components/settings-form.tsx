@@ -152,7 +152,7 @@ export function SettingsForm({
       mpAccessToken: initialTenant?.mpAccessToken || "",
       mpPublicKey: initialTenant?.mpPublicKey || "",
       mpWebhookUrl: initialTenant?.mpWebhookUrl || "",
-      purchaseFlow: initialTenant?.purchaseFlow || "direct",
+      purchaseFlow: initialTenant?.purchaseFlow || "reception",
     },
   });
 
@@ -411,19 +411,23 @@ export function SettingsForm({
                     render={({ field }) => (
                       <FormItem className="space-y-3">
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Flujo de Inventario</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
                           <FormControl>
-                            <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-none focus:ring-0 focus:border-blue-800 transition-all font-bold text-xs">
-                              <SelectValue placeholder="Seleccionar flujo" />
+                            <SelectTrigger className="w-full h-12 bg-slate-50 border-slate-200 rounded-none focus:ring-0 focus:border-blue-800 transition-all font-black uppercase text-[10px] tracking-widest">
+                              <SelectValue placeholder="SELECCIONAR FLUJO DE TRABAJO" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent className="rounded-none border-slate-200">
-                            <SelectItem value="direct" className="text-[11px] font-bold uppercase tracking-tight">Directo (Carga stock al comprar)</SelectItem>
-                            <SelectItem value="reception" className="text-[11px] font-bold uppercase tracking-tight">Recepción (Requiere confirmar en sede)</SelectItem>
+                          <SelectContent className="rounded-none border-slate-200 shadow-2xl min-w-[320px] bg-white z-[100]">
+                            <SelectItem value="direct" className="text-[10px] font-black uppercase tracking-widest py-4 cursor-pointer data-[highlighted]:bg-slate-950 data-[highlighted]:[&_*]:!text-white">
+                              Carga Directa (Stock Inmediato)
+                            </SelectItem>
+                            <SelectItem value="reception" className="text-[10px] font-black uppercase tracking-widest py-4 cursor-pointer data-[highlighted]:bg-slate-950 data-[highlighted]:[&_*]:!text-white">
+                              Validación en Sede (Módulo Recepción)
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription className="text-[10px] font-medium text-slate-400 italic">
-                          Define si el stock impacta inmediatamente o si requiere una validación física en cada sucursal.
+                          Define si el stock impacta inmediatamente al comprar o si requiere una validación física en cada sucursal.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

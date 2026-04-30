@@ -1,7 +1,5 @@
-"use client";
-
 import * as React from "react";
-import { LucideCheck, LucideChevronsUpDown, LucideSearch, LucideUserPlus } from "lucide-react";
+import { LucideCheck, LucideChevronsUpDown, LucideSearch, LucideUserPlus, LucideGlobe, LucideArrowRight, LucideLoader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { getCustomersAction, createQuickCustomerAction } from "@/lib/actions/customer";
+import { getCustomersAction, createQuickCustomerAction, searchGlobalUserAction, linkGlobalUserToTenantAction } from "@/lib/actions/customer";
 import { toast } from "sonner";
 
 interface CustomerSelectProps {
@@ -31,10 +29,13 @@ export function CustomerSelect({ onSelect, defaultValue, className, placeholder 
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState(defaultValue || "");
   const [customers, setCustomers] = React.useState<any[]>([]);
+  const [globalUsers, setGlobalUsers] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [searchingGlobal, setSearchingGlobal] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [isCreating, setIsCreating] = React.useState(false);
+  const [forceCreate, setForceCreate] = React.useState(false);
 
   const loadCustomers = React.useCallback(async () => {
     setLoading(true);
@@ -47,9 +48,46 @@ export function CustomerSelect({ onSelect, defaultValue, className, placeholder 
     loadCustomers();
   }, [loadCustomers]);
 
+  // Debounced Global Search
+  React.useEffect(() => {
+    if (searchValue.length < 3) {
+      setGlobalUsers([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearchingGlobal(true);
+      const res = await searchGlobalUserAction(searchValue);
+      if (res.success) {
+        // Filtrar los que ya son clientes locales
+        const localUserIds = new Set(customers.map(c => c.userId).filter(Boolean));
+        const filteredGlobal = (res.data || []).filter((u: any) => !localUserIds.has(u.id));
+        setGlobalUsers(filteredGlobal);
+      }
+      setSearchingGlobal(false);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchValue, customers]);
+
   const selectedCustomer = customers.find((c) => c.id === value);
 
-  const [forceCreate, setForceCreate] = React.useState(false);
+  const handleLinkGlobal = async (userId: string) => {
+    setIsCreating(true);
+    const res = await linkGlobalUserToTenantAction(userId);
+    if (res.success && res.data) {
+      toast.success("Usuario vinculado correctamente");
+      const newCustomer = res.data;
+      setCustomers(prev => [newCustomer, ...prev]);
+      setValue(newCustomer.id);
+      onSelect(newCustomer);
+      setOpen(false);
+      setSearchValue("");
+    } else {
+      toast.error(res.error || "Error al vincular usuario");
+    }
+    setIsCreating(false);
+  };
 
   const handleQuickCreate = async () => {
     if (!searchValue.trim()) {
@@ -72,7 +110,7 @@ export function CustomerSelect({ onSelect, defaultValue, className, placeholder 
       setSearchValue("");
       setForceCreate(false);
     } else {
-      toast.error("Error al crear cliente");
+      toast.error(res.error || "Error al crear cliente");
     }
     setIsCreating(false);
   };
@@ -100,10 +138,10 @@ export function CustomerSelect({ onSelect, defaultValue, className, placeholder 
           </Button>
         }
       />
-      <PopoverContent className="w-[350px] p-0 rounded-2xl border-none shadow-2xl overflow-hidden" align="start">
+      <PopoverContent className="w-[400px] p-0 rounded-2xl border-none shadow-2xl overflow-hidden" align="start">
         <Command className="rounded-2xl border-none" shouldFilter={!forceCreate}>
           <CommandInput 
-            placeholder="Nombre o DNI..." 
+            placeholder="NOMBRE, DNI O TELÉFONO..." 
             value={searchValue}
             onValueChange={(v) => {
               setSearchValue(v);
@@ -111,7 +149,7 @@ export function CustomerSelect({ onSelect, defaultValue, className, placeholder 
             }}
             className="h-12 border-none focus:ring-0 font-bold uppercase text-[10px] tracking-widest" 
           />
-          <CommandList className="max-h-[350px]">
+          <CommandList className="max-h-[450px]">
             {!forceCreate && (
               <div className="p-2 border-b border-slate-50">
                 <Button 
@@ -120,7 +158,7 @@ export function CustomerSelect({ onSelect, defaultValue, className, placeholder 
                   className="w-full justify-start h-10 text-indigo-600 font-black uppercase text-[10px] tracking-widest hover:bg-indigo-50 rounded-lg gap-2"
                 >
                   <LucideUserPlus className="h-4 w-4" />
-                  Nuevo Cliente Manual
+                  Alta Rápida (Cliente Manual)
                 </Button>
               </div>
             )}
@@ -167,17 +205,30 @@ export function CustomerSelect({ onSelect, defaultValue, className, placeholder 
             {!forceCreate && (
               <>
                 <CommandEmpty className="p-0 overflow-hidden">
-                  <div className="p-6 bg-slate-50 border-t border-slate-100 text-center">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 text-center">No se encontró "{searchValue}"</p>
-                    <Button 
-                      onClick={() => setForceCreate(true)}
-                      className="w-full h-11 bg-white border border-slate-200 text-slate-900 font-black uppercase text-[10px] tracking-widest rounded-xl shadow-sm hover:bg-slate-50"
-                    >
-                      Crear "{searchValue}"
-                    </Button>
+                   <div className="p-6 bg-slate-50 border-t border-slate-100 text-center">
+                    {searchingGlobal ? (
+                      <div className="flex flex-col items-center gap-3 py-4">
+                        <LucideLoader2 className="h-5 w-5 animate-spin text-indigo-600" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Buscando en la plataforma...</p>
+                      </div>
+                    ) : globalUsers.length > 0 ? (
+                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Resultados en la plataforma</p>
+                    ) : (
+                      <>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 text-center">No se encontró en tu lista local</p>
+                        <Button 
+                          onClick={() => setForceCreate(true)}
+                          className="w-full h-11 bg-white border border-slate-200 text-slate-900 font-black uppercase text-[10px] tracking-widest rounded-xl shadow-sm hover:bg-slate-50"
+                        >
+                          Crear como nuevo
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </CommandEmpty>
-                <CommandGroup heading={<span className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-2">Clientes Recientes</span>}>
+
+                {/* Resultados Locales */}
+                <CommandGroup heading={<span className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-2">Mis Clientes</span>}>
                   <CommandItem
                     value="consumidor_final"
                     onSelect={() => {
@@ -193,49 +244,80 @@ export function CustomerSelect({ onSelect, defaultValue, className, placeholder 
                         Consumidor Final
                       </span>
                     </div>
-                    <LucideCheck
-                      className={cn(
-                        "h-4 w-4 text-indigo-600",
-                        !value ? "opacity-100" : "opacity-0"
-                      )}
-                    />
                   </CommandItem>
 
-                  {customers.map((customer) => (
-                <CommandItem
-                  key={customer.id}
-                  value={`${customer.firstName} ${customer.lastName} ${customer.dni || ""} ${customer.phone || ""}`}
-                  onSelect={() => {
-                    setValue(customer.id);
-                    onSelect(customer);
-                    setOpen(false);
-                    setSearchValue("");
-                  }}
-                  className="py-3 px-4 flex items-center justify-between cursor-pointer hover:bg-indigo-50 rounded-xl mx-1"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-black text-slate-900 uppercase text-[11px] tracking-tight">
-                      {customer.firstName} {customer.lastName}
-                    </span>
-                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex gap-2">
-                      {customer.dni && <span>DNI: {customer.dni}</span>}
-                      {customer.phone && <span>TEL: {customer.phone}</span>}
-                    </span>
-                  </div>
-                  <LucideCheck
-                    className={cn(
-                      "h-4 w-4 text-indigo-600",
-                      value === customer.id ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </>
-        )}
-      </CommandList>
-    </Command>
-  </PopoverContent>
-</Popover>
+                  {customers.filter(c => 
+                    `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchValue.toLowerCase()) ||
+                    c.dni?.includes(searchValue) ||
+                    c.phone?.includes(searchValue)
+                  ).slice(0, 10).map((customer) => (
+                    <CommandItem
+                      key={customer.id}
+                      value={`${customer.firstName} ${customer.lastName} ${customer.dni || ""} ${customer.phone || ""}`}
+                      onSelect={() => {
+                        setValue(customer.id);
+                        onSelect(customer);
+                        setOpen(false);
+                        setSearchValue("");
+                      }}
+                      className="py-3 px-4 flex items-center justify-between cursor-pointer hover:bg-indigo-50 rounded-xl mx-1"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-black text-slate-900 uppercase text-[11px] tracking-tight">
+                          {customer.firstName} {customer.lastName}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex gap-2">
+                          {customer.dni && <span>DNI: {customer.dni}</span>}
+                          {customer.phone && <span>TEL: {customer.phone}</span>}
+                        </span>
+                      </div>
+                      <LucideCheck
+                        className={cn(
+                          "h-4 w-4 text-indigo-600",
+                          value === customer.id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+
+                {/* Resultados Globales (Plataforma) */}
+                {globalUsers.length > 0 && (
+                  <CommandGroup heading={
+                    <div className="flex items-center gap-2 px-2">
+                      <LucideGlobe className="h-3 w-3 text-indigo-500" />
+                      <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Encontrados en la plataforma</span>
+                    </div>
+                  }>
+                    {globalUsers.map((user) => (
+                      <CommandItem
+                        key={user.id}
+                        value={user.id}
+                        onSelect={() => handleLinkGlobal(user.id)}
+                        className="py-3 px-4 flex items-center justify-between cursor-pointer hover:bg-indigo-600 hover:text-white group rounded-xl mx-1 transition-all"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-black uppercase text-[11px] tracking-tight group-hover:text-white">
+                            {user.name}
+                          </span>
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-indigo-100 flex gap-2">
+                            {user.dni && <span>DNI: {user.dni}</span>}
+                            {user.phone && <span>TEL: {user.phone}</span>}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[8px] font-black uppercase opacity-0 group-hover:opacity-100 transition-opacity">Vincular</span>
+                          <LucideArrowRight className="h-4 w-4" />
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+              </>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
