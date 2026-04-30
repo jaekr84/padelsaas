@@ -34,6 +34,7 @@ export async function getCenterAction(id?: string) {
       : eq(centers.tenantId, userMember.tenantId),
     with: {
       pricingSchedules: true,
+      courts: true,
     },
     orderBy: (centers, { asc }) => [asc(centers.createdAt)],
   });
@@ -74,6 +75,7 @@ export async function getCentersAction() {
     where: eq(centers.tenantId, session.user.tenantId),
     with: {
       pricingSchedules: true,
+      courts: true,
     },
     orderBy: (centers, { asc }) => [asc(centers.createdAt)],
   });
@@ -109,41 +111,6 @@ export async function updateCenterAction(data: any) {
     }
 
     revalidatePath("/settings");
-
-    // --- Automated Court Sync ---
-    const updatedCenter = result[0];
-    if (updatedCenter) {
-      const existingCourts = await db.query.courts.findMany({
-        where: (courts, { eq }) => eq(courts.centerId, updatedCenter.id),
-      });
-
-      const currentCount = existingCourts.length;
-      const targetCount = updatedCenter.courtsCount;
-
-      if (targetCount > currentCount) {
-        const diff = targetCount - currentCount;
-        const newCourtsData = Array.from({ length: diff }).map((_, i) => ({
-          centerId: updatedCenter.id,
-          name: `Cancha ${currentCount + i + 1}`,
-          surface: "Césped Sintético",
-        }));
-
-        await db.insert(require("@/db/schema").courts).values(newCourtsData);
-      } else if (targetCount < currentCount) {
-        // Find courts to delete (those with higher index names)
-        const courtsToDelete = existingCourts
-          .sort((a, b) => b.name.localeCompare(a.name)) // Sort descending to get highest first
-          .slice(0, currentCount - targetCount);
-
-        if (courtsToDelete.length > 0) {
-          const { inArray } = require("drizzle-orm");
-          const { courts } = require("@/db/schema");
-          await db.delete(courts).where(inArray(courts.id, courtsToDelete.map(c => c.id)));
-        }
-      }
-    }
-    // ----------------------------
-
     revalidatePath("/courts");
     return { success: true, result };
   } catch (error) {

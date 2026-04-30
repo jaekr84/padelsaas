@@ -122,6 +122,7 @@ export const courts = pgTable("court", {
   surface: text("surface").notNull().default("Césped Sintético"),
   isPanoramic: boolean("is_panoramic").default(false).notNull(),
   hasLighting: boolean("has_lighting").default(true).notNull(),
+  isPublic: boolean("is_public").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

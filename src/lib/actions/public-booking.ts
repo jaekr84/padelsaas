@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { centers, courts, bookings, customers, tenants } from "@/db/schema";
 import { eq, and, or, gte, lte, desc, lt, gt, ilike, sql } from "drizzle-orm";
 import { auth } from "@/auth";
+import { SPORTS } from "../constants/sports";
 
 export async function getPublicCentersAction(filters?: { sport?: string; query?: string; city?: string; state?: string }) {
   try {
@@ -40,9 +41,11 @@ export async function getPublicCentersAction(filters?: { sport?: string; query?:
       where: conditions.length > 0 ? and(...conditions) : undefined,
       with: {
         tenant: true,
-        courts: filters?.sport ? {
-          where: eq(courts.type, filters.sport)
-        } : true,
+        courts: {
+          where: filters?.sport 
+            ? and(ilike(courts.type, filters.sport), eq(courts.isPublic, true))
+            : eq(courts.isPublic, true)
+        },
       }
     });
 
@@ -243,11 +246,12 @@ export async function getPlayerLastContactAction() {
 export async function getExploreMetaDataAction() {
   try {
     const allCenters = await db.select({ city: centers.city, state: centers.state }).from(centers);
-    const allSports = await db.select({ type: courts.type }).from(courts);
-
+    
     const uniqueCities = Array.from(new Set(allCenters.map(c => c.city?.trim().toUpperCase()).filter(Boolean))).sort() as string[];
     const uniqueStates = Array.from(new Set(allCenters.map(c => c.state?.trim().toUpperCase()).filter(Boolean))).sort() as string[];
-    const uniqueSports = Array.from(new Set(allSports.map(s => s.type?.trim().toUpperCase()).filter(Boolean))).sort() as string[];
+    
+    // Usamos nuestra lista maestra de deportes definida en las constantes
+    const uniqueSports = SPORTS.map(s => s.value.toUpperCase());
 
     // Mapa para filtrar ciudades por provincia en el cliente
     const cityToStateMap: Record<string, string> = {};

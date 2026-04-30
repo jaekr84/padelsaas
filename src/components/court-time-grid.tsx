@@ -5,6 +5,7 @@ export interface TimeGridCourt {
   id: string;
   centerId: string;
   name: string;
+  type: string | null;
   surface: string;
   bookings?: any[];
 }

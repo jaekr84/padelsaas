@@ -22,11 +22,10 @@ import {
   LucideCalendar,
   LucideChevronLeft,
   LucideChevronRight,
-  LucideLoader2,
   LucideShieldCheck,
-  LucideClock,
   LucideBarChart3
 } from "lucide-react";
+import { getSportByValue } from "@/lib/constants/sports";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -115,6 +114,7 @@ export function CourtsList({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempName, setTempName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [selectedSport, setSelectedSport] = useState<string>("all");
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [initialSlot, setInitialSlot] = useState<{ courtId: string; time: string } | null>(null);
@@ -289,6 +289,39 @@ export function CourtsList({
           </div>
         </div>
       </div>
+      
+      {/* Tabs por Deporte */}
+      <div className="flex flex-wrap items-center gap-1 border-b border-slate-200">
+        <button
+          onClick={() => setSelectedSport("all")}
+          className={cn(
+            "px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all border-b-2",
+            selectedSport === "all" 
+              ? "border-blue-800 text-blue-800 bg-blue-50/30" 
+              : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+          )}
+        >
+          TODOS
+        </button>
+        {Array.from(new Set(courts.map(c => c.type).filter(Boolean))).map(type => {
+          const sport = getSportByValue(type);
+          return (
+            <button
+              key={type}
+              onClick={() => setSelectedSport(type!)}
+              className={cn(
+                "flex items-center gap-2 px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-all border-b-2",
+                selectedSport === type 
+                  ? "border-blue-800 text-blue-800 bg-blue-50/30" 
+                  : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+              )}
+            >
+              <sport.icon className="h-3 w-3" />
+              {sport.label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* 3. Courts Matrix - High Density Layout */}
       {courts.length === 0 ? (
@@ -303,7 +336,9 @@ export function CourtsList({
         </div>
       ) : (
         <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2">
-          {courts.map((court) => (
+          {courts
+            .filter(c => selectedSport === "all" || c.type === selectedSport)
+            .map((court) => (
             <div key={court.id} className="bg-white border border-slate-200 overflow-hidden transition-all hover:border-slate-400">
               {/* Card Header Industrial */}
               <div className="p-6 border-b border-slate-100 bg-slate-50/50">
@@ -351,6 +386,25 @@ export function CourtsList({
                         >
                           <LucidePencil className="h-3.5 w-3.5" />
                         </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const sport = getSportByValue(court.type);
+                          return (
+                            <Badge 
+                              variant="outline" 
+                              className={cn(
+                                "rounded-none text-[8px] font-black uppercase tracking-widest gap-1",
+                                sport.bg,
+                                sport.border,
+                                sport.text
+                              )}
+                            >
+                              <sport.icon className="h-2 w-2" /> {sport.label}
+                            </Badge>
+                          );
+                        })()}
                       </div>
 
                       <div className="flex items-center gap-3">

@@ -71,6 +71,7 @@ export async function addCourtAction(data: {
   surface: string;
   isPanoramic: boolean;
   hasLighting: boolean;
+  centerId?: string;
 }) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -82,30 +83,24 @@ export async function addCourtAction(data: {
   if (!userMember) throw new Error("No tenant found");
 
   const center = await db.query.centers.findFirst({
-    where: session.user.centerId 
-      ? eq(centers.id, session.user.centerId)
-      : eq(centers.tenantId, userMember.tenantId),
+    where: data.centerId 
+      ? eq(centers.id, data.centerId)
+      : session.user.centerId 
+        ? eq(centers.id, session.user.centerId)
+        : eq(centers.tenantId, userMember.tenantId),
     orderBy: (centers, { asc }) => [asc(centers.createdAt)],
   });
 
   if (!center) throw new Error("No center found. Please configure your center first.");
 
-  // Enforce capacity
-  const currentCourts = await db.query.courts.findMany({
-    where: eq(courts.centerId, center.id),
-  });
-
-  if (currentCourts.length >= center.courtsCount) {
-    throw new Error(`Capacidad máxima alcanzada (${center.courtsCount} canchas)`);
-  }
-
-  await db.insert(courts).values({
+  const [newCourt] = await db.insert(courts).values({
     ...data,
     centerId: center.id,
-  });
+  }).returning();
 
   revalidatePath("/courts");
-  return { success: true };
+  revalidatePath("/settings");
+  return { success: true, court: newCourt };
 }
 
 export async function updateCourtAction(id: string, data: any) {

@@ -15,10 +15,11 @@ export const dynamic = "force-dynamic";
 
 interface CenterPageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ courtId?: string }>;
 }
 
-export default async function CenterPage({ params }: CenterPageProps) {
-  const { id } = await params;
+export default async function CenterPage({ params, searchParams }: CenterPageProps) {
+  const [{ id }, { courtId }] = await Promise.all([params, searchParams]);
   const result = await getCenterDetailsAction(id);
   
   if (!result.success || !result.data) {
@@ -96,7 +97,7 @@ export default async function CenterPage({ params }: CenterPageProps) {
 
       {/* 3. Main Interactive Module */}
       <main className="max-w-7xl mx-auto px-6 py-16">
-        <CenterBookingView center={center} />
+        <CenterBookingView center={center} courtId={courtId} />
       </main>
 
       {/* 4. Footer */}

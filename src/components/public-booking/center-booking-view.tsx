@@ -27,10 +27,17 @@ import { createBookingPreferenceAction } from "@/lib/actions/payments";
 
 interface CenterBookingViewProps {
   center: any;
+  courtId?: string;
 }
 
-export function CenterBookingView({ center }: CenterBookingViewProps) {
+export function CenterBookingView({ center, courtId }: CenterBookingViewProps) {
   const { data: session } = useSession();
+  
+  // Filtrar canchas si se proporciona un courtId
+  const displayedCourts = useMemo(() => {
+    if (!courtId) return center.courts;
+    return center.courts.filter((c: any) => c.id === courtId);
+  }, [center.courts, courtId]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedSlot, setSelectedSlot] = useState<{ court: any, time: string } | null>(null);
   const [duration, setDuration] = useState(90);
@@ -278,7 +285,7 @@ export function CenterBookingView({ center }: CenterBookingViewProps) {
           </div>
           
           <div className="grid grid-cols-1 gap-10">
-            {center.courts.map((court: any) => (
+            {displayedCourts.map((court: any) => (
               <div key={court.id} className="bg-white border-2 border-slate-950 overflow-hidden transition-all hover:border-blue-800 shadow-[4px_4px_0px_black] hover:shadow-[8px_8px_0px_rgba(0,51,153,1)]">
                 {/* Card Header Industrial Style */}
                 <div className="p-6 border-b-2 border-slate-950 bg-slate-50/50 flex items-start justify-between">

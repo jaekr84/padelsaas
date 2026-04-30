@@ -52,6 +52,7 @@ import { updatePricingConfigAction } from "@/lib/actions/pricing";
 import { PricingCanvas } from "./pricing-canvas";
 import { POSSettings } from "./settings/pos-settings";
 import { updateMercadoPagoSettingsAction } from "@/lib/actions/tenant";
+import { CourtEditor } from "./settings/court-editor";
 
 const companySchema = z.object({
   id: z.string(),
@@ -83,7 +84,6 @@ const formSchema = z.object({
     hasWiFi: z.boolean(),
     hasVestuarios: z.boolean(),
   }),
-  courtsCount: z.coerce.number().min(1, "Debe tener al menos 1 cancha"),
   openTime: z.string(),
   closeTime: z.string(),
   defaultPrice30: z.coerce.number().min(0),
@@ -124,9 +124,6 @@ export function SettingsForm({
       phone: "",
       whatsapp: "",
       website: "",
-      courtsCount: 1,
-      openTime: "08:00",
-      closeTime: "23:00",
       amenities: {
         hasBar: false,
         hasGrill: false,
@@ -175,7 +172,6 @@ export function SettingsForm({
         phone: activeCenter.phone || "",
         whatsapp: activeCenter.whatsapp || "",
         website: activeCenter.website || "",
-        courtsCount: activeCenter.courtsCount || 1,
         openTime: activeCenter.openTime || "08:00",
         closeTime: activeCenter.closeTime || "23:00",
         amenities: {
@@ -625,7 +621,7 @@ export function SettingsForm({
                   <h2 className="text-sm font-black uppercase tracking-widest text-slate-950">Identificación</h2>
                 </div>
                 <div className="bg-white border border-slate-200 p-8 space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-6">
                     <FormField
                       control={centerForm.control}
                       name="name"
@@ -639,20 +635,24 @@ export function SettingsForm({
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={centerForm.control}
-                      name="courtsCount"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-500">Capacidad (Canchas)</FormLabel>
-                          <FormControl>
-                            <Input type="number" min={1} {...field} className="h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-black text-xs tabular-nums" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                   </div>
+
+                  {/* Gestión Individual de Canchas */}
+                  {activeCenter && (
+                    <div className="pt-4 border-t border-slate-100">
+                      <CourtEditor 
+                        key={activeCenter.id}
+                        initialCourts={activeCenter.courts || []} 
+                        centerId={activeCenter.id}
+                        onCourtsChange={(newCourts) => {
+                          setCenters(prev => prev.map(c => 
+                            c.id === activeCenter.id ? { ...c, courts: newCourts } : c
+                          ));
+                        }}
+                      />
+                    </div>
+                  )}
+
                   <FormField
                     control={centerForm.control}
                     name="description"
@@ -734,7 +734,7 @@ export function SettingsForm({
                       render={({ field }) => (
                         <FormItem className="space-y-2">
                           <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-500">Apertura</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
                             <FormControl>
                               <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-none font-black text-xs tabular-nums focus:ring-0 focus:border-blue-800">
                                 <SelectValue placeholder="00:00" />
@@ -759,7 +759,7 @@ export function SettingsForm({
                       render={({ field }) => (
                         <FormItem className="space-y-2">
                           <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-500">Cierre</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
                             <FormControl>
                               <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-none font-black text-xs tabular-nums focus:ring-0 focus:border-blue-800">
                                 <SelectValue placeholder="00:00" />
@@ -911,6 +911,7 @@ export function SettingsForm({
                     </div>
                     <div className="p-0">
                       <PricingCanvas
+                        key={activeCenter.id}
                         rules={schedules}
                         basePrice={Number(watchBasePrice) || 0}
                         onChange={(newRules) => setSchedules(newRules)}

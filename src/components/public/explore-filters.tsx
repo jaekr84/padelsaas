@@ -103,12 +103,17 @@ export function ExploreFilters({ availableSports, metaData }: { availableSports:
   useEffect(() => {
     const timer = setTimeout(() => {
       const params = new URLSearchParams(searchParams.toString());
-      if (search) {
-        params.set("q", search);
-      } else {
-        params.delete("q");
+      const currentQ = params.get("q") || "";
+      
+      // Solo disparar si la búsqueda cambió realmente
+      if (search !== currentQ) {
+        if (search) {
+          params.set("q", search);
+        } else {
+          params.delete("q");
+        }
+        router.push(`/explore?${params.toString()}`, { scroll: false });
       }
-      router.push(`/explore?${params.toString()}`, { scroll: false });
     }, 500);
     return () => clearTimeout(timer);
   }, [search, router, searchParams]);
