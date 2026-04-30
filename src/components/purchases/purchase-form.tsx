@@ -125,7 +125,11 @@ export function PurchaseForm({ open, onOpenChange, suppliers, products, categori
         centerId,
         invoiceNumber,
         notes,
-        items,
+        items: items.map(i => ({
+          productId: i.productId,
+          unitCost: i.unitCost,
+          distributions: [{ centerId, quantity: i.quantity }]
+        })),
       });
       toast.success("Compra registrada correctamente y stock actualizado");
       onOpenChange(false);

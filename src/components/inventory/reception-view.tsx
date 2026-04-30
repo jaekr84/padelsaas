@@ -218,7 +218,7 @@ export function ReceptionView({ pendingItems: initialItems }: ReceptionViewProps
         toast.success(`Recepción procesada exitosamente`);
         
         const newItems = items.map(i => {
-          const update = itemsToReceive.find(tr => tr.purchaseItemId === i.id);
+          const update = itemsToReceive.find((tr: any) => tr.purchaseItemId === i.id);
           if (update) {
             const newReceived = i.receivedQuantity + update.quantity;
             return {

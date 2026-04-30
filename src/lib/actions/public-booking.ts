@@ -1,18 +1,58 @@
 "use server";
 
 import { db } from "@/db";
-import { centers, courts, bookings, customers } from "@/db/schema";
-import { eq, and, or, gte, lte, desc, lt, gt } from "drizzle-orm";
+import { centers, courts, bookings, customers, tenants } from "@/db/schema";
+import { eq, and, or, gte, lte, desc, lt, gt, ilike, sql } from "drizzle-orm";
 import { auth } from "@/auth";
 
-export async function getPublicCentersAction() {
+export async function getPublicCentersAction(filters?: { sport?: string; query?: string; city?: string; state?: string }) {
   try {
+    let tenantMatchIds: string[] = [];
+    
+    // Si hay una búsqueda por texto, buscamos IDs de clubes que coincidan
+    if (filters?.query) {
+      const matchingTenants = await db.select({ id: tenants.id })
+        .from(tenants)
+        .where(ilike(tenants.name, `%${filters.query}%`));
+      tenantMatchIds = matchingTenants.map(t => t.id);
+    }
+
+    const conditions = [];
+
+    // Lógica de búsqueda principal (Nombre de Sede O Nombre de Club)
+    if (filters?.query) {
+      const queryOr = [ilike(centers.name, `%${filters.query}%`)];
+      if (tenantMatchIds.length > 0) {
+        queryOr.push(sql`${centers.tenantId} IN (${sql.join(tenantMatchIds.map(id => sql`${id}`), sql`, `)})`);
+      }
+      conditions.push(or(...queryOr));
+    }
+
+    if (filters?.city && filters.city !== "all") {
+      conditions.push(ilike(centers.city, filters.city));
+    }
+
+    if (filters?.state && filters.state !== "all") {
+      conditions.push(ilike(centers.state, filters.state));
+    }
+
     const result = await db.query.centers.findMany({
+      where: conditions.length > 0 ? and(...conditions) : undefined,
       with: {
-        courts: true,
+        tenant: true,
+        courts: filters?.sport ? {
+          where: eq(courts.type, filters.sport)
+        } : true,
       }
     });
-    return { success: true, data: result };
+
+    // Filtrar por deporte si es necesario
+    let finalFiltered = result;
+    if (filters?.sport) {
+      finalFiltered = result.filter(c => c.courts.length > 0);
+    }
+
+    return { success: true, data: finalFiltered };
   } catch (error) {
     console.error("Error fetching public centers:", error);
     return { success: false, error: "No se pudieron obtener los centros" };
@@ -197,5 +237,37 @@ export async function getPlayerLastContactAction() {
   } catch (error) {
     console.error("Error fetching player contact:", error);
     return { success: false, error: "No se pudo obtener el contacto" };
+  }
+}
+
+export async function getExploreMetaDataAction() {
+  try {
+    const allCenters = await db.select({ city: centers.city, state: centers.state }).from(centers);
+    const allSports = await db.select({ type: courts.type }).from(courts);
+
+    const uniqueCities = Array.from(new Set(allCenters.map(c => c.city?.trim().toUpperCase()).filter(Boolean))).sort() as string[];
+    const uniqueStates = Array.from(new Set(allCenters.map(c => c.state?.trim().toUpperCase()).filter(Boolean))).sort() as string[];
+    const uniqueSports = Array.from(new Set(allSports.map(s => s.type?.trim().toUpperCase()).filter(Boolean))).sort() as string[];
+
+    // Mapa para filtrar ciudades por provincia en el cliente
+    const cityToStateMap: Record<string, string> = {};
+    allCenters.forEach(c => {
+      if (c.city && c.state) {
+        cityToStateMap[c.city.trim().toUpperCase()] = c.state.trim().toUpperCase();
+      }
+    });
+
+    return {
+      success: true,
+      data: {
+        cities: uniqueCities,
+        states: uniqueStates,
+        sports: uniqueSports,
+        cityToStateMap
+      }
+    };
+  } catch (error) {
+    console.error("Error fetching explore metadata:", error);
+    return { success: false, error: "Error al cargar filtros" };
   }
 }
