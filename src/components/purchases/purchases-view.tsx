@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { 
   LucideShoppingCart, 
   LucidePlus, 
@@ -15,7 +15,9 @@ import {
   LucideShieldCheck,
   LucideChevronRight,
   LucideArrowUpRight,
-  LucideBoxes
+  LucideBoxes,
+  LucideFilter,
+  LucideCalendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +31,16 @@ import {
   DialogTitle, 
   DialogFooter 
 } from "@/components/ui/dialog";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { format, isSameDay } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface PurchasesViewProps {
   initialPurchases: any[];
@@ -47,10 +58,38 @@ export function PurchasesView({ initialPurchases, suppliers, products, categorie
   const [isExpiryModalOpen, setIsExpiryModalOpen] = useState(false);
   const [initialProductName, setInitialProductName] = useState("");
 
-  const filteredPurchases = initialPurchases.filter((p) =>
-    p.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.supplier?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Estados de Filtro de Fecha
+  const [filterType, setFilterType] = useState<"day" | "month" | "year" | "all">("day");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+  // Lógica combinada de filtrado (Fecha + Término de Búsqueda)
+  const filteredPurchases = useMemo(() => {
+    return initialPurchases.filter((p) => {
+      const purchaseDate = new Date(p.createdAt);
+      let matchesDate = false;
+
+      // 1. Validar Fecha
+      if (filterType === "day") {
+        matchesDate = isSameDay(purchaseDate, selectedDate);
+      } else if (filterType === "month") {
+        matchesDate = purchaseDate.getMonth() === selectedDate.getMonth() && 
+                      purchaseDate.getFullYear() === selectedDate.getFullYear();
+      } else if (filterType === "year") {
+        matchesDate = purchaseDate.getFullYear() === selectedDate.getFullYear();
+      } else {
+        matchesDate = true; // "all"
+      }
+
+      if (!matchesDate) return false;
+
+      // 2. Validar Búsqueda (Factura o Proveedor)
+      const matchesSearch = 
+        p.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.supplier?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      return matchesSearch;
+    });
+  }, [initialPurchases, filterType, selectedDate, searchTerm]);
 
   const criticalCount = expiringProducts.filter(p => {
     const days = Math.ceil((new Date(p.expiryDate!).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
@@ -112,18 +151,9 @@ export function PurchasesView({ initialPurchases, suppliers, products, categorie
         </div>
         
         <div className="flex flex-col md:flex-row items-stretch gap-4">
-          <div className="relative flex-1 md:w-[400px]">
-            <LucideSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input 
-              placeholder="FILTRAR POR FACTURA O PROVEEDOR..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 h-12 bg-white border-slate-200 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-bold uppercase text-[10px] tracking-widest placeholder:text-slate-300"
-            />
-          </div>
           <Button 
             onClick={() => setIsFormOpen(true)}
-            className="h-12 bg-blue-800 hover:bg-blue-900 text-white rounded-none font-black uppercase tracking-[0.2em] text-[10px] px-8 transition-all gap-3 shadow-none"
+            className="h-12 bg-blue-800 hover:bg-blue-900 text-white rounded-none font-black uppercase tracking-[0.2em] text-[10px] px-8 transition-all gap-3 shadow-none order-2 md:order-1"
           >
             <LucidePlus className="h-4 w-4" />
             Nueva Compra
@@ -131,12 +161,84 @@ export function PurchasesView({ initialPurchases, suppliers, products, categorie
         </div>
       </div>
 
-      {/* 3. Purchases Matrix - Accounting Style */}
-      <div className="border border-slate-200 bg-white">
+      {/* 3. Filter Bar */}
+      <div className="bg-white border border-slate-200 p-4 flex flex-col xl:flex-row items-center justify-between gap-6 shadow-sm">
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
+          <div className="flex items-center gap-3 shrink-0 mr-4">
+            <div className="h-10 w-10 bg-slate-100 flex items-center justify-center rounded-none">
+              <LucideFilter className="h-4 w-4 text-slate-500" />
+            </div>
+            <div className="flex flex-col">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Filtros de Auditoría</p>
+              <p className="text-xs font-bold text-slate-900">Periodo Contable</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <Select value={filterType} onValueChange={(val: any) => setFilterType(val)}>
+              <SelectTrigger className="w-full md:w-[140px] h-10 rounded-none border-slate-200 font-black uppercase text-[10px] tracking-widest focus:ring-blue-800 bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-none border-slate-200">
+                <SelectItem value="day" className="text-[10px] font-black uppercase">Por Día</SelectItem>
+                <SelectItem value="month" className="text-[10px] font-black uppercase">Por Mes</SelectItem>
+                <SelectItem value="year" className="text-[10px] font-black uppercase">Por Año</SelectItem>
+                <SelectItem value="all" className="text-[10px] font-black uppercase">Ver Todos</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {filterType !== "all" && (
+              <Input 
+                type={filterType === "day" ? "date" : filterType === "month" ? "month" : "number"}
+                value={filterType === "day" ? format(selectedDate, "yyyy-MM-dd") : 
+                       filterType === "month" ? format(selectedDate, "yyyy-MM") : 
+                       selectedDate.getFullYear()}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) return;
+                  if (filterType === "year") {
+                    const newDate = new Date(selectedDate);
+                    newDate.setFullYear(parseInt(val));
+                    setSelectedDate(newDate);
+                  } else {
+                    setSelectedDate(new Date(val + (filterType === "month" ? "-01" : "")));
+                  }
+                }}
+                className="h-10 w-full md:w-[180px] rounded-none border-slate-200 font-black text-[10px] focus-visible:ring-blue-800 bg-white"
+              />
+            )}
+
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setFilterType("day");
+                setSelectedDate(new Date());
+                setSearchTerm("");
+              }}
+              className="h-10 rounded-none border-slate-200 px-4 text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 shrink-0"
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
+
+        <div className="relative w-full xl:w-[400px]">
+          <LucideSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input 
+            placeholder="BUSCAR EN ESTE PERIODO..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-12 h-11 bg-white border-slate-200 rounded-none shadow-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-bold uppercase text-[10px] tracking-widest placeholder:text-slate-300"
+          />
+        </div>
+      </div>
+
+      {/* 4. Purchases Matrix - Accounting Style */}
+      <div className="border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-100 border-b border-slate-200">
+              <tr className="bg-slate-50 border-b border-slate-200">
                 <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 border-r border-slate-200">Facturación / ID Sistema</th>
                 <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 border-r border-slate-200">Entidad Proveedora</th>
                 <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 border-r border-slate-200">Fecha Registro</th>
@@ -148,18 +250,27 @@ export function PurchasesView({ initialPurchases, suppliers, products, categorie
             <tbody className="divide-y divide-slate-100">
               {filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center bg-slate-50/30">
+                  <td colSpan={6} className="px-6 py-24 text-center bg-slate-50/30">
                     <div className="flex flex-col items-center gap-6">
-                      <div className="h-16 w-16 bg-slate-100 flex items-center justify-center">
+                      <div className="h-16 w-16 bg-white border border-slate-100 flex items-center justify-center shadow-sm">
                         <LucidePackage className="h-8 w-8 text-slate-200" />
                       </div>
-                      <p className="font-black uppercase tracking-[0.3em] text-[10px] text-slate-300">No se registran movimientos de compra</p>
+                      <div className="space-y-1">
+                        <p className="font-black uppercase tracking-[0.3em] text-[10px] text-slate-400">Sin registros en el periodo seleccionado</p>
+                        <Button 
+                          variant="link" 
+                          onClick={() => setFilterType("all")}
+                          className="text-blue-800 font-black uppercase text-[9px]"
+                        >
+                          Explorar historial completo
+                        </Button>
+                      </div>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredPurchases.map((purchase) => (
-                  <tr key={purchase.id} className="hover:bg-slate-50/50 transition-colors group h-16">
+                  <tr key={purchase.id} className="hover:bg-slate-50 transition-colors group h-16">
                     <td className="px-6 py-4 border-r border-slate-50">
                       <div className="flex flex-col">
                         <span className="font-black text-slate-950 tracking-tighter text-sm uppercase">{purchase.invoiceNumber || "SIN FACTURA"}</span>
@@ -168,13 +279,13 @@ export function PurchasesView({ initialPurchases, suppliers, products, categorie
                     </td>
                     <td className="px-6 py-4 border-r border-slate-50">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 bg-slate-950 flex items-center justify-center text-white font-black text-[10px] tracking-tighter uppercase transition-transform group-hover:scale-95">
+                        <div className="h-8 w-8 bg-slate-950 flex items-center justify-center text-white font-black text-[10px] tracking-tighter uppercase transition-transform group-hover:scale-95 group-hover:bg-blue-800">
                           {purchase.supplier?.name?.charAt(0) || "P"}
                         </div>
                         <span className="font-black text-slate-950 uppercase text-[11px] tracking-tight">{purchase.supplier?.name || "PROVEEDOR FINAL"}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 border-r border-slate-50 text-[11px] font-bold text-slate-600 uppercase tabular-nums">
+                    <td className="px-6 py-4 border-r border-slate-50 text-[11px] font-black text-slate-600 uppercase tabular-nums">
                       {formatDate(purchase.createdAt)}
                     </td>
                     <td className="px-6 py-4 border-r border-slate-50">

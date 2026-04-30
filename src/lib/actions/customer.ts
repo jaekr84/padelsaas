@@ -2,22 +2,29 @@
 
 import { db } from "@/db";
 import { customers } from "@/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { cookies } from "next/headers";
+import { bookings, sales as salesTable, courts } from "@/db/schema";
 
 export async function getCustomersAction() {
   try {
     const session = await auth();
     if (!session) return { success: false, error: "No autorizado" };
 
-    // En un entorno multi-tenant real filtraríamos por tenantId
-    // Por ahora traemos todos los del sistema para simplificar el MVP
+    const cookieStore = await cookies();
+    const activeCenterId = cookieStore.get("active_center_id")?.value || session.user.centerId;
+
     const result = await db.query.customers.findMany({
       orderBy: [desc(customers.createdAt)],
       with: {
-        bookings: true,
-        sales: true,
+        bookings: activeCenterId ? {
+          where: sql`${bookings.courtId} IN (SELECT id FROM ${courts} WHERE ${courts.centerId} = ${activeCenterId})`
+        } : true,
+        sales: activeCenterId ? {
+          where: eq(salesTable.centerId, activeCenterId)
+        } : true,
       }
     });
 

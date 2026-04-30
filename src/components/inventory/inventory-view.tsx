@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   LucidePackage, 
   LucidePlus, 
@@ -40,6 +40,11 @@ export function InventoryView({ products: initialProducts, categories }: Invento
   const [search, setSearch] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+
+  // Sincronizar estado cuando cambian las props (ej. al cambiar de sede)
+  useEffect(() => {
+    setProducts(initialProducts);
+  }, [initialProducts]);
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 

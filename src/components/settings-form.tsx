@@ -59,6 +59,7 @@ const companySchema = z.object({
   mpAccessToken: z.string().optional(),
   mpPublicKey: z.string().optional(),
   mpWebhookUrl: z.string().optional(),
+  purchaseFlow: z.string().optional(),
 });
 
 const formSchema = z.object({
@@ -151,6 +152,7 @@ export function SettingsForm({
       mpAccessToken: initialTenant?.mpAccessToken || "",
       mpPublicKey: initialTenant?.mpPublicKey || "",
       mpWebhookUrl: initialTenant?.mpWebhookUrl || "",
+      purchaseFlow: initialTenant?.purchaseFlow || "direct",
     },
   });
 
@@ -193,6 +195,10 @@ export function SettingsForm({
   }, [activeCenter, centerForm]);
 
   const handleCreateSede = async () => {
+    if (centers.length >= 5) {
+      toast.error("Límite de 5 sedes alcanzado");
+      return;
+    }
     setLoading(true);
     try {
       const name = `Nueva Sede ${centers.length + 1}`;
@@ -202,8 +208,8 @@ export function SettingsForm({
         setSelectedId(response.center.id);
         toast.success("Nueva sede creada correctamente");
       }
-    } catch (error) {
-      toast.error("Error al crear sede");
+    } catch (error: any) {
+      toast.error(error.message || "Error al crear sede");
     } finally {
       setLoading(false);
     }
@@ -342,11 +348,11 @@ export function SettingsForm({
           <Button
             variant="outline"
             onClick={handleCreateSede}
-            disabled={loading}
-            className="h-12 px-6 rounded-none border-dashed border-slate-300 font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 gap-2"
+            disabled={loading || centers.length >= 5}
+            className="h-12 px-6 rounded-none border-dashed border-slate-300 font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <LucidePlus className="h-4 w-4" />
-            Nueva Sede
+            {centers.length >= 5 ? "Límite Alcanzado (5/5)" : "Nueva Sede"}
           </Button>
         </div>
       </div>
@@ -398,6 +404,31 @@ export function SettingsForm({
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={companyForm.control}
+                    name="purchaseFlow"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Flujo de Inventario</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-none focus:ring-0 focus:border-blue-800 transition-all font-bold text-xs">
+                              <SelectValue placeholder="Seleccionar flujo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="rounded-none border-slate-200">
+                            <SelectItem value="direct" className="text-[11px] font-bold uppercase tracking-tight">Directo (Carga stock al comprar)</SelectItem>
+                            <SelectItem value="reception" className="text-[11px] font-bold uppercase tracking-tight">Recepción (Requiere confirmar en sede)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription className="text-[10px] font-medium text-slate-400 italic">
+                          Define si el stock impacta inmediatamente o si requiere una validación física en cada sucursal.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
             </div>
@@ -407,22 +438,22 @@ export function SettingsForm({
         /* MERCADO PAGO SETTINGS */
         <Form {...companyForm}>
           <form onSubmit={companyForm.handleSubmit(async (values) => {
-             setLoading(true);
-             try {
-               const res = await updateMercadoPagoSettingsAction({
-                 id: values.id,
-                 mpAccessToken: values.mpAccessToken || "",
-                 mpPublicKey: values.mpPublicKey || "",
+            setLoading(true);
+            try {
+              const res = await updateMercadoPagoSettingsAction({
+                id: values.id,
+                mpAccessToken: values.mpAccessToken || "",
+                mpPublicKey: values.mpPublicKey || "",
                 mpWebhookUrl: values.mpWebhookUrl || ""
-               });
-               if (res.success) {
-                 toast.success("Credenciales de Mercado Pago actualizadas");
-               }
-             } catch (e) {
-               toast.error("Error al actualizar credenciales");
-             } finally {
-               setLoading(false);
-             }
+              });
+              if (res.success) {
+                toast.success("Credenciales de Mercado Pago actualizadas");
+              }
+            } catch (e) {
+              toast.error("Error al actualizar credenciales");
+            } finally {
+              setLoading(false);
+            }
           })} className="space-y-10">
             <div className="flex flex-col md:flex-row items-stretch md:items-end justify-between gap-6 border-b border-slate-200 pb-8 sticky top-0 bg-slate-50/95 backdrop-blur-sm z-30 pt-4">
               <div>
@@ -444,99 +475,99 @@ export function SettingsForm({
 
             <div className="grid gap-10 max-w-4xl">
               <div className="space-y-6">
-                 <div className="p-4 bg-blue-50 border border-blue-200 text-blue-800 text-[10px] font-bold uppercase tracking-tight leading-relaxed">
-                   Ingresa tus credenciales de Mercado Pago para habilitar los pagos online en tus reservas. 
-                   El sistema solicitará automáticamente el 50% del valor para confirmar el turno.
-                 </div>
+                <div className="p-4 bg-blue-50 border border-blue-200 text-blue-800 text-[10px] font-bold uppercase tracking-tight leading-relaxed">
+                  Ingresa tus credenciales de Mercado Pago para habilitar los pagos online en tus reservas.
+                  El sistema solicitará automáticamente el 50% del valor para confirmar el turno.
+                </div>
 
-                 <div className="bg-white border border-slate-200 p-8 space-y-8">
-                    <FormField
-                      control={companyForm.control}
-                      name="mpPublicKey"
-                      render={({ field }) => (
-                        <FormItem className="space-y-3">
-                          <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Public Key (Clave Pública)</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="APP_USR-..."
-                              {...field}
-                              className="h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-mono text-xs"
-                            />
-                          </FormControl>
-                          <FormDescription className="text-[10px] font-medium text-slate-400 italic">Utilizada para inicializar el SDK en el navegador.</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <div className="bg-white border border-slate-200 p-8 space-y-8">
+                  <FormField
+                    control={companyForm.control}
+                    name="mpPublicKey"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Public Key (Clave Pública)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="APP_USR-..."
+                            {...field}
+                            className="h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-mono text-xs"
+                          />
+                        </FormControl>
+                        <FormDescription className="text-[10px] font-medium text-slate-400 italic">Utilizada para inicializar el SDK en el navegador.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormField
-                      control={companyForm.control}
-                      name="mpAccessToken"
-                      render={({ field }) => (
-                        <FormItem className="space-y-3">
-                          <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Access Token (Token de Acceso)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="password"
-                              placeholder="APP_USR-..."
-                              {...field}
-                              className="h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-mono text-xs"
-                            />
-                          </FormControl>
-                          <FormDescription className="text-[10px] font-medium text-slate-400 italic">Token privado para operaciones de servidor. Nunca lo compartas.</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={companyForm.control}
+                    name="mpAccessToken"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Access Token (Token de Acceso)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="APP_USR-..."
+                            {...field}
+                            className="h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-mono text-xs"
+                          />
+                        </FormControl>
+                        <FormDescription className="text-[10px] font-medium text-slate-400 italic">Token privado para operaciones de servidor. Nunca lo compartas.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormField
-                      control={companyForm.control}
-                      name="mpWebhookUrl"
-                      render={({ field }) => (
-                        <FormItem className="space-y-3">
-                          <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Webhook URL (Opcional)</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="https://..."
-                              {...field}
-                              className="h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-mono text-xs"
-                            />
-                          </FormControl>
-                          <FormDescription className="text-[10px] font-medium text-slate-400 italic">URL de notificación personalizada si deseas recibir eventos en tu propio sistema.</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={companyForm.control}
+                    name="mpWebhookUrl"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500">Webhook URL (Opcional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://..."
+                            {...field}
+                            className="h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-mono text-xs"
+                          />
+                        </FormControl>
+                        <FormDescription className="text-[10px] font-medium text-slate-400 italic">URL de notificación personalizada si deseas recibir eventos en tu propio sistema.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <div className="space-y-3 pt-4 border-t border-slate-100">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">URL de Notificación (Webhook)</Label>
-                      <div className="bg-slate-950 p-4 rounded-none flex items-center justify-between group">
-                        <code className="text-blue-400 text-[10px] font-mono break-all">
-                          {(() => {
-                            const baseUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || '');
-                            return `${baseUrl}/api/webhooks/mercadopago?tenantId=${initialTenant?.id}`;
-                          })()}
-                        </code>
-                        <Button 
-                          type="button"
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => {
-                            const baseUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || '');
-                            const url = `${baseUrl}/api/webhooks/mercadopago?tenantId=${initialTenant?.id}`;
-                            navigator.clipboard.writeText(url);
-                            toast.success("Copiado al portapapeles");
-                          }}
-                          className="text-slate-400 hover:text-white hover:bg-slate-800 h-8 w-8 p-0"
-                        >
-                          <LucideSave className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <p className="text-[9px] font-medium text-slate-400 italic leading-relaxed">
-                        Copia esta URL y configúrala en tu <a href="https://www.mercadopago.com.ar/developers/panel" target="_blank" rel="noreferrer" className="text-blue-600 underline">Panel de Desarrollador</a> de Mercado Pago para recibir confirmaciones automáticas.
-                      </p>
+                  <div className="space-y-3 pt-4 border-t border-slate-100">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">URL de Notificación (Webhook)</Label>
+                    <div className="bg-slate-950 p-4 rounded-none flex items-center justify-between group">
+                      <code className="text-blue-400 text-[10px] font-mono break-all">
+                        {(() => {
+                          const baseUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || '');
+                          return `${baseUrl}/api/webhooks/mercadopago?tenantId=${initialTenant?.id}`;
+                        })()}
+                      </code>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const baseUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || '');
+                          const url = `${baseUrl}/api/webhooks/mercadopago?tenantId=${initialTenant?.id}`;
+                          navigator.clipboard.writeText(url);
+                          toast.success("Copiado al portapapeles");
+                        }}
+                        className="text-slate-400 hover:text-white hover:bg-slate-800 h-8 w-8 p-0"
+                      >
+                        <LucideSave className="h-3 w-3" />
+                      </Button>
                     </div>
-                 </div>
+                    <p className="text-[9px] font-medium text-slate-400 italic leading-relaxed">
+                      Copia esta URL y configúrala en tu <a href="https://www.mercadopago.com.ar/developers/panel" target="_blank" rel="noreferrer" className="text-blue-600 underline">Panel de Desarrollador</a> de Mercado Pago para recibir confirmaciones automáticas.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </form>

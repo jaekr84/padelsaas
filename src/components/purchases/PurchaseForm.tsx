@@ -46,10 +46,15 @@ interface PurchaseFormProps {
 export function PurchaseForm({ open, onOpenChange, suppliers, products, categories, centers, onCreateProduct }: PurchaseFormProps) {
   const [loading, setLoading] = useState(false);
   const [supplierId, setSupplierId] = useState<string>("none");
-  const [centerId, setCenterId] = useState<string>(centers[0]?.id || "");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<{ productId: string; quantity: number; unitCost: number; expiryDate?: string; batchNumber?: string }[]>([]);
+  const [items, setItems] = useState<{ 
+    productId: string; 
+    distributions: { centerId: string; quantity: number }[]; 
+    unitCost: number; 
+    expiryDate?: string; 
+    batchNumber?: string 
+  }[]>([]);
   const [productSearch, setProductSearch] = useState("");
 
   const [supplierSearch, setSupplierSearch] = useState("");
@@ -88,9 +93,16 @@ export function PurchaseForm({ open, onOpenChange, suppliers, products, categori
   const addItem = (product: any) => {
     const existing = items.find(i => i.productId === product.id);
     if (existing) {
-      setItems(items.map(i => i.productId === product.id ? { ...i, quantity: i.quantity + 1 } : i));
+      // Si ya existe, podríamos sumar 1 a la primera sede por defecto o simplemente no hacer nada
+      return;
     } else {
-      setItems([...items, { productId: product.id, quantity: 1, unitCost: product.buyPrice || 0, expiryDate: "", batchNumber: "" }]);
+      setItems([...items, { 
+        productId: product.id, 
+        distributions: centers.map(c => ({ centerId: c.id, quantity: 0 })),
+        unitCost: product.buyPrice || 0, 
+        expiryDate: "", 
+        batchNumber: "" 
+      }]);
     }
     setProductSearch("");
   };
@@ -99,11 +111,27 @@ export function PurchaseForm({ open, onOpenChange, suppliers, products, categori
     setItems(items.filter(i => i.productId !== productId));
   };
 
-  const updateItem = (productId: string, field: "quantity" | "unitCost" | "expiryDate" | "batchNumber", value: any) => {
+  const updateItem = (productId: string, field: string, value: any) => {
     setItems(items.map(i => i.productId === productId ? { ...i, [field]: value } : i));
   };
 
-  const total = items.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
+  const updateDistribution = (productId: string, centerId: string, quantity: number) => {
+    setItems(items.map(item => {
+      if (item.productId !== productId) return item;
+      return {
+        ...item,
+        distributions: item.distributions.map(d => 
+          d.centerId === centerId ? { ...d, quantity } : d
+        )
+      };
+    }));
+  };
+
+  const getItemTotalQty = (item: any) => {
+    return item.distributions.reduce((sum: number, d: any) => sum + d.quantity, 0);
+  };
+
+  const total = items.reduce((acc, item) => acc + (getItemTotalQty(item) * item.unitCost), 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,8 +139,11 @@ export function PurchaseForm({ open, onOpenChange, suppliers, products, categori
       toast.error("Debes agregar al menos un producto");
       return;
     }
-    if (!centerId) {
-      toast.error("Debes seleccionar una sede");
+    
+    // Validar que haya al menos una cantidad ingresada
+    const hasQuantity = items.some(item => getItemTotalQty(item) > 0);
+    if (!hasQuantity) {
+      toast.error("Debes ingresar cantidades para los productos");
       return;
     }
 
@@ -120,7 +151,6 @@ export function PurchaseForm({ open, onOpenChange, suppliers, products, categori
     try {
       await addPurchaseAction({
         supplierId: supplierId === "none" ? undefined : supplierId,
-        centerId,
         invoiceNumber,
         notes,
         items,
@@ -216,28 +246,6 @@ export function PurchaseForm({ open, onOpenChange, suppliers, products, categori
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Centro de Destino</Label>
-                <Popover open={centerOpen} onOpenChange={setCenterOpen}>
-                  <PopoverTrigger render={
-                    <Button
-                      variant="outline"
-                      className="w-full h-12 justify-between bg-white border-slate-200 rounded-none font-bold uppercase text-[10px] tracking-widest"
-                    >
-                      {centerId ? centers.find((c) => c.id === centerId)?.name : "SELECCIONAR SEDE"}
-                      <LucidePlus className="ml-2 h-4 w-4 opacity-50" />
-                    </Button>
-                  } />
-                  <PopoverContent className="w-[200px] p-1 rounded-none border-slate-200 shadow-xl">
-                    {centers.map((c) => (
-                      <button key={c.id} type="button" onClick={() => { setCenterId(c.id); setCenterOpen(false); }} className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-blue-800 hover:text-white transition-colors flex justify-between items-center">
-                        {c.name} {centerId === c.id && <LucideCheck className="h-3 w-3" />}
-                      </button>
-                    ))}
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
                 <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Nro de Comprobante / Factura</Label>
                 <div className="relative">
                     <LucideHash className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -245,7 +253,7 @@ export function PurchaseForm({ open, onOpenChange, suppliers, products, categori
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 col-span-2">
                 <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Buscador de Artículos</Label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
@@ -284,19 +292,23 @@ export function PurchaseForm({ open, onOpenChange, suppliers, products, categori
                     <thead>
                       <tr className="bg-slate-100 border-b border-slate-200">
                         <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-left w-12 border-r border-slate-200">#</th>
-                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-left border-r border-slate-200">Especificación de Producto</th>
-                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center w-48 border-r border-slate-200">Identificación de Lote</th>
-                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center w-32 border-r border-slate-200">Unidades</th>
-                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center w-40 border-r border-slate-200">Costo Unit. (Neto)</th>
-                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center w-48 border-r border-slate-200">Fecha Caducidad</th>
-                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-right w-40 border-r border-slate-200">Subtotal Neto</th>
+                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-left border-r border-slate-200 min-w-[250px]">Especificación de Producto</th>
+                        {centers.map(center => (
+                          <th key={center.id} className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-blue-800 text-center w-28 border-r border-slate-200 bg-blue-50/50">
+                            Cant. {center.name.split(' ')[0]}
+                          </th>
+                        ))}
+                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center w-32 border-r border-slate-200">Costo Unit.</th>
+                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center w-40 border-r border-slate-200">Identificación Lote</th>
+                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center w-40 border-r border-slate-200">Vencimiento</th>
+                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-right w-36 border-r border-slate-200">Subtotal</th>
                         <th className="px-4 py-4 text-[9px] font-black uppercase tracking-widest text-slate-950 text-center w-16">Acción</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {items.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="py-24 text-center bg-white">
+                          <td colSpan={8 + centers.length} className="py-24 text-center bg-white">
                             <div className="flex flex-col items-center gap-4">
                                 <div className="h-12 w-12 bg-slate-50 flex items-center justify-center">
                                     <LucideBox className="h-6 w-6 text-slate-200" />
@@ -322,25 +334,21 @@ export function PurchaseForm({ open, onOpenChange, suppliers, products, categori
                                     </div>
                                 </div>
                               </td>
-                              <td className="px-2 py-1 border-r border-slate-100">
-                                <div className="relative">
-                                    <LucideBarcode className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-300" />
+
+                              {centers.map(center => {
+                                const dist = item.distributions.find(d => d.centerId === center.id);
+                                return (
+                                  <td key={center.id} className="px-2 py-1 border-r border-slate-100 bg-blue-50/20">
                                     <Input
-                                        placeholder="NRO LOTE"
-                                        value={item.batchNumber}
-                                        onChange={(e) => updateItem(item.productId, "batchNumber", e.target.value)}
-                                        className="h-9 pl-7 border-transparent focus:bg-white focus:border-blue-200 bg-transparent text-center font-black text-[10px] uppercase shadow-none rounded-none"
+                                      type="number"
+                                      value={dist?.quantity || 0}
+                                      onChange={(e) => updateDistribution(item.productId, center.id, parseInt(e.target.value) || 0)}
+                                      className="h-9 border-transparent focus:bg-white focus:border-blue-200 bg-transparent text-center font-black text-[11px] tabular-nums shadow-none rounded-none"
                                     />
-                                </div>
-                              </td>
-                              <td className="px-2 py-1 border-r border-slate-100">
-                                <Input
-                                  type="number"
-                                  value={item.quantity}
-                                  onChange={(e) => updateItem(item.productId, "quantity", parseInt(e.target.value) || 0)}
-                                  className="h-9 border-transparent focus:bg-white focus:border-blue-200 bg-transparent text-center font-black text-[11px] tabular-nums shadow-none rounded-none"
-                                />
-                              </td>
+                                  </td>
+                                );
+                              })}
+
                               <td className="px-2 py-1 border-r border-slate-100">
                                 <div className="relative">
                                   <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">$</span>
@@ -352,6 +360,19 @@ export function PurchaseForm({ open, onOpenChange, suppliers, products, categori
                                   />
                                 </div>
                               </td>
+
+                              <td className="px-2 py-1 border-r border-slate-100">
+                                <div className="relative">
+                                    <LucideBarcode className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-300" />
+                                    <Input
+                                        placeholder="NRO LOTE"
+                                        value={item.batchNumber}
+                                        onChange={(e) => updateItem(item.productId, "batchNumber", e.target.value)}
+                                        className="h-9 pl-7 border-transparent focus:bg-white focus:border-blue-200 bg-transparent text-center font-black text-[10px] uppercase shadow-none rounded-none"
+                                    />
+                                </div>
+                              </td>
+
                               <td className="px-2 py-1 border-r border-slate-100">
                                 <div className="relative">
                                     <LucideCalendar className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-300" />
@@ -363,8 +384,9 @@ export function PurchaseForm({ open, onOpenChange, suppliers, products, categori
                                     />
                                 </div>
                               </td>
+
                               <td className="px-4 py-2 text-right font-black text-slate-950 text-[11px] tabular-nums bg-slate-50/30 border-r border-slate-100">
-                                {formatCurrency(item.quantity * item.unitCost)}
+                                {formatCurrency(getItemTotalQty(item) * item.unitCost)}
                               </td>
                               <td className="px-2 py-1 text-center">
                                 <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(item.productId)} className="h-8 w-8 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-none transition-colors">

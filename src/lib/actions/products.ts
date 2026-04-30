@@ -3,12 +3,17 @@
 import { db } from "@/db";
 import { products, productCategories, members, tenants } from "@/db/schema";
 import { auth } from "@/auth";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { productStock } from "@/db/schema";
 
 export async function getProductsAction() {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const cookieStore = await cookies();
+  const activeCenterId = cookieStore.get("active_center_id")?.value || session.user.centerId;
 
   const userMember = await db.query.members.findFirst({
     where: eq(members.userId, session.user.id),
@@ -20,7 +25,11 @@ export async function getProductsAction() {
     where: eq(products.tenantId, userMember.tenantId),
     with: {
       category: true,
-      stock: true,
+      stock: activeCenterId ? {
+        where: eq(productStock.centerId, activeCenterId)
+      } : {
+        where: sql`1=0` // Evitar devolver stock de todas las sedes si no hay sede activa
+      },
     },
     orderBy: (products, { asc }) => [asc(products.name)],
   });

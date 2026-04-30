@@ -33,7 +33,8 @@ import {
   LucideChevronRight,
   LucideMenu,
   LucideShieldAlert,
-  LucideMonitor
+  LucideMonitor,
+  LucideTruck
 } from "lucide-react";
 import { UserNav } from "@/components/user-nav";
 import Link from "next/link";
@@ -55,6 +56,7 @@ const navItems = [
   { title: "Reservas Simples", icon: LucideDumbbell, href: "/courts" },
   { title: "Clientes (CRM)", icon: LucideUsers, href: "/customers" },
   { title: "Kiosco / Stock", icon: LucidePackage, href: "/inventory" },
+  { title: "Recepción Stock", icon: LucideTruck, href: "/inventory/reception" },
   { title: "Compras", icon: LucideShoppingCart, href: "/purchases" },
   { title: "Usuarios", icon: LucideUsers, href: "/users", adminOnly: true },
   { title: "Configuración", icon: LucideSettings, href: "/settings", adminOnly: true },

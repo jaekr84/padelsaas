@@ -82,6 +82,7 @@ export const tenants = pgTable("tenant", {
   mpAccessToken: text("mp_access_token"),
   mpPublicKey: text("mp_public_key"),
   mpWebhookUrl: text("mp_webhook_url"),
+  purchaseFlow: text("purchase_flow").default("direct").notNull(), // 'direct' or 'reception'
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -343,11 +344,42 @@ export const purchaseItems = pgTable("purchase_item", {
   productId: uuid("product_id")
     .notNull()
     .references(() => products.id, { onDelete: "cascade" }),
+  centerId: uuid("center_id")
+    .notNull()
+    .references(() => centers.id, { onDelete: "cascade" }),
   quantity: integer("quantity").notNull(),
   unitCost: integer("unit_cost").notNull(),
   subtotal: integer("subtotal").notNull(),
   expiryDate: timestamp("expiry_date"),
   batchNumber: text("batch_number"),
+  receivedQuantity: integer("received_quantity").default(0).notNull(),
+  status: text("status").default("pending").notNull(), // 'pending', 'partial', 'received'
+});
+
+export const receptions = pgTable("reception", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  purchaseId: uuid("purchase_id")
+    .notNull()
+    .references(() => purchases.id, { onDelete: "cascade" }),
+  centerId: uuid("center_id")
+    .notNull()
+    .references(() => centers.id, { onDelete: "cascade" }),
+  receivedById: text("received_by_id")
+    .notNull()
+    .references(() => users.id),
+  notes: text("notes"),
+  receivedAt: timestamp("received_at").defaultNow().notNull(),
+});
+
+export const receptionItems = pgTable("reception_item", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  receptionId: uuid("reception_id")
+    .notNull()
+    .references(() => receptions.id, { onDelete: "cascade" }),
+  purchaseItemId: uuid("purchase_item_id")
+    .notNull()
+    .references(() => purchaseItems.id, { onDelete: "cascade" }),
+  quantity: integer("quantity").notNull(),
 });
 
 export const productBatches = pgTable("product_batch", {

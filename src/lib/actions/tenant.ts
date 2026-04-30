@@ -17,11 +17,11 @@ export async function getTenantAction() {
   return tenant;
 }
 
-export async function updateTenantAction(data: { id: string; name: string }) {
+export async function updateTenantAction(data: { id: string; name: string; purchaseFlow?: string }) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const { id, name } = data;
+  const { id, name, purchaseFlow } = data;
 
   if (!id) throw new Error("Tenant ID is required");
 
@@ -29,6 +29,7 @@ export async function updateTenantAction(data: { id: string; name: string }) {
     .update(tenants)
     .set({
       name,
+      purchaseFlow: purchaseFlow as any,
       updatedAt: new Date(),
     })
     .where(eq(tenants.id, id));

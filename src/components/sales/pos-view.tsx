@@ -49,6 +49,7 @@ interface POSViewProps {
   agendaDate?: string;
   terminals?: any[];
   paymentMethods?: any[];
+  defaultCenterId?: string;
 }
 
 export function POSView({ 
@@ -57,14 +58,15 @@ export function POSView({
   dayBookings, 
   agendaDate,
   terminals = [], 
-  paymentMethods = [] 
+  paymentMethods = [],
+  defaultCenterId
 }: POSViewProps) {
   const [cart, setCart] = useState<any[]>([]);
   const [customerName, setCustomerName] = useState("Consumidor Final");
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState(paymentMethods[0]?.name || "Efectivo");
   const [terminalId, setTerminalId] = useState(terminals[0]?.name || "Caja 1");
-  const [centerId, setCenterId] = useState(centers[0]?.id || "");
+  const [centerId, setCenterId] = useState(defaultCenterId || centers[0]?.id || "");
   const [discount, setDiscount] = useState(0);
   const [charge, setCharge] = useState(0);
   const [search, setSearch] = useState("");
@@ -281,7 +283,7 @@ export function POSView({
                   <p className="text-xs font-bold uppercase">Agenda del Día</p>
                 </div>
                 <div className="ml-auto bg-slate-950 px-3 py-1 text-[9px] font-bold text-white">
-                  {dayBookings.filter(b => b.paymentStatus === 'pending').length}
+                  {dayBookings.filter(b => b.paymentStatus === 'pending' && b.court?.centerId === centerId).length}
                 </div>
               </Button>
             } />
@@ -333,11 +335,14 @@ export function POSView({
                   </thead>
                   <tbody>
                     {(() => {
-                      const pending = dayBookings.filter(b => b.paymentStatus === 'pending');
-                      const paid = dayBookings.filter(b => b.paymentStatus === 'paid');
+                      const filteredBookings = dayBookings.filter(b => b.court?.centerId === centerId);
+                      const pending = filteredBookings.filter(b => b.paymentStatus === 'pending');
+                      const paid = filteredBookings.filter(b => b.paymentStatus === 'paid');
                       const last3Paid = paid.slice(-3).reverse();
                       const items = [...last3Paid, ...pending];
                       
+                      if (items.length === 0) return null;
+
                       return items.map((booking) => {
                         const isPaid = booking.paymentStatus === 'paid';
                       return (
@@ -399,7 +404,7 @@ export function POSView({
               
               <div className="p-4 bg-white border-t border-slate-200 shrink-0">
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">
-                  Total de operaciones: {dayBookings.length} • Pendientes: {dayBookings.filter(b => b.paymentStatus === 'pending').length}
+                  Operaciones en sucursal: {dayBookings.filter(b => b.court?.centerId === centerId).length} • Pendientes: {dayBookings.filter(b => b.paymentStatus === 'pending' && b.court?.centerId === centerId).length}
                 </p>
               </div>
             </SheetContent>
@@ -526,6 +531,22 @@ export function POSView({
                   placeholder={customerName}
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">Sucursal / Sede</label>
+              <Select value={centerId} onValueChange={(val) => setCenterId(val)}>
+                <SelectTrigger className="rounded-none border-slate-200 font-bold uppercase text-[10px] tracking-widest h-12 bg-slate-50/50">
+                  <SelectValue placeholder="Seleccionar Sucursal" />
+                </SelectTrigger>
+                <SelectContent className="rounded-none">
+                  {centers.map(c => (
+                    <SelectItem key={c.id} value={c.id} className="font-bold uppercase text-[10px] tracking-widest">
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-px bg-slate-200 border border-slate-200">

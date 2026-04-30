@@ -9,15 +9,20 @@ import {
   suppliers,
   members,
   products,
-  productBatches
+  productBatches,
+  tenants
 } from "@/db/schema";
 import { auth } from "@/auth";
 import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 export async function getPurchasesAction() {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const cookieStore = await cookies();
+  const activeCenterId = cookieStore.get("active_center_id")?.value || session.user.centerId;
 
   const userMember = await db.query.members.findFirst({
     where: eq(members.userId, session.user.id),
@@ -26,7 +31,10 @@ export async function getPurchasesAction() {
   if (!userMember) throw new Error("No tenant found");
 
   return await db.query.purchases.findMany({
-    where: eq(purchases.tenantId, userMember.tenantId),
+    where: and(
+      eq(purchases.tenantId, userMember.tenantId),
+      activeCenterId ? eq(purchases.centerId, activeCenterId) : sql`true`
+    ),
     with: {
       supplier: true,
       center: true,
@@ -58,12 +66,12 @@ export async function getSuppliersAction() {
 
 export async function addPurchaseAction(data: {
   supplierId?: string;
-  centerId: string;
+  centerId?: string; // Representativo, opcional ahora que hay distribución
   invoiceNumber?: string;
   notes?: string;
   items: {
     productId: string;
-    quantity: number;
+    distributions: { centerId: string; quantity: number }[];
     unitCost: number;
     expiryDate?: string;
     batchNumber?: string;
@@ -78,14 +86,28 @@ export async function addPurchaseAction(data: {
 
   if (!userMember) throw new Error("No tenant found");
 
-  // Calculate total
-  const total = data.items.reduce((acc, item) => acc + (item.quantity * item.unitCost), 0);
+  // Obtener configuración de flujo de la empresa
+  const tenant = await db.query.tenants.findFirst({
+    where: eq(tenants.id, userMember.tenantId),
+  });
+
+  if (!tenant) throw new Error("Empresa no encontrada");
+  const isDirectFlow = tenant.purchaseFlow === "direct";
+
+  // Calculate total across all distributions
+  const total = data.items.reduce((acc, item) => {
+    const itemTotalQty = item.distributions.reduce((sum, d) => sum + d.quantity, 0);
+    return acc + (itemTotalQty * item.unitCost);
+  }, 0);
+
+  const cookieStore = await cookies();
+  const activeCenterId = cookieStore.get("active_center_id")?.value;
 
   return await db.transaction(async (tx) => {
     // 1. Create Purchase
     const [newPurchase] = await tx.insert(purchases).values({
       tenantId: userMember.tenantId,
-      centerId: data.centerId,
+      centerId: data.centerId || activeCenterId || userMember.centerId || "", // Sede de referencia
       supplierId: data.supplierId || null,
       total,
       invoiceNumber: data.invoiceNumber,
@@ -93,60 +115,71 @@ export async function addPurchaseAction(data: {
     }).returning();
 
     for (const item of data.items) {
-      await tx.insert(purchaseItems).values({
-        purchaseId: newPurchase.id,
-        productId: item.productId,
-        quantity: item.quantity,
-        unitCost: item.unitCost,
-        subtotal: item.quantity * item.unitCost,
-        expiryDate: item.expiryDate ? new Date(item.expiryDate) : null,
-        batchNumber: item.batchNumber || null,
-      });
+      for (const dist of item.distributions) {
+        if (dist.quantity <= 0) continue;
 
-      // 3. Update Stock & Batches
-      if (item.expiryDate) {
-        await tx.insert(productBatches).values({
+        // 2. Create Purchase Item for this distribution
+        await tx.insert(purchaseItems).values({
+          purchaseId: newPurchase.id,
           productId: item.productId,
-          centerId: data.centerId,
-          tenantId: userMember.tenantId,
-          quantity: item.quantity,
-          expiryDate: new Date(item.expiryDate),
+          centerId: dist.centerId,
+          quantity: dist.quantity,
+          unitCost: item.unitCost,
+          subtotal: dist.quantity * item.unitCost,
+          expiryDate: item.expiryDate ? new Date(item.expiryDate) : null,
           batchNumber: item.batchNumber || null,
+          receivedQuantity: isDirectFlow ? dist.quantity : 0,
+          status: isDirectFlow ? "received" : "pending",
         });
+
+        // 3. Update Stock & Batches ONLY if direct flow
+        if (isDirectFlow) {
+          if (item.expiryDate) {
+            await tx.insert(productBatches).values({
+              productId: item.productId,
+              centerId: dist.centerId,
+              tenantId: userMember.tenantId,
+              quantity: dist.quantity,
+              expiryDate: new Date(item.expiryDate),
+              batchNumber: item.batchNumber || null,
+            });
+          }
+
+          const existingStock = await tx.query.productStock.findFirst({
+            where: and(
+              eq(productStock.productId, item.productId),
+              eq(productStock.centerId, dist.centerId)
+            ),
+          });
+
+          const previousStock = existingStock?.stock || 0;
+          const newStockValue = previousStock + dist.quantity;
+
+          if (existingStock) {
+            await tx.update(productStock)
+              .set({ stock: newStockValue, updatedAt: new Date() })
+              .where(eq(productStock.id, existingStock.id));
+          } else {
+            await tx.insert(productStock).values({
+              productId: item.productId,
+              centerId: dist.centerId,
+              stock: newStockValue,
+            });
+          }
+
+          // 4. Record Inventory Transaction for this center
+          await tx.insert(inventoryTransactions).values({
+            productId: item.productId,
+            centerId: dist.centerId,
+            userId: session.user.id,
+            type: "purchase",
+            quantity: dist.quantity,
+            reason: `Purchase ${newPurchase.invoiceNumber || newPurchase.id} (Distributed)`,
+          });
+        }
       }
-      const existingStock = await tx.query.productStock.findFirst({
-        where: and(
-          eq(productStock.productId, item.productId),
-          eq(productStock.centerId, data.centerId)
-        ),
-      });
 
-      const previousStock = existingStock?.stock || 0;
-      const newStockValue = previousStock + item.quantity;
-
-      if (existingStock) {
-        await tx.update(productStock)
-          .set({ stock: newStockValue, updatedAt: new Date() })
-          .where(eq(productStock.id, existingStock.id));
-      } else {
-        await tx.insert(productStock).values({
-          productId: item.productId,
-          centerId: data.centerId,
-          stock: newStockValue,
-        });
-      }
-
-      // 4. Record Inventory Transaction
-      await tx.insert(inventoryTransactions).values({
-        productId: item.productId,
-        centerId: data.centerId,
-        userId: session.user.id,
-        type: "purchase",
-        quantity: item.quantity,
-        reason: `Purchase ${newPurchase.invoiceNumber || newPurchase.id}`,
-      });
-
-      // 5. Update Product's buyPrice (optional but recommended)
+      // 5. Update Product's buyPrice (global reference)
       await tx.update(products)
         .set({ buyPrice: item.unitCost, updatedAt: new Date() })
         .where(eq(products.id, item.productId));
@@ -181,6 +214,9 @@ export async function getExpiringProductsAction() {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  const cookieStore = await cookies();
+  const activeCenterId = cookieStore.get("active_center_id")?.value || session.user.centerId;
+
   const userMember = await db.query.members.findFirst({
     where: eq(members.userId, session.user.id),
   });
@@ -193,6 +229,7 @@ export async function getExpiringProductsAction() {
   return await db.query.productBatches.findMany({
     where: and(
       eq(productBatches.tenantId, userMember.tenantId),
+      activeCenterId ? eq(productBatches.centerId, activeCenterId) : sql`true`,
       sql`${productBatches.expiryDate} <= ${thirtyDaysFromNow}`,
       sql`${productBatches.quantity} > 0`
     ),

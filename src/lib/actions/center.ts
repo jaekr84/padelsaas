@@ -45,6 +45,15 @@ export async function createCenterAction(data: { name: string }) {
   const session = await auth();
   if (!session?.user?.tenantId) throw new Error("Unauthorized");
 
+  // Limitar a un máximo de 5 sedes
+  const existingCenters = await db.query.centers.findMany({
+    where: eq(centers.tenantId, session.user.tenantId),
+  });
+
+  if (existingCenters.length >= 5) {
+    throw new Error("Límite de sedes alcanzado (Máximo 5). Contacte con soporte para ampliar su plan.");
+  }
+
   const newCenter = await db.insert(centers).values({
     tenantId: session.user.tenantId,
     name: data.name,

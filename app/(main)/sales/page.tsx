@@ -9,6 +9,7 @@ import { LucideHistory, LucideShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getTodayArgentina, parseArgentineDate } from "@/lib/date-utils";
+import { cookies } from "next/headers";
 
 export default async function SalesPage(props: {
   searchParams?: Promise<{ bookingId?: string; agendaDate?: string }>;
@@ -19,6 +20,9 @@ export default async function SalesPage(props: {
   const searchParams = await props.searchParams;
   const bookingId = searchParams?.bookingId;
   const agendaDate = searchParams?.agendaDate;
+
+  const cookieStore = await cookies();
+  const activeCenterId = cookieStore.get("active_center_id")?.value;
 
   const allProducts = await db.query.products.findMany({
     where: (products, { eq }) => eq(products.isActive, true),
@@ -99,6 +103,7 @@ export default async function SalesPage(props: {
             centers={allCenters}
             dayBookings={dayBookings}
             agendaDate={agendaDate || new Date().toISOString().split('T')[0]}
+            defaultCenterId={activeCenterId}
           />
         </Suspense>
       </div>

@@ -14,6 +14,7 @@ import {
   LucideShoppingBag 
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,9 @@ export default async function ReportsPage(props: {
   const searchParams = await props.searchParams;
   const session = await auth();
   if (!session) redirect("/sign-in");
+
+  const cookieStore = await cookies();
+  const activeCenterId = cookieStore.get("active_center_id")?.value;
 
   // Parámetros de búsqueda
   const period = (searchParams?.period as string) || "month";
@@ -47,10 +51,22 @@ export default async function ReportsPage(props: {
 
   // 1. Obtener datos con consultas planas (Estabilidad máxima)
   const [periodSales, allSaleItems, allCategories, periodPurchases] = await Promise.all([
-    db.select().from(sales).where(and(gte(sales.createdAt, startDate), lte(sales.createdAt, endDate))),
+    db.select().from(sales).where(
+      and(
+        activeCenterId ? eq(sales.centerId, activeCenterId) : sql`true`,
+        gte(sales.createdAt, startDate), 
+        lte(sales.createdAt, endDate)
+      )
+    ),
     db.select().from(saleItems),
     db.select().from(productCategories),
-    db.select().from(purchases).where(and(gte(purchases.createdAt, startDate), lte(purchases.createdAt, endDate)))
+    db.select().from(purchases).where(
+      and(
+        activeCenterId ? eq(purchases.centerId, activeCenterId) : sql`true`,
+        gte(purchases.createdAt, startDate), 
+        lte(purchases.createdAt, endDate)
+      )
+    )
   ]);
 
   // Mapeos rápidos para agregación
@@ -128,7 +144,12 @@ export default async function ReportsPage(props: {
   twelveMonthsAgo.setHours(0, 0, 0, 0);
 
   const yearSalesList = await db.select().from(sales)
-    .where(gte(sales.createdAt, twelveMonthsAgo))
+    .where(
+      and(
+        activeCenterId ? eq(sales.centerId, activeCenterId) : sql`true`,
+        gte(sales.createdAt, twelveMonthsAgo)
+      )
+    )
     .orderBy(desc(sales.createdAt));
 
   const monthlySummaryMap = new Map<string, number>();

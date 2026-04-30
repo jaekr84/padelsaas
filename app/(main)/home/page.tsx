@@ -17,10 +17,15 @@ import { db } from "@/db";
 import { bookings, sales, users, courts, customers } from "@/db/schema";
 import { count, sql, and, gte, lte, asc, desc } from "drizzle-orm";
 import { formatCurrency, formatTime } from "@/lib/formatters";
+import { cookies } from "next/headers";
+import { eq as schemaEq } from "drizzle-orm";
 
 export default async function HomePage() {
-  const session = await auth();
+   const session = await auth();
   const userName = session?.user?.name?.split(" ")[0] || "Administrador";
+
+  const cookieStore = await cookies();
+  const activeCenterId = cookieStore.get("active_center_id")?.value;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -33,6 +38,7 @@ export default async function HomePage() {
     .from(sales)
     .where(
       and(
+        activeCenterId ? schemaEq(sales.centerId, activeCenterId) : sql`true`,
         gte(sales.createdAt, today),
         lte(sales.createdAt, tomorrow)
       )
@@ -43,16 +49,40 @@ export default async function HomePage() {
   const [salesMonth] = await db
     .select({ total: sql<number>`COALESCE(sum(cast(${sales.total} as numeric)), 0)` })
     .from(sales)
-    .where(gte(sales.createdAt, firstDayOfMonth));
+    .where(
+      and(
+        activeCenterId ? schemaEq(sales.centerId, activeCenterId) : sql`true`,
+        gte(sales.createdAt, firstDayOfMonth)
+      )
+    );
 
   // 3. Clientes Registrados
   const [totalCustomers] = await db
     .select({ count: count() })
     .from(customers);
 
-  // 4. Próximos Partidos (Reservas que aún no terminaron)
+  // 4. Próximos Partidos (Filtrados por sede activa)
+  // Nota: Usamos una consulta join o subconsulta para filtrar por centerId a través de court
   const upcomingBookings = await db.query.bookings.findMany({
-    where: gte(bookings.endTime, new Date()),
+    where: (bookings, { gte, and, exists }) => {
+      const conditions = [gte(bookings.endTime, new Date())];
+      if (activeCenterId) {
+        // Filtramos que la cancha pertenezca a la sede
+        conditions.push(
+          exists(
+            db.select()
+              .from(courts)
+              .where(
+                and(
+                  schemaEq(courts.id, bookings.courtId),
+                  schemaEq(courts.centerId, activeCenterId)
+                )
+              )
+          )
+        );
+      }
+      return and(...conditions);
+    },
     with: {
       court: true,
       user: true,
@@ -61,14 +91,26 @@ export default async function HomePage() {
     limit: 6,
   });
 
-  // 5. Actividad Reciente (Últimas ventas)
+  // 5. Actividad Reciente (Últimas ventas de la sede)
   const recentSales = await db.query.sales.findMany({
+    where: activeCenterId ? schemaEq(sales.centerId, activeCenterId) : undefined,
     orderBy: [desc(sales.createdAt)],
     limit: 5,
     with: {
       center: true
     }
   });
+  
+  // 6. Calcular Ocupación Real (Hoy)
+  const [totalCourts] = await db
+    .select({ count: count() })
+    .from(courts)
+    .where(activeCenterId ? schemaEq(courts.centerId, activeCenterId) : undefined);
+  
+  const courtsCount = totalCourts.count || 1;
+  const totalSlots = courtsCount * 15; // Estimado
+  const occupancy = Math.round((salesToday.count / totalSlots) * 100);
+
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
       <div className="flex flex-col gap-1 border-b border-slate-200 pb-4">
@@ -86,7 +128,7 @@ export default async function HomePage() {
             { label: "Ventas Hoy", value: salesToday.count.toString(), icon: LucideShoppingCart, color: "text-blue-800" },
             { label: "Ingresos Mes", value: formatCurrency(salesMonth?.total || 0), icon: LucideTrendingUp, color: "text-slate-950" },
             { label: "Clientes Registrados", value: totalCustomers.count.toString(), icon: LucideUsers, color: "text-blue-900" },
-            { label: "Ocupación", value: "78%", icon: LucideTarget, color: "text-slate-800" },
+            { label: "Ocupación Hoy", value: `${occupancy}%`, icon: LucideTarget, color: "text-slate-800" },
           ].map((stat) => (
             <div key={stat.label} className="bg-white p-4 flex flex-col justify-between hover:bg-slate-50 transition-colors">
               <div className="flex items-center justify-between mb-3">
@@ -122,7 +164,7 @@ export default async function HomePage() {
                         Venta {sale.saleNumber}
                       </p>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        {sale.customerName} • {formatTime(sale.createdAt)}
+                        {sale.customerName} • {sale.center?.name || "Sede"} • {formatTime(sale.createdAt)}
                       </p>
                     </div>
                   </div>
