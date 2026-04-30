@@ -41,6 +41,10 @@ export async function POST(req: Request) {
         const bookingId = result.external_reference;
         const transactionAmount = result.transaction_amount;
         
+        if (transactionAmount === undefined) {
+          throw new Error("Transaction amount is missing");
+        }
+        
         if (bookingId) {
           const booking = await db.query.bookings.findFirst({
             where: eq(bookings.id, bookingId),

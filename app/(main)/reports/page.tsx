@@ -45,81 +45,81 @@ export default async function ReportsPage(props: {
     periodLabel = `Año ${selectedYear}`;
   }
 
-  // 1. Obtener ventas del periodo
-  const periodSales = await db.query.sales.findMany({
-    where: and(gte(sales.createdAt, startDate), lte(sales.createdAt, endDate)),
-    with: {
-      items: {
-        with: {
-          category: true,
-          product: true,
-        }
-      }
-    }
-  });
+  // 1. Obtener datos con consultas planas (Estabilidad máxima)
+  const [periodSales, allSaleItems, allCategories, periodPurchases] = await Promise.all([
+    db.select().from(sales).where(and(gte(sales.createdAt, startDate), lte(sales.createdAt, endDate))),
+    db.select().from(saleItems),
+    db.select().from(productCategories),
+    db.select().from(purchases).where(and(gte(purchases.createdAt, startDate), lte(purchases.createdAt, endDate)))
+  ]);
 
-  // 2. Obtener compras del periodo
-  const periodPurchases = await db.query.purchases.findMany({
-    where: and(gte(purchases.createdAt, startDate), lte(purchases.createdAt, endDate)),
-  });
+  // Mapeos rápidos para agregación
+  const categoryMap = new Map(allCategories.map(c => [c.id, c.name]));
+  const saleItemsBySaleId = allSaleItems.reduce((acc, item) => {
+    if (!item.saleId) return acc;
+    if (!acc[item.saleId]) acc[item.saleId] = [];
+    acc[item.saleId].push(item);
+    return acc;
+  }, {} as Record<string, typeof allSaleItems>);
 
-  // 3. Procesar datos para gráficos
+  // 2. Procesar datos para gráficos
   
   // A. Ventas por Categoría
   const salesByCategoryMap = new Map<string, number>();
   periodSales.forEach(sale => {
-    sale.items.forEach(item => {
-      const catName = item.category?.name || "Otros";
+    const items = saleItemsBySaleId[sale.id] || [];
+    items.forEach(item => {
+      const catName = categoryMap.get(item.categoryId!) || "Otros";
       const amount = Number(item.totalPrice) || 0;
       salesByCategoryMap.set(catName, (salesByCategoryMap.get(catName) || 0) + amount);
     });
   });
 
-  const categoryData = Array.from(salesByCategoryMap.entries()).map(([name, value]) => ({
-    name,
-    value
-  }));
+  const categoryData = Array.from(salesByCategoryMap.entries())
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
 
   // B. Ventas por Medio de Pago
   const salesByPaymentMap = new Map<string, number>();
   periodSales.forEach(sale => {
-    const method = sale.paymentMethod || "Otro";
+    const method = sale.paymentMethod || "Efectivo";
     const amount = Number(sale.total) || 0;
     salesByPaymentMap.set(method, (salesByPaymentMap.get(method) || 0) + amount);
   });
 
-  const paymentData = Array.from(salesByPaymentMap.entries()).map(([name, value]) => ({
-    name,
-    value
-  }));
+  const paymentData = Array.from(salesByPaymentMap.entries())
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
 
   // C. Tendencia de Ventas
   const trendDataMap = new Map<string, number>();
   
   if (period === "month") {
+    // Inicializar todos los días del mes
+    const daysInMonth = endDate.getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const label = d.toString().padStart(2, '0');
+      trendDataMap.set(label, 0);
+    }
+
     periodSales.forEach(sale => {
-      const date = sale.createdAt.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
-      trendDataMap.set(date, (trendDataMap.get(date) || 0) + Number(sale.total));
+      const day = sale.createdAt.getDate().toString().padStart(2, '0');
+      trendDataMap.set(day, (trendDataMap.get(day) || 0) + Number(sale.total));
     });
   } else {
     // Inicializar meses para reporte anual
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(startDate.getFullYear(), i, 1);
-      const label = d.toLocaleDateString('es-AR', { month: 'short' });
-      trendDataMap.set(label, 0);
-    }
+    const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    months.forEach(m => trendDataMap.set(m, 0));
+
     periodSales.forEach(sale => {
-      const label = sale.createdAt.toLocaleDateString('es-AR', { month: 'short' });
+      const monthIdx = sale.createdAt.getMonth();
+      const label = months[monthIdx];
       trendDataMap.set(label, (trendDataMap.get(label) || 0) + Number(sale.total));
     });
   }
 
   const trendData = Array.from(trendDataMap.entries())
-    .map(([date, amount]) => ({ date, amount }))
-    .sort((a, b) => {
-      if (period === "month") return a.date.localeCompare(b.date);
-      return 0; // El orden de inserción de meses ya es correcto
-    });
+    .map(([date, amount]) => ({ date, amount }));
 
   // D. Ventas de los últimos 12 meses
   const twelveMonthsAgo = new Date();
@@ -127,10 +127,9 @@ export default async function ReportsPage(props: {
   twelveMonthsAgo.setDate(1);
   twelveMonthsAgo.setHours(0, 0, 0, 0);
 
-  const yearSales = await db.query.sales.findMany({
-    where: gte(sales.createdAt, twelveMonthsAgo),
-    orderBy: [desc(sales.createdAt)]
-  });
+  const yearSalesList = await db.select().from(sales)
+    .where(gte(sales.createdAt, twelveMonthsAgo))
+    .orderBy(desc(sales.createdAt));
 
   const monthlySummaryMap = new Map<string, number>();
   for (let i = 0; i < 12; i++) {
@@ -140,7 +139,7 @@ export default async function ReportsPage(props: {
     monthlySummaryMap.set(label, 0);
   }
 
-  yearSales.forEach(sale => {
+  yearSalesList.forEach(sale => {
     const label = sale.createdAt.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' });
     if (monthlySummaryMap.has(label)) {
       monthlySummaryMap.set(label, (monthlySummaryMap.get(label) || 0) + Number(sale.total));
@@ -167,30 +166,30 @@ export default async function ReportsPage(props: {
         <ReportFilters />
       </div>
 
-      {/* Row 1: KPIs en Grilla Industrial */}
-      <div className="grid gap-px bg-slate-200 border border-slate-200">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-px">
-          {[
-            { label: "Ventas Totales", value: formatCurrency(totalSales), icon: LucideTrendingUp, color: "text-blue-800" },
-            { label: "Compras Stock", value: formatCurrency(totalPurchases), icon: LucideTrendingDown, color: "text-slate-900" },
-            { label: "Balance Neto", value: formatCurrency(netBalance), icon: LucideDollarSign, color: "text-blue-900" },
-            { label: "Ticket Promedio", value: formatCurrency(avgTicket), icon: LucideShoppingBag, color: "text-slate-950" },
-          ].map((kpi) => (
-            <div key={kpi.label} className="bg-white p-4 flex flex-col justify-between hover:bg-slate-50 transition-colors">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{kpi.label}</span>
+      {/* Row 1: KPIs en Grilla Industrial Refinada */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {[
+          { label: "Ventas Totales", value: formatCurrency(totalSales), icon: LucideTrendingUp, color: "text-blue-600", bg: "bg-blue-50" },
+          { label: "Compras Stock", value: formatCurrency(totalPurchases), icon: LucideTrendingDown, color: "text-slate-600", bg: "bg-slate-50" },
+          { label: "Balance Neto", value: formatCurrency(netBalance), icon: LucideDollarSign, color: "text-blue-700", bg: "bg-blue-50/50" },
+          { label: "Ticket Promedio", value: formatCurrency(avgTicket), icon: LucideShoppingBag, color: "text-slate-900", bg: "bg-slate-50" },
+        ].map((kpi) => (
+          <div key={kpi.label} className="bg-white p-6 border border-slate-200 flex flex-col justify-between hover:border-blue-200 transition-all group">
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-blue-600 transition-colors">{kpi.label}</span>
+              <div className={`${kpi.bg} p-2 rounded-none transition-transform group-hover:scale-110`}>
                 <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
               </div>
-              <div>
-                <div className="text-2xl font-bold tracking-tighter text-slate-950">{kpi.value}</div>
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="h-1 w-1 bg-blue-800" />
-                  <p className="text-[9px] font-bold text-slate-400 uppercase">Sincronizado</p>
-                </div>
+            </div>
+            <div>
+              <div className="text-2xl font-black tracking-tighter text-slate-950 tabular-nums">{kpi.value}</div>
+              <div className="mt-3 flex items-center gap-2">
+                <div className="h-1 w-1 rounded-full bg-blue-600 animate-pulse" />
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Sincronizado</p>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
       {/* Row 2 & 3: Charts (Client Component) */}
