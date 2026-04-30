@@ -3,11 +3,11 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
-import { 
-  LucideLayoutDashboard, 
-  LucideCalendar, 
-  LucideZap, 
-  LucideArrowRight, 
+import {
+  LucideLayoutDashboard,
+  LucideCalendar,
+  LucideZap,
+  LucideArrowRight,
   LucideCheckCircle2,
   LucideActivity,
   LucideLock,
@@ -46,7 +46,7 @@ export function LandingContent() {
               </div>
               <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-[0.85] text-slate-950">
                 Control <br />
-                <span className="text-blue-800 underline decoration-8 underline-offset-8">Mecanizado</span> <br />
+                <span className="text-blue-800 underline decoration-8 underline-offset-8">AUTOMATIZADO</span> <br />
                 de Canchas.
               </h1>
               <p className="max-w-xl text-xl font-medium text-slate-600 leading-relaxed">
@@ -61,28 +61,28 @@ export function LandingContent() {
                 </Link>
               </div>
             </div>
-            
+
             <div className="lg:col-span-5 relative">
               <div className="aspect-square bg-slate-100 border-4 border-slate-950 relative group overflow-hidden shadow-[12px_12px_0px_#003399]">
-                <img 
-                  src="/img/main.jpg" 
-                  alt="Padel Center" 
+                <img
+                  src="/img/main.jpg"
+                  alt="Padel Center"
                   className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 transition-all duration-700"
                 />
                 <div className="absolute inset-0 bg-blue-900/10 mix-blend-overlay group-hover:bg-transparent transition-all"></div>
-                
+
                 {/* Floating Stats UI */}
                 <div className="absolute top-8 left-8 p-6 bg-white border-2 border-slate-950 shadow-[6px_6px_0px_black] z-10">
-                   <div className="flex items-center gap-3 mb-2">
-                     <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sistema Online</span>
-                   </div>
-                   <div className="text-4xl font-black tabular-nums">0.2ms</div>
-                   <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Latencia de Red</span>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sistema Online</span>
+                  </div>
+                  <div className="text-4xl font-black tabular-nums">0.2ms</div>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Latencia de Red</span>
                 </div>
-                
+
                 <div className="absolute bottom-10 right-10 w-40 h-40 bg-blue-800 flex items-center justify-center border-4 border-white shadow-2xl z-10 animate-in fade-in zoom-in duration-1000">
-                   <LucideCalendar className="h-16 w-16 text-white" />
+                  <LucideCalendar className="h-16 w-16 text-white" />
                 </div>
               </div>
             </div>
@@ -93,7 +93,7 @@ export function LandingContent() {
       {/* Industrial Tape / Marquee */}
       <div className="bg-slate-950 py-5 overflow-hidden border-b-2 border-slate-950">
         <div className="flex whitespace-nowrap animate-marquee">
-          {[1,2,3,4].map((i) => (
+          {[1, 2, 3, 4].map((i) => (
             <div key={i} className="flex items-center gap-16 mx-12 text-white text-[11px] font-black uppercase tracking-[0.5em]">
               <span>Misión Crítica</span>
               <span className="text-blue-500">•</span>
@@ -126,27 +126,27 @@ export function LandingContent() {
                 Tu cliente recibe notificaciones automáticas de sus reservas, cambios de estado y recordatorios tácticos directamente en su terminal móvil. Sin intervención manual.
               </p>
               <div className="space-y-4">
-                 {[
-                   "Confirmación instantánea vía Push",
-                   "Recordatorios 1h antes del turno",
-                   "Gestión de lista de espera automática"
-                 ].map((item, i) => (
-                   <div key={i} className="flex items-center gap-4">
-                      <div className="h-6 w-6 bg-blue-800 text-white flex items-center justify-center">
-                         <LucideCheckCircle2 className="h-4 w-4" />
-                      </div>
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-950">{item}</span>
-                   </div>
-                 ))}
+                {[
+                  "Confirmación instantánea vía Push",
+                  "Recordatorios 1h antes del turno",
+                  "Gestión de lista de espera automática"
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <div className="h-6 w-6 bg-blue-800 text-white flex items-center justify-center">
+                      <LucideCheckCircle2 className="h-4 w-4" />
+                    </div>
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-950">{item}</span>
+                  </div>
+                ))}
               </div>
             </div>
-            
+
             <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
-               <PhoneSimulator />
+              <PhoneSimulator />
             </div>
           </div>
         </div>
-        
+
         {/* Background Decorative Grid */}
         <div className="absolute top-0 right-0 w-1/3 h-full bg-slate-50/50 -z-10 border-l border-slate-100"></div>
       </section>
@@ -156,18 +156,18 @@ export function LandingContent() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-4 border-slate-950">
             {[
-              { 
-                title: "Gestor Técnico", 
+              {
+                title: "Gestor Técnico",
                 desc: "Grilla de alta densidad con control de conflictos y bloqueos manuales.",
                 icon: LucideLayoutDashboard
               },
-              { 
-                title: "POS Mecanizado", 
+              {
+                title: "POS Mecanizado",
                 desc: "Venta de productos, alquiler de palas y gestión de inventario en tiempo real.",
                 icon: LucideZap
               },
-              { 
-                title: "Seguridad AES", 
+              {
+                title: "Seguridad AES",
                 desc: "Protocolos de encriptación de grado militar para transacciones y datos.",
                 icon: LucideLock
               }
@@ -188,23 +188,23 @@ export function LandingContent() {
 
       {/* CTA */}
       <section className="py-32 px-6 md:px-12 bg-blue-800 border-t-2 border-slate-950 text-white text-center relative overflow-hidden">
-         <div className="max-w-4xl mx-auto space-y-12 relative z-10">
-            <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-none">
-               Industrializa <br /> tu centro.
-            </h2>
-            <div className="flex flex-col sm:flex-row justify-center gap-8">
-               <Link href="/register" className="px-12 py-6 bg-white text-slate-950 font-black uppercase tracking-[0.2em] shadow-[10px_10px_0px_black] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
-                  Registrar Ahora
-               </Link>
-               <button 
-                onClick={handleDemoLogin}
-                disabled={isLoggingIn}
-                className="px-12 py-6 bg-slate-950 text-white font-black uppercase tracking-[0.2em] shadow-[10px_10px_0px_white] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
-               >
-                  {isLoggingIn ? "Cargando..." : "Acceso Terminal"}
-               </button>
-            </div>
-         </div>
+        <div className="max-w-4xl mx-auto space-y-12 relative z-10">
+          <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-none">
+            Industrializa <br /> tu centro.
+          </h2>
+          <div className="flex flex-col sm:flex-row justify-center gap-8">
+            <Link href="/register" className="px-12 py-6 bg-white text-slate-950 font-black uppercase tracking-[0.2em] shadow-[10px_10px_0px_black] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
+              Registrar Ahora
+            </Link>
+            <button
+              onClick={handleDemoLogin}
+              disabled={isLoggingIn}
+              className="px-12 py-6 bg-slate-950 text-white font-black uppercase tracking-[0.2em] shadow-[10px_10px_0px_white] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+            >
+              {isLoggingIn ? "Cargando..." : "Acceso Terminal"}
+            </button>
+          </div>
+        </div>
       </section>
 
       <style jsx global>{`

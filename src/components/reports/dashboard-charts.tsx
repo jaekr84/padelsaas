@@ -16,6 +16,8 @@ import {
   Legend
 } from "recharts";
 
+import React, { useState, useEffect } from "react";
+
 interface DashboardChartsProps {
   categoryData: { name: string, value: number }[];
   paymentData: { name: string, value: number }[];
@@ -27,6 +29,16 @@ interface DashboardChartsProps {
 const COLORS = ["#003399", "#000000", "#1e293b", "#334155", "#475569", "#64748b"];
 
 export function DashboardCharts({ categoryData, paymentData, trendData, yearData }: DashboardChartsProps) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return <div className="grid gap-px bg-slate-200 border border-slate-200 h-[800px] animate-pulse bg-slate-100" />;
+  }
+
   return (
     <div className="grid gap-px bg-slate-200 border border-slate-200 overflow-hidden">
       {/* Gráfico de Tendencia (Ancho) */}
@@ -35,8 +47,8 @@ export function DashboardCharts({ categoryData, paymentData, trendData, yearData
           <h3 className="text-xs font-bold uppercase tracking-widest text-slate-800">Tendencia de Ingresos</h3>
           <p className="text-[10px] font-mono text-slate-400 uppercase">Evolución de flujo de caja</p>
         </div>
-        <div className="h-[250px]">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="min-w-0">
+          <ResponsiveContainer width="100%" aspect={2.5} minWidth={0} minHeight={0}>
             <AreaChart data={trendData}>
               <CartesianGrid strokeDasharray="0" vertical={false} stroke="#f1f5f9" />
               <XAxis 
@@ -81,8 +93,8 @@ export function DashboardCharts({ categoryData, paymentData, trendData, yearData
           <div className="flex flex-col gap-1 mb-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-800">Distribución de Inventario</h3>
           </div>
-          <div className="h-[250px] flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="flex items-center justify-center min-w-0">
+            <ResponsiveContainer width="100%" aspect={1} minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
                   data={categoryData}
@@ -117,8 +129,8 @@ export function DashboardCharts({ categoryData, paymentData, trendData, yearData
           <div className="flex flex-col gap-1 mb-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-800">Métodos de Recaudación</h3>
           </div>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="min-w-0">
+            <ResponsiveContainer width="100%" aspect={2} minWidth={0} minHeight={0}>
               <BarChart data={paymentData}>
                 <CartesianGrid strokeDasharray="0" vertical={false} stroke="#f1f5f9" />
                 <XAxis 
@@ -161,8 +173,8 @@ export function DashboardCharts({ categoryData, paymentData, trendData, yearData
         <div className="flex flex-col gap-1 mb-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-slate-800">Histórico de Ventas (Anual)</h3>
         </div>
-        <div className="h-[250px]">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="min-w-0">
+          <ResponsiveContainer width="100%" aspect={3} minWidth={0} minHeight={0}>
             <BarChart data={yearData}>
               <CartesianGrid strokeDasharray="0" vertical={false} stroke="#f1f5f9" />
               <XAxis 

@@ -24,6 +24,9 @@ export const users = pgTable("user", {
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   password: text("password"),
   image: text("image"),
+  phone: text("phone"),
+  dni: text("dni"),
+  padelLevel: text("padel_level"),
 });
 
 export const accounts = pgTable(
@@ -111,6 +114,7 @@ export const courts = pgTable("court", {
     .notNull()
     .references(() => centers.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  type: text("type").default("padel"),
   surface: text("surface").notNull().default("Césped Sintético"),
   isPanoramic: boolean("is_panoramic").default(false).notNull(),
   hasLighting: boolean("has_lighting").default(true).notNull(),
@@ -129,6 +133,7 @@ export const bookings = pgTable("booking", {
     .references(() => customers.id, { onDelete: "set null" }),
   guestName: text("guest_name"),
   price: integer("price"),
+  type: text("type").default("regular"),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time").notNull(),
   status: text("status").notNull().default("pending"), // pending, confirmed, cancelled

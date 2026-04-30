@@ -1,6 +1,6 @@
 import React from "react";
 import { getPlayerBookingsAction } from "@/lib/actions/public-booking";
-import { auth } from "@/auth";
+import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
 import {
    LucideCalendar,
@@ -45,15 +45,28 @@ export default async function ProfilePage() {
          <main className="max-w-5xl mx-auto px-6 py-12 space-y-12">
             {/* Profile Header */}
             <div className="bg-white border-2 border-slate-950 p-10 flex flex-col md:flex-row gap-10 items-center">
-               <div className="h-24 w-24 bg-slate-950 flex items-center justify-center text-white text-4xl font-black">
+               <div className="h-24 w-24 bg-slate-950 flex items-center justify-center text-white text-4xl font-black shrink-0">
                   {session.user?.name?.[0]}
                </div>
                <div className="space-y-4 flex-1 text-center md:text-left">
                   <div className="flex items-center justify-center md:justify-start gap-2">
                      <div className="w-2 h-6 bg-blue-800" />
-                     <h1 className="text-3xl font-black uppercase tracking-tighter">Mi Perfil</h1>
+                     <h1 className="text-3xl font-black uppercase tracking-tighter">{session.user?.name || "Mi Perfil"}</h1>
                   </div>
                   <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">{session.user?.email}</p>
+               </div>
+               <div className="flex flex-col gap-3 w-full md:w-auto">
+                  <Link href="/profile/edit" className="flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-slate-950 text-slate-950 font-black uppercase tracking-widest text-[10px] hover:bg-slate-50 transition-colors">
+                     <LucideUser className="h-4 w-4" /> Editar Datos
+                  </Link>
+                  <form action={async () => {
+                     "use server";
+                     await signOut({ redirectTo: "/login" });
+                  }}>
+                     <button type="submit" className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-red-600 border-2 border-red-600 text-white font-black uppercase tracking-widest text-[10px] hover:bg-red-700 hover:border-red-700 transition-colors">
+                        <LucideActivity className="h-4 w-4" /> Cerrar Sesión
+                     </button>
+                  </form>
                </div>
             </div>
 
