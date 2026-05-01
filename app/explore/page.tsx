@@ -26,9 +26,15 @@ interface ExplorePageProps {
   }>;
 }
 
+import { cn } from "@/lib/utils";
+
 const SportIcon = ({ type, className }: { type: string, className?: string }) => {
   const sport = getSportByValue(type);
-  return <sport.icon className={className} />;
+  return (
+    <span className={cn("material-symbols-outlined shrink-0", className)} style={{ fontSize: 'inherit' }}>
+      {sport.icon}
+    </span>
+  );
 };
 
 export default async function ExplorePage({ searchParams }: ExplorePageProps) {
@@ -107,16 +113,16 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
       </header>
 
       {/* Content Section */}
-      <main className="max-w-[1400px] mx-auto px-4 md:px-6 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      <main className="max-w-[1600px] mx-auto px-4 md:px-6 py-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
           {allCourts.map((court) => {
             const center = court.center;
-            const sportType = court.type?.toUpperCase();
+            const sportType = (court.type || "padel").toUpperCase();
             
             return (
               <div 
                 key={court.id} 
-                className="group relative flex flex-col bg-white border border-slate-200 transition-all hover:border-blue-500 hover:shadow-[0_10px_30px_rgba(0,51,153,0.05)]"
+                className="group relative flex flex-col bg-white border border-slate-200 transition-all hover:border-blue-500 hover:shadow-[0_20px_40px_rgba(0,51,153,0.08)]"
               >
                 <Link href={`/centers/${center.id}?courtId=${court.id}`} className="absolute inset-0 z-0" aria-label={`Ver detalles de ${center.name}`} />
                 
@@ -129,19 +135,19 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
                       className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" 
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-100">
-                      <LucideBox className="h-8 w-8" />
+                    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300">
+                      <SportIcon type={court.type} className="text-5xl opacity-20" />
                     </div>
                   )}
                   
                   {/* Badge de Deporte */}
-                  <div className="absolute bottom-2 left-2 flex flex-wrap gap-1">
-                    <div className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-950/80 backdrop-blur-sm text-white text-[7px] font-black uppercase tracking-widest border border-slate-700">
-                      <SportIcon type={sportType} className="h-2 w-2" />
+                  <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5">
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-950/90 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest border border-slate-700 shadow-xl">
+                      <SportIcon type={court.type} className="text-[12px]" />
                       <span>{sportType}</span>
                     </div>
                     {court.isPanoramic && (
-                      <div className="px-1.5 py-0.5 bg-blue-600/90 backdrop-blur-sm text-white text-[7px] font-black uppercase tracking-widest border border-blue-500">
+                      <div className="px-2 py-1 bg-blue-600/90 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest border border-blue-500 shadow-xl">
                         Panorámica
                       </div>
                     )}
@@ -149,28 +155,28 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
                 </div>
                 
                 {/* Compact Card Body */}
-                <div className="p-4 space-y-3">
-                  <div className="space-y-0.5">
-                    <span className="text-[7px] font-black uppercase tracking-[0.2em] text-blue-600 block">
+                <div className="p-5 space-y-4">
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-600 block">
                       {center.tenant?.name || "CLUB ASOCIADO"}
                     </span>
-                    <h3 className="text-xs font-black uppercase tracking-tight text-slate-900 truncate">
+                    <h3 className="text-sm font-black uppercase tracking-tight text-slate-900 truncate leading-tight">
                       {court.name} - {center.name}
                     </h3>
-                    <div className="flex items-center gap-1 text-slate-400">
-                      <LucideMapPin className="h-2 w-2" />
-                      <span className="text-[7px] font-bold uppercase tracking-widest">
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <LucideMapPin className="h-3 w-3" />
+                      <span className="text-[9px] font-bold uppercase tracking-widest">
                         {center.city}, {center.state}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-50 relative z-10 pointer-events-none">
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 relative z-10 pointer-events-none">
                      <div className="flex flex-col">
-                        <span className="text-[6px] font-black uppercase text-slate-400 tracking-widest leading-none">Horario Centro</span>
-                        <span className="text-[8px] font-black text-slate-700 tabular-nums">{center.openTime} - {center.closeTime}</span>
+                        <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Horario Centro</span>
+                        <span className="text-[11px] font-black text-slate-700 tabular-nums">{center.openTime} - {center.closeTime}</span>
                      </div>
-                     <LucideArrowRight className="h-2.5 w-2.5 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
+                     <LucideArrowRight className="h-4 w-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
                   </div>
                 </div>
               </div>
@@ -180,11 +186,13 @@ export default async function ExplorePage({ searchParams }: ExplorePageProps) {
 
         {/* Empty State */}
         {allCourts.length === 0 && (
-          <div className="py-20 text-center space-y-4 border border-dashed border-slate-200">
-             <LucideSearch className="h-8 w-8 mx-auto text-slate-100" />
-             <div className="space-y-1">
-                <h3 className="text-xs font-black uppercase tracking-widest text-slate-300">Cero Resultados</h3>
-                <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-slate-400">Reajuste parámetros</p>
+          <div className="py-24 text-center space-y-6 border-2 border-dashed border-slate-200 bg-slate-50/50">
+             <div className="h-16 w-16 bg-slate-100 flex items-center justify-center mx-auto rounded-full">
+                <LucideSearch className="h-8 w-8 text-slate-300" />
+             </div>
+             <div className="space-y-2">
+                <h3 className="text-base font-black uppercase tracking-widest text-slate-400">Cero Resultados Encontrados</h3>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Pruebe ajustando los filtros de búsqueda</p>
              </div>
           </div>
         )}

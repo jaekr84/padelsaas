@@ -68,21 +68,21 @@ const IndustrialSelect = ({
           className="bg-slate-900 border border-slate-700 rounded-none shadow-xl p-0 overflow-hidden z-[100]"
           sideOffset={2}
         >
-          <SelectItem 
-            value="all" 
-            className="py-2 px-3 font-black uppercase tracking-widest text-[8px] text-slate-400 border-b border-slate-800 last:border-0 hover:bg-slate-800 focus:bg-blue-900/30 focus:text-blue-400 transition-colors cursor-pointer outline-none"
-          >
-            {placeholder}
-          </SelectItem>
-          {options.map((opt) => (
             <SelectItem 
-              key={opt} 
-              value={opt}
-              className="py-2 px-3 font-black uppercase tracking-widest text-[8px] text-slate-400 border-b border-slate-800 last:border-0 hover:bg-slate-800 focus:bg-blue-900/30 focus:text-blue-400 transition-colors cursor-pointer outline-none"
+              value="all" 
+              className="py-2.5 px-3 font-black uppercase tracking-widest text-[8px] text-slate-400 border-b border-slate-800 last:border-0 data-[highlighted]:bg-blue-600 data-[highlighted]:!text-white transition-colors cursor-pointer outline-none"
             >
-              {opt.toUpperCase()}
+              {placeholder}
             </SelectItem>
-          ))}
+            {options.map((opt) => (
+              <SelectItem 
+                key={opt} 
+                value={opt}
+                className="py-2.5 px-3 font-black uppercase tracking-widest text-[8px] text-slate-400 border-b border-slate-800 last:border-0 data-[highlighted]:bg-blue-600 data-[highlighted]:!text-white transition-colors cursor-pointer outline-none"
+              >
+                {opt.toUpperCase()}
+              </SelectItem>
+            ))}
         </SelectContent>
       </Select>
     </div>

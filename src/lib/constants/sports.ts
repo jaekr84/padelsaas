@@ -1,17 +1,8 @@
-import { 
-  LucideTarget, 
-  LucideActivity, 
-  LucideTrophy, 
-  LucideZap,
-  LucideSun,
-  LucideDumbbell
-} from "lucide-react";
-
 export const SPORTS = [
   { 
     value: "padel", 
     label: "Pádel", 
-    icon: LucideTarget,
+    icon: "padel",
     color: "blue",
     bg: "bg-blue-50",
     border: "border-blue-200",
@@ -20,7 +11,7 @@ export const SPORTS = [
   { 
     value: "tenis", 
     label: "Tenis", 
-    icon: LucideActivity,
+    icon: "sports_tennis",
     color: "emerald",
     bg: "bg-emerald-50",
     border: "border-emerald-200",
@@ -29,7 +20,7 @@ export const SPORTS = [
   { 
     value: "futbol", 
     label: "Fútbol", 
-    icon: LucideTrophy,
+    icon: "sports_soccer",
     color: "amber",
     bg: "bg-amber-50",
     border: "border-amber-200",
@@ -38,7 +29,7 @@ export const SPORTS = [
   { 
     value: "squash", 
     label: "Squash", 
-    icon: LucideTarget,
+    icon: "sports_tennis",
     color: "slate",
     bg: "bg-slate-50",
     border: "border-slate-200",
@@ -47,7 +38,7 @@ export const SPORTS = [
   { 
     value: "pickleball", 
     label: "Pickleball", 
-    icon: LucideZap,
+    icon: "sports_tennis",
     color: "purple",
     bg: "bg-purple-50",
     border: "border-purple-200",
@@ -56,7 +47,7 @@ export const SPORTS = [
   { 
     value: "voley", 
     label: "Vóley", 
-    icon: LucideSun,
+    icon: "sports_volleyball",
     color: "orange",
     bg: "bg-orange-50",
     border: "border-orange-200",
@@ -65,7 +56,7 @@ export const SPORTS = [
   { 
     value: "basquet", 
     label: "Básquet", 
-    icon: LucideTrophy,
+    icon: "sports_basketball",
     color: "red",
     bg: "bg-red-50",
     border: "border-red-200",
@@ -74,7 +65,7 @@ export const SPORTS = [
   { 
     value: "handball", 
     label: "Handball", 
-    icon: LucideActivity,
+    icon: "sports_handball",
     color: "cyan",
     bg: "bg-cyan-50",
     border: "border-cyan-200",
@@ -83,7 +74,7 @@ export const SPORTS = [
   { 
     value: "hockey", 
     label: "Hockey", 
-    icon: LucideActivity,
+    icon: "sports_hockey",
     color: "lime",
     bg: "bg-lime-50",
     border: "border-lime-200",
@@ -92,7 +83,7 @@ export const SPORTS = [
   { 
     value: "hockey_hielo", 
     label: "Hockey sobre Hielo", 
-    icon: LucideZap,
+    icon: "ice_skating",
     color: "sky",
     bg: "bg-sky-50",
     border: "border-sky-200",
@@ -106,3 +97,4 @@ export const getSportByValue = (value: string | null) => {
   const normalized = value?.toLowerCase();
   return SPORTS.find(s => s.value === normalized) || SPORTS[0]; // Default to Padel
 };
+

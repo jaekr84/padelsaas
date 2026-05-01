@@ -158,7 +158,9 @@ export function CourtEditor({ initialCourts, centerId, onCourtsChange }: {
                       {SPORTS.map((sport) => (
                         <SelectItem key={sport.value} value={sport.value} className="text-[10px] font-black uppercase tracking-widest py-3">
                           <div className="flex items-center gap-2">
-                            <sport.icon className="h-3 w-3" />
+                            <span className="material-symbols-outlined text-[14px]">
+                              {sport.icon}
+                            </span>
                             {sport.label}
                           </div>
                         </SelectItem>

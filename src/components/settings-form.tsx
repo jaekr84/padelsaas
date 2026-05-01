@@ -43,8 +43,10 @@ import {
   LucidePhone,
   LucideGlobe,
   LucideCoffee,
-  LucideCreditCard
+  LucideCreditCard,
+  LucideImage
 } from "lucide-react";
+
 import { capitalize } from "@/lib/formatters";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -87,6 +89,7 @@ const formSchema = z.object({
   openTime: z.string(),
   closeTime: z.string(),
   defaultPrice30: z.coerce.number().min(0),
+  logoUrl: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -124,6 +127,7 @@ export function SettingsForm({
       phone: "",
       whatsapp: "",
       website: "",
+      logoUrl: "",
       amenities: {
         hasBar: false,
         hasGrill: false,
@@ -172,6 +176,7 @@ export function SettingsForm({
         phone: activeCenter.phone || "",
         whatsapp: activeCenter.whatsapp || "",
         website: activeCenter.website || "",
+        logoUrl: activeCenter.logoUrl || "",
         openTime: activeCenter.openTime || "08:00",
         closeTime: activeCenter.closeTime || "23:00",
         amenities: {
@@ -189,6 +194,7 @@ export function SettingsForm({
       setSchedules(activeCenter.pricingSchedules || []);
     }
   }, [activeCenter, centerForm]);
+
 
   const handleCreateSede = async () => {
     if (centers.length >= 5) {
@@ -635,6 +641,37 @@ export function SettingsForm({
                         </FormItem>
                       )}
                     />
+
+                    <FormField
+                      control={centerForm.control}
+                      name="logoUrl"
+                      render={({ field }) => (
+                        <FormItem className="space-y-4">
+                          <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-500">Foto / Logo del Club</FormLabel>
+                          <div className="flex items-start gap-4">
+                            <div className="h-20 w-20 border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden">
+                              {field.value ? (
+                                <img src={field.value} alt="Club logo preview" className="h-full w-full object-cover" />
+                              ) : (
+                                <LucideImage className="h-6 w-6 text-slate-300" />
+                              )}
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <FormControl>
+                                <Input 
+                                  placeholder="HTTPS://IMAGEN.COM/FOTO.JPG" 
+                                  {...field} 
+                                  className="h-10 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-mono text-[10px]" 
+                                />
+                              </FormControl>
+                              <p className="text-[9px] font-medium text-slate-400 italic leading-tight">Proporciona una URL directa de la imagen (JPG, PNG). Esta foto se mostrará en los resultados de búsqueda pública.</p>
+                            </div>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                   </div>
 
                   {/* Gestión Individual de Canchas */}

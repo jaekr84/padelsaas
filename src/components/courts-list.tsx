@@ -316,7 +316,9 @@ export function CourtsList({
                   : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50"
               )}
             >
-              <sport.icon className="h-3 w-3" />
+              <span className="material-symbols-outlined text-[14px] shrink-0">
+                {sport.icon}
+              </span>
               {sport.label}
             </button>
           );
@@ -401,7 +403,9 @@ export function CourtsList({
                                 sport.text
                               )}
                             >
-                              <sport.icon className="h-2 w-2" /> {sport.label}
+                              <span className="material-symbols-outlined text-[10px] shrink-0">
+                                  {sport.icon}
+                              </span> {sport.label}
                             </Badge>
                           );
                         })()}
