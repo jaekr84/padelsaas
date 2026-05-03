@@ -48,15 +48,15 @@ import { ManualReservationSheet } from "./manual-reservation-sheet";
 import { Button } from "./ui/button";
 
 const navItems = [
-  { title: "Home", icon: LucideHome, href: "/home" },
+  { title: "Home", icon: LucideHome, href: "/home", mostrador: true },
   { title: "Reportes", icon: LucideLayoutDashboard, href: "/reports" },
-  { title: "Punto de Venta", icon: LucideScanBarcode, href: "/sales" },
-  { title: "Lista de Reservas", icon: LucideCalendar, href: "/bookings" },
-  { title: "Reservas Fijas", icon: LucideRepeat, href: "/fixed-reservations" },
-  { title: "Reservas Simples", icon: LucideDumbbell, href: "/courts" },
+  { title: "Punto de Venta", icon: LucideScanBarcode, href: "/sales", mostrador: true },
+  { title: "Lista de Reservas", icon: LucideCalendar, href: "/bookings", mostrador: true },
+  { title: "Reservas Fijas", icon: LucideRepeat, href: "/fixed-reservations", mostrador: true },
+  { title: "Reservas Simples", icon: LucideDumbbell, href: "/courts", mostrador: true },
   { title: "Clientes (CRM)", icon: LucideUsers, href: "/customers" },
-  { title: "Kiosco / Stock", icon: LucidePackage, href: "/inventory" },
-  { title: "Recepción Stock", icon: LucideTruck, href: "/inventory/reception" },
+  { title: "Stock", icon: LucidePackage, href: "/inventory" },
+  { title: "Recepción Stock", icon: LucideTruck, href: "/inventory/reception", mostrador: true },
   { title: "Compras", icon: LucideShoppingCart, href: "/purchases" },
   { title: "Usuarios", icon: LucideUsers, href: "/users", adminOnly: true },
   { title: "Configuración", icon: LucideSettings, href: "/settings", adminOnly: true },
@@ -70,7 +70,9 @@ export function AppSidebar() {
   const [activeCenter, setActiveCenter] = useState<any>(null);
   const [isResModalOpen, setIsResModalOpen] = useState(false);
 
-  const isAdmin = session?.user?.role === "admin";
+  const role = session?.user?.role;
+  const isAdmin = role === "admin";
+  const isMostrador = role === "mostrador";
   const activeCenterId = activeCenter?.id;
 
   useEffect(() => {
@@ -109,7 +111,11 @@ export function AppSidebar() {
     }
   }, [activeCenterId]);
 
-  const filteredItems = navItems.filter(item => !item.adminOnly || isAdmin);
+  const filteredItems = navItems.filter(item => {
+    if (isAdmin) return true;
+    if (isMostrador) return item.mostrador;
+    return !item.adminOnly;
+  });
 
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r border-slate-200 shadow-none bg-white">
