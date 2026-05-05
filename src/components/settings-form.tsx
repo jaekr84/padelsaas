@@ -55,6 +55,7 @@ import { PricingCanvas } from "./pricing-canvas";
 import { POSSettings } from "./settings/pos-settings";
 import { updateMercadoPagoSettingsAction } from "@/lib/actions/tenant";
 import { CourtEditor } from "./settings/court-editor";
+import { ProvinceSelect, LocalitySelect } from "./georef/georef-selects";
 
 const companySchema = z.object({
   id: z.string(),
@@ -162,6 +163,7 @@ export function SettingsForm({
   const watchBasePrice = centerForm.watch("defaultPrice30");
   const watchOpenTime = centerForm.watch("openTime");
   const watchCloseTime = centerForm.watch("closeTime");
+  const watchState = centerForm.watch("state");
 
   useEffect(() => {
     if (activeCenter) {
@@ -729,12 +731,18 @@ export function SettingsForm({
                   <div className="grid grid-cols-2 gap-6">
                     <FormField
                       control={centerForm.control}
-                      name="city"
+                      name="state"
                       render={({ field }) => (
                         <FormItem className="space-y-2">
-                          <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-500">Localidad</FormLabel>
+                          <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-500">Provincia</FormLabel>
                           <FormControl>
-                            <Input placeholder="CIUDAD" {...field} className="h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-bold uppercase text-xs" />
+                            <ProvinceSelect 
+                              value={field.value} 
+                              onChange={(val) => {
+                                field.onChange(val);
+                                centerForm.setValue("city", ""); // Reset city when province changes
+                              }} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -742,12 +750,16 @@ export function SettingsForm({
                     />
                     <FormField
                       control={centerForm.control}
-                      name="state"
+                      name="city"
                       render={({ field }) => (
                         <FormItem className="space-y-2">
-                          <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-500">Provincia</FormLabel>
+                          <FormLabel className="text-[9px] font-black uppercase tracking-widest text-slate-500">Localidad</FormLabel>
                           <FormControl>
-                            <Input placeholder="ESTADO" {...field} className="h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-bold uppercase text-xs" />
+                            <LocalitySelect 
+                              value={field.value} 
+                              onChange={field.onChange} 
+                              provinceName={watchState} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

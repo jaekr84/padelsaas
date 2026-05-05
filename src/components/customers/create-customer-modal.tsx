@@ -23,8 +23,10 @@ import {
   LucideTag,
   LucideFileText,
   LucideShieldCheck,
-  LucideX
+  LucideX,
+  LucideMapPin
 } from "lucide-react";
+import { ProvinceSelect, LocalitySelect } from "../georef/georef-selects";
 import { createCustomerAction } from "@/lib/actions/customer";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -32,6 +34,8 @@ import { cn } from "@/lib/utils";
 export function CreateCustomerModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -48,6 +52,9 @@ export function CreateCustomerModal() {
       padelLevel: formData.get("padelLevel") as string,
       category: formData.get("category") as string,
       notes: formData.get("notes") as string,
+      state: selectedProvince,
+      city: selectedCity,
+      address: formData.get("address") as string,
     };
 
     try {
@@ -160,6 +167,35 @@ export function CreateCustomerModal() {
               <div className="relative">
                 <LucideTag className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input name="category" className="pl-12 h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-bold uppercase text-xs" defaultValue="FRECUENTE" />
+              </div>
+            </div>
+
+            {/* Ubicación */}
+            <div className="space-y-2">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Provincia</Label>
+              <ProvinceSelect 
+                value={selectedProvince} 
+                onChange={(val) => {
+                  setSelectedProvince(val);
+                  setSelectedCity("");
+                }} 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Localidad</Label>
+              <LocalitySelect 
+                value={selectedCity} 
+                onChange={setSelectedCity} 
+                provinceName={selectedProvince} 
+              />
+            </div>
+
+            <div className="space-y-2 col-span-2">
+              <Label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Dirección / Domicilio</Label>
+              <div className="relative">
+                <LucideMapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input name="address" className="pl-12 h-12 bg-slate-50 border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-blue-800 transition-all font-bold uppercase text-xs" placeholder="DIRECCIÓN" />
               </div>
             </div>
 

@@ -6,7 +6,14 @@ import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 
-export async function updateProfileAction(data: { name: string; phone?: string; dni?: string; padelLevel?: string }) {
+export async function updateProfileAction(data: { 
+  name: string; 
+  phone?: string; 
+  dni?: string; 
+  padelLevel?: string;
+  city?: string;
+  state?: string;
+}) {
   const session = await auth();
   if (!session?.user?.id) {
     return { success: false, error: "No autorizado" };
@@ -22,7 +29,9 @@ export async function updateProfileAction(data: { name: string; phone?: string; 
         name: data.name,
         phone: data.phone || null,
         dni: data.dni || null,
-        padelLevel: data.padelLevel || null
+        padelLevel: data.padelLevel || null,
+        city: data.city || null,
+        state: data.state || null
       })
       .where(eq(users.id, session.user.id));
       
@@ -49,6 +58,8 @@ export async function getProfileAction() {
         phone: true,
         dni: true,
         padelLevel: true,
+        city: true,
+        state: true,
       }
     });
     

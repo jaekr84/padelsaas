@@ -6,6 +6,7 @@ import { LucideArrowLeft, LucideUser, LucideBox, LucidePhone, LucideCreditCard, 
 import Link from "next/link";
 import { updateProfileAction, getProfileAction, changePasswordAction } from "@/lib/actions/profile";
 import { useSession } from "next-auth/react";
+import { ProvinceSelect, LocalitySelect } from "@/components/georef/georef-selects";
 
 export default function EditProfilePage() {
    const { data: session, status, update } = useSession();
@@ -15,6 +16,8 @@ export default function EditProfilePage() {
    const [phone, setPhone] = useState("");
    const [dni, setDni] = useState("");
    const [padelLevel, setPadelLevel] = useState("");
+   const [city, setCity] = useState("");
+   const [state, setState] = useState("");
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [error, setError] = useState("");
    const [isFetching, setIsFetching] = useState(true);
@@ -35,6 +38,8 @@ export default function EditProfilePage() {
             setPhone(result.data.phone || "");
             setDni(result.data.dni || "");
             setPadelLevel(result.data.padelLevel || "");
+            setCity(result.data.city || "");
+            setState(result.data.state || "");
          }
          setIsFetching(false);
       };
@@ -60,7 +65,7 @@ export default function EditProfilePage() {
       setIsSubmitting(true);
       setError("");
 
-      const result = await updateProfileAction({ name, phone, dni, padelLevel });
+      const result = await updateProfileAction({ name, phone, dni, padelLevel, city, state });
 
       if (result.success) {
          await update({ name }); // Update session
@@ -206,6 +211,30 @@ export default function EditProfilePage() {
                                  placeholder="Ej: 5.5"
                               />
                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                              Provincia
+                           </label>
+                           <ProvinceSelect 
+                              value={state} 
+                              onChange={(val) => {
+                                 setState(val);
+                                 setCity("");
+                              }} 
+                           />
+                        </div>
+
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                              Localidad
+                           </label>
+                           <LocalitySelect 
+                              value={city} 
+                              onChange={setCity} 
+                              provinceName={state} 
+                           />
                         </div>
                      </div>
 

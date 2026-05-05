@@ -124,6 +124,9 @@ export async function createCustomerAction(data: {
   category?: string;
   padelLevel?: string;
   notes?: string;
+  city?: string;
+  state?: string;
+  address?: string;
 }) {
   try {
     const session = await auth();
@@ -157,6 +160,9 @@ export async function createCustomerAction(data: {
       category: data.category || "Frecuente",
       padelLevel: data.padelLevel,
       notes: data.notes,
+      city: data.city,
+      state: data.state,
+      address: data.address,
     });
 
     revalidatePath("/customers");

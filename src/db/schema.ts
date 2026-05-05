@@ -27,6 +27,8 @@ export const users = pgTable("user", {
   phone: text("phone"),
   dni: text("dni"),
   padelLevel: text("padel_level"),
+  city: text("city"),
+  state: text("state"),
 });
 
 export const accounts = pgTable(
@@ -199,6 +201,8 @@ export const suppliers = pgTable("supplier", {
   phone: text("phone"),
   email: text("email"),
   address: text("address"),
+  city: text("city"),
+  state: text("state"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -283,6 +287,9 @@ export const customers = pgTable("customer", {
   category: text("category").default("Frecuente"), // Frecuente, VIP, Ocasional, etc.
   padelLevel: text("padel_level"), // 1.0 a 7.0 o 7ma, 6ta...
   notes: text("notes"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
   balance: decimal("balance", { precision: 10, scale: 2 }).default("0"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
