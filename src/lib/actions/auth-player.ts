@@ -68,6 +68,7 @@ export async function registerAction(data: {
 export async function getLandingPageAction() {
   const { auth } = await import("@/auth");
   const session = await auth();
+  console.log("[LANDING] Session check:", !!session, session?.user?.email);
 
   if (!session) return "/landing";
 

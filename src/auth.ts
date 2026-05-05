@@ -51,15 +51,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        // Fetch membership details on first sign in
+        console.log("[AUTH] New sign in, fetching membership for user:", user.email);
         const membership = await db.query.members.findFirst({
           where: (members, { eq }) => eq(members.userId, user.id as string),
         });
 
         if (membership) {
+          console.log("[AUTH] Membership found:", membership.role, "for tenant:", membership.tenantId);
           token.role = membership.role;
           token.tenantId = membership.tenantId;
           token.centerId = membership.centerId;
+        } else {
+          console.log("[AUTH] No membership found for user");
         }
       }
       return token;
@@ -74,7 +77,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
     authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user;
+      const isLoggedIn = !!auth?.user?.id;
       const isOnPublicPage = 
         nextUrl.pathname === "/" || 
         nextUrl.pathname === "/landing" || 
@@ -87,6 +90,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         nextUrl.pathname === "/register";
 
       if (isOnPublicPage) return true;
+      
+      if (!isLoggedIn) {
+        console.log("[AUTH] Unauthorized access to:", nextUrl.pathname);
+      }
+      
       return isLoggedIn;
     },
   },

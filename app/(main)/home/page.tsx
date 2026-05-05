@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 import { 
   Card, 
   CardContent, 
@@ -21,8 +22,13 @@ import { cookies } from "next/headers";
 import { eq as schemaEq } from "drizzle-orm";
 
 export default async function HomePage() {
-   const session = await auth();
-  const userName = session?.user?.name?.split(" ")[0] || "Administrador";
+  const session = await auth();
+  
+  if (!session?.user?.name) {
+    redirect("/login");
+  }
+
+  const userName = session.user.name.split(" ")[0];
 
   const cookieStore = await cookies();
   const activeCenterId = cookieStore.get("active_center_id")?.value;
